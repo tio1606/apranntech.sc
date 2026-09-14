@@ -181,8 +181,8 @@ async function newSession(env, userId) {
     Date.now() + SESSION_DAYS * 86400000
   )
     .toISOString()
-  .replace(”T”,” “)
-  .replace(”Z”,” “);
+    .slice(0, 19)
+    .replace("T"," ");
 
   await env.DB.prepare(
     "INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)"
