@@ -103,7 +103,36 @@ section{padding:58px 0}.section-title{text-align:center;margin-bottom:30px}.sect
 function hideAll(){document.getElementById('public').style.display='none';document.getElementById('loginArea').style.display='none';document.getElementById('app').style.display='none'}
 function home(){hideAll();document.getElementById('public').style.display='block';window.scrollTo(0,0)}
 function login(){hideAll();document.getElementById('loginArea').style.display='block';window.scrollTo(0,0)}
-function enterApp(){if(!document.getElementById('email').value||!document.getElementById('pass').value){alert('Please enter an email and password.');return}hideAll();document.getElementById('app').style.display='block';window.scrollTo(0,0)}
+async function enterApp(){
+  const email=document.getElementById('email').value.trim();
+  const password=document.getElementById('pass').value;
+
+  if(!email||!password){
+    alert('Please enter an email and password.');
+    return;
+  }
+
+  try{
+    const response=await fetch('/api/login',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email,password})
+    });
+
+    const data=await response.json();
+
+    if(!response.ok){
+      alert(data.error||'Login failed. Please check your email and password.');
+      return;
+    }
+
+    hideAll();
+    document.getElementById('app').style.display='block';
+    window.scrollTo(0,0);
+  }catch(error){
+    alert('Unable to connect to the server. Please try again.');
+  }
+}
 function dashTab(id,btn){document.querySelectorAll('.dtab').forEach(x=>x.classList.add('hidden'));document.getElementById('d'+id).classList.remove('hidden');document.querySelectorAll('.side button').forEach(x=>x.classList.remove('active'));if(btn)btn.classList.add('active')}
 </script>
 </body></html>
