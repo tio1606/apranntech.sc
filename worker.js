@@ -179,7 +179,10 @@ async function newSession(env, userId) {
 
   const expires = new Date(
     Date.now() + SESSION_DAYS * 86400000
-  ).toISOString();
+  )
+    .toISOString()
+  .replace(”T”,” “)
+  .replace(”Z”,” “);
 
   await env.DB.prepare(
     "INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)"
