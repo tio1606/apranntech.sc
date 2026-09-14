@@ -70,9 +70,61 @@ section{padding:58px 0}.section-title{text-align:center;margin-bottom:30px}.sect
 </main>
 
 <section id="loginArea" class="login-area">
-<div class="login-box"><h2>Student Login</h2><p class="muted">Prototype login — real authentication will be connected in the production version.</p>
-<label>Email</label><input class="field" id="email" type="email" placeholder="student@email.com"><label>Password</label><input class="field" id="pass" type="password" placeholder="Password">
-<button class="primary" style="width:100%" onclick="enterApp()">Log In</button><p class="muted" style="text-align:center">New student? <a href="#" onclick="alert('Registration will be connected in the production version.')">Create an account</a></p><button class="outline" style="width:100%" onclick="home()">← Back to website</button></div>
+<div class="login-box">
+<h2>Student Login</h2>
+<p class="muted">Sign in to access your Aprann Tech learning dashboard.</p>
+
+<label>Email</label>
+<input class="field" id="email" type="email" placeholder="student@email.com">
+
+<label>Password</label>
+<input class="field" id="pass" type="password" placeholder="Password">
+
+<button class="primary" style="width:100%" onclick="enterApp()">Log In</button>
+
+<p class="muted" style="text-align:center;margin-top:18px">
+New student?
+<button type="button" onclick="showRegister()" style="border:0;background:none;font:inherit;color:#168bc4;cursor:pointer">
+Create an account
+</button>
+</p>
+
+<button type="button" onclick="home()" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;background:white;font-weight:700;cursor:pointer">
+← Back to website
+</button>
+</div>
+</section>
+
+<section id="registerArea" class="login-area" style="display:none">
+<div class="login-box">
+<h2>Create Student Account</h2>
+<p class="muted">Create your Aprann Tech student account.</p>
+
+<label>Full Name</label>
+<input class="field" id="registerName" type="text" placeholder="Your full name">
+
+<label>Email</label>
+<input class="field" id="registerEmail" type="email" placeholder="student@email.com">
+
+<label>Password</label>
+<input class="field" id="registerPass" type="password" placeholder="Create a password">
+
+<label>Confirm Password</label>
+<input class="field" id="registerConfirm" type="password" placeholder="Confirm your password">
+
+<button class="primary" style="width:100%" onclick="registerStudent()">Create Account</button>
+
+<p class="muted" style="text-align:center;margin-top:18px">
+Already have an account?
+<button type="button" onclick="login()" style="border:0;background:none;font:inherit;color:#168bc4;cursor:pointer">
+Student Login
+</button>
+</p>
+
+<button type="button" onclick="home()" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;background:white;font-weight:700;cursor:pointer">
+← Back to website
+</button>
+</div>
 </section>
 
 <section id="app" class="app">
@@ -129,6 +181,54 @@ async function enterApp(){
     hideAll();
     document.getElementById('app').style.display='block';
     window.scrollTo(0,0);
+  }catch(error){
+    alert('Unable to connect to the server. Please try again.');
+  }
+}function showRegister(){
+  hideAll();
+  document.getElementById('registerArea').style.display='block';
+  window.scrollTo(0,0);
+}
+
+async function registerStudent(){
+  const name=document.getElementById('registerName').value.trim();
+  const email=document.getElementById('registerEmail').value.trim();
+  const password=document.getElementById('registerPass').value;
+  const confirm=document.getElementById('registerConfirm').value;
+
+  if(!name||!email||!password||!confirm){
+    alert('Please complete all fields.');
+    return;
+  }
+
+  if(password!==confirm){
+    alert('Passwords do not match.');
+    return;
+  }
+
+  if(password.length<8){
+    alert('Password must be at least 8 characters.');
+    return;
+  }
+
+  try{
+    const response=await fetch('/api/register',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,email,password})
+    });
+
+    const data=await response.json();
+
+    if(!response.ok){
+      alert(data.error||'Registration failed. Please try again.');
+      return;
+    }
+
+    alert('Account created successfully. You can now log in.');
+    login();
+
+    document.getElementById('email').value=email;
   }catch(error){
     alert('Unable to connect to the server. Please try again.');
   }
