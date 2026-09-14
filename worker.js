@@ -844,7 +844,7 @@ export default {
         return json(
           {
             error:
-              "Server error."
+            error?.message || "Server error."
           },
           500
         );
