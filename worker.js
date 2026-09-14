@@ -4,7 +4,7 @@
  */
 
 const SESSION_DAYS = 7;
-const PBKDF2_ITERATIONS = 120000;
+const PBKDF2_ITERATIONS = 100000;
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
