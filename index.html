@@ -186,8 +186,16 @@ async function enterApp(){
     hideAll();
 
 const welcome = document.getElementById('studentWelcome');
-if(welcome){
-  welcome.textContent = `Welcome back, ${data.user.name || 'Student'} 👋`;
+
+try{
+  const meResponse = await fetch('/api/me');
+  const meData = await meResponse.json();
+
+  if(welcome && meData.authenticated && meData.user){
+    welcome.textContent = `Welcome back, ${meData.user.name || 'Student'} 👋`;
+  }
+}catch(error){
+  console.error('Could not load student profile', error);
 }
 
 document.getElementById('app').style.display='block';
