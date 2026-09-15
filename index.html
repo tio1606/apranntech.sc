@@ -253,5 +253,78 @@ async function registerStudent(){
   }
 }
 function dashTab(id,btn){document.querySelectorAll('.dtab').forEach(x=>x.classList.add('hidden'));document.getElementById('d'+id).classList.remove('hidden');document.querySelectorAll('.side button').forEach(x=>x.classList.remove('active'));if(btn)btn.classList.add('active')}
-</script>
+
+  async function loadMyCourse(){
+  try{
+    const response = await fetch('/api/courses/1');
+
+    if(!response.ok){
+      console.error('Could not load course:', response.status);
+      return;
+    }
+
+    const data = await response.json();
+
+    console.log('Aprann Tech course data:', data);
+
+    if(!data.course || !Array.isArray(data.lessons)){
+      console.error('Course data is incomplete.');
+      return;
+    }
+
+    const modules = document.querySelectorAll('#dhome .module');
+
+    data.lessons.forEach((lesson, index) => {
+      if(!modules[index]) return;
+
+      const title = modules[index].querySelector('h3');
+      const description = modules[index].querySelector('.muted');
+      const button = modules[index].querySelector('button');
+
+      if(title){
+        title.textContent = lesson.title;
+      }
+
+      if(description){
+        if(lesson.locked){
+          description.textContent = 'Premium lesson • Locked';
+        }else{
+          description.textContent = 'Available • Ready to learn';
+        }
+      }
+
+      if(button){
+        if(lesson.locked){
+          button.textContent = '🔒 Locked';
+          button.disabled = true;
+          button.style.opacity = '0.6';
+          button.style.cursor = 'not-allowed';
+        }else{
+          button.textContent = 'Open';
+          button.disabled = false;
+          button.style.opacity = '1';
+          button.style.cursor = 'pointer';
+
+          button.onclick = function(){
+            openLesson(lesson);
+          };
+        }
+      }
+    });
+
+  }catch(error){
+    console.error('Course loading error:', error);
+  }
+}
+
+function openLesson(lesson){
+  alert(
+    'Lesson: ' + lesson.title +
+    '\n\n' +
+    (lesson.content || 'Lesson content will be available soon.')
+  );
+}
+
+  loadMyCourse();
+  </script>
 </body></html>
