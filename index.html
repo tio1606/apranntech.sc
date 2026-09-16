@@ -184,6 +184,10 @@ async function enterApp(){
     }
 
     hideAll();
+    
+
+document.getElementById('app').style.display='block';
+await loadMyCourse();
 
 const welcome = document.getElementById('studentWelcome');
 
@@ -198,8 +202,6 @@ try{
   console.error('Could not load student profile', error);
 }
 
-document.getElementById('app').style.display='block';
-   await loadMyCourse(); 
 window.scrollTo(0,0);
   }catch(error){
     alert('Unable to connect to the server. Please try again.');
