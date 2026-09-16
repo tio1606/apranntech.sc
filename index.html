@@ -398,10 +398,283 @@ function openModuleLesson(module, lesson = 1){
             Hardware
           </button>
         `
+           },
+
+      3: {
+        title: "Lesson 3: CPU, Memory and Storage",
+        content: `
+          <h3>🎯 Learning Objectives</h3>
+
+          <ul>
+            <li>Understand the purpose of the CPU.</li>
+            <li>Identify the main components of the CPU.</li>
+            <li>Understand the difference between RAM and ROM.</li>
+            <li>Identify common secondary storage devices.</li>
+            <li>Compare different types of storage.</li>
+          </ul>
+
+          <h3>🧠 What is the CPU?</h3>
+
+          <p>
+            The <strong>CPU (Central Processing Unit)</strong> is often called
+            the brain of the computer. It processes instructions and controls
+            the operations of the computer system.
+          </p>
+
+          <div style="
+            background:#f1f7fb;
+            border-left:5px solid #0788cc;
+            padding:18px;
+            border-radius:10px;
+            margin:20px 0;
+          ">
+            <strong>Exam Tip:</strong><br>
+            CPU = Central Processing Unit<br>
+            Its main job is to process instructions and control the computer.
+          </div>
+
+          <h3>⚙️ Main Components of the CPU</h3>
+
+          <p><strong>1. Control Unit (CU)</strong></p>
+
+          <p>
+            The Control Unit manages and coordinates the activities of the
+            computer. It controls the flow of data and instructions between
+            the CPU, memory and other parts of the computer.
+          </p>
+
+          <p><strong>2. Arithmetic Logic Unit (ALU)</strong></p>
+
+          <p>
+            The ALU performs arithmetic calculations such as addition,
+            subtraction, multiplication and division. It also performs
+            logical comparisons such as greater than, less than and equal to.
+          </p>
+
+          <p><strong>3. Registers</strong></p>
+
+          <p>
+            Registers are very small, very fast storage locations inside the
+            CPU. They temporarily hold data and instructions currently being
+            processed.
+          </p>
+
+          <h3>💾 RAM</h3>
+
+          <p>
+            <strong>RAM (Random Access Memory)</strong> is the main memory used
+            to temporarily store programs and data currently being used by
+            the computer.
+          </p>
+
+          <ul>
+            <li>RAM is volatile.</li>
+            <li>Its contents are lost when the computer is switched off.</li>
+            <li>More RAM can allow a computer to run more applications at the same time.</li>
+          </ul>
+
+          <h3>📀 ROM</h3>
+
+          <p>
+            <strong>ROM (Read Only Memory)</strong> is a type of memory that
+            stores instructions needed to start or boot a computer.
+          </p>
+
+          <ul>
+            <li>ROM is non-volatile.</li>
+            <li>Its contents are retained when the computer is switched off.</li>
+            <li>It normally stores permanent instructions.</li>
+          </ul>
+
+          <h3>💽 Secondary Storage</h3>
+
+          <p>
+            Secondary storage is used to store files, programs and other data
+            permanently.
+          </p>
+
+          <ul>
+            <li><strong>HDD</strong> – Hard Disk Drive</li>
+            <li><strong>SSD</strong> – Solid State Drive</li>
+            <li><strong>USB flash drive</strong></li>
+            <li><strong>Memory card</strong></li>
+            <li><strong>Optical disc</strong> such as a DVD</li>
+          </ul>
+
+          <h3>📊 RAM, ROM and Secondary Storage</h3>
+
+          <div style="
+            overflow-x:auto;
+            margin:20px 0;
+          ">
+
+            <table style="
+              width:100%;
+              border-collapse:collapse;
+              min-width:650px;
+            ">
+
+              <tr style="background:#0788cc;color:white;">
+                <th style="padding:12px;border:1px solid #ddd;">Type</th>
+                <th style="padding:12px;border:1px solid #ddd;">Purpose</th>
+                <th style="padding:12px;border:1px solid #ddd;">Volatile?</th>
+              </tr>
+
+              <tr>
+                <td style="padding:12px;border:1px solid #ddd;"><strong>RAM</strong></td>
+                <td style="padding:12px;border:1px solid #ddd;">
+                  Stores programs and data currently being used
+                </td>
+                <td style="padding:12px;border:1px solid #ddd;">Yes</td>
+              </tr>
+
+              <tr>
+                <td style="padding:12px;border:1px solid #ddd;"><strong>ROM</strong></td>
+                <td style="padding:12px;border:1px solid #ddd;">
+                  Stores permanent start-up instructions
+                </td>
+                <td style="padding:12px;border:1px solid #ddd;">No</td>
+              </tr>
+
+              <tr>
+                <td style="padding:12px;border:1px solid #ddd;"><strong>Secondary Storage</strong></td>
+                <td style="padding:12px;border:1px solid #ddd;">
+                  Stores files and programs permanently
+                </td>
+                <td style="padding:12px;border:1px solid #ddd;">No</td>
+              </tr>
+
+            </table>
+
+          </div>
+
+          <h3>🇸🇨 Real-Life Seychelles Example</h3>
+
+          <p>
+            Imagine a student at a secondary school in Seychelles preparing
+            an ICT assignment. Microsoft Word is stored on the computer's
+            secondary storage. When the student opens Word, the program and
+            the document being edited are loaded into RAM. The CPU then
+            processes the instructions and the monitor displays the result.
+          </p>
+
+          <div style="
+            background:#fff7e6;
+            border-left:5px solid #f59e0b;
+            padding:18px;
+            border-radius:10px;
+            margin:20px 0;
+          ">
+            <strong>Remember:</strong><br>
+            Storage keeps your files.<br>
+            RAM temporarily holds what you are working on.<br>
+            CPU processes instructions.
+          </div>
+
+          <h3>📝 IGCSE Exam Tip</h3>
+
+          <p>
+            If an exam asks why a computer needs RAM, do not simply write
+            "to store data". Explain that RAM temporarily stores programs
+            and data that are currently being used by the CPU.
+          </p>
+
+          <h3>🧩 Check Your Understanding</h3>
+
+          <p>
+            <strong>Question 1:</strong>
+            Which component performs arithmetic calculations?
+          </p>
+
+          <div style="
+            display:grid;
+            gap:10px;
+            margin-bottom:25px;
+          ">
+
+            <button
+              onclick="alert('Correct! The ALU performs arithmetic calculations.')"
+              style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+              A. ALU
+            </button>
+
+            <button
+              onclick="alert('Not quite. The Control Unit controls and coordinates operations.')"
+              style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+              B. Control Unit
+            </button>
+
+            <button
+              onclick="alert('Not quite. A monitor is an output device.')"
+              style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+              C. Monitor
+            </button>
+
+          </div>
+
+          <p>
+            <strong>Question 2:</strong>
+            What happens to the contents of RAM when the computer is switched off?
+          </p>
+
+          <div style="
+            display:grid;
+            gap:10px;
+            margin-bottom:25px;
+          ">
+
+            <button
+              onclick="alert('Correct! RAM is volatile, so its contents are lost when power is removed.')"
+              style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+              A. They are lost
+            </button>
+
+            <button
+              onclick="alert('Incorrect. RAM is volatile memory.')"
+              style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+              B. They are permanently stored
+            </button>
+
+            <button
+              onclick="alert('Incorrect. RAM does not automatically transfer its contents to ROM.')"
+              style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+              C. They are transferred to ROM
+            </button>
+
+          </div>
+
+          <p>
+            <strong>Question 3:</strong>
+            Which of the following is a secondary storage device?
+          </p>
+
+          <div style="
+            display:grid;
+            gap:10px;
+          ">
+
+            <button
+              onclick="alert('Correct! An SSD is a secondary storage device.')"
+              style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+              A. SSD
+            </button>
+
+            <button
+              onclick="alert('Incorrect. Registers are located inside the CPU.')"
+              style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+              B. Register
+            </button>
+
+            <button
+              onclick="alert('Incorrect. The ALU is part of the CPU.')"
+              style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+              C. ALU
+            </button>
+
+          </div>
+        `
       }
-
     }
-
   };
 
   const lessonData = lessons[module]?.[lesson];
