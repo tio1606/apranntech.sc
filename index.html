@@ -1866,8 +1866,357 @@ function openModuleLesson(module, lesson = 1){
 
       </div>
     `
+    `
+
+  },
+
+  4: {
+    title: "Lesson 4: Queries and Searching",
+    content: `
+      <h3>🎯 Learning Objectives</h3>
+
+      <ul>
+        <li>Understand what a database query is.</li>
+        <li>Explain why queries are used.</li>
+        <li>Understand how criteria are used to find records.</li>
+        <li>Use simple comparison operators in database searches.</li>
+        <li>Understand the use of AND and OR conditions.</li>
+        <li>Understand how query results can be sorted.</li>
+      </ul>
+
+      <h3>🔎 What is a Query?</h3>
+
+      <p>
+        A <strong>query</strong> is a request for specific information
+        from a database.
+      </p>
+
+      <p>
+        Queries allow users to search through a large amount of data
+        and display only the records that meet particular conditions.
+      </p>
+
+      <div style="
+        background:#f1f7fb;
+        border-left:5px solid #0788cc;
+        padding:18px;
+        border-radius:10px;
+        margin:20px 0;
+      ">
+        <strong>Exam Tip:</strong><br>
+        A query is used to find and display records that meet specified
+        criteria.
+      </div>
+
+      <h3>🏫 School Database Example</h3>
+
+      <p>
+        Imagine a school database containing the following student records:
+      </p>
+
+      <div style="overflow-x:auto;margin:20px 0;">
+        <table style="width:100%;border-collapse:collapse;min-width:650px;">
+
+          <tr style="background:#0788cc;color:white;">
+            <th style="padding:12px;border:1px solid #ddd;">Student ID</th>
+            <th style="padding:12px;border:1px solid #ddd;">Name</th>
+            <th style="padding:12px;border:1px solid #ddd;">Class</th>
+            <th style="padding:12px;border:1px solid #ddd;">Age</th>
+          </tr>
+
+          <tr>
+            <td style="padding:12px;border:1px solid #ddd;">001</td>
+            <td style="padding:12px;border:1px solid #ddd;">Lucas</td>
+            <td style="padding:12px;border:1px solid #ddd;">S5A</td>
+            <td style="padding:12px;border:1px solid #ddd;">16</td>
+          </tr>
+
+          <tr>
+            <td style="padding:12px;border:1px solid #ddd;">002</td>
+            <td style="padding:12px;border:1px solid #ddd;">Jaelle</td>
+            <td style="padding:12px;border:1px solid #ddd;">S5B</td>
+            <td style="padding:12px;border:1px solid #ddd;">16</td>
+          </tr>
+
+          <tr>
+            <td style="padding:12px;border:1px solid #ddd;">003</td>
+            <td style="padding:12px;border:1px solid #ddd;">Daniel</td>
+            <td style="padding:12px;border:1px solid #ddd;">S4A</td>
+            <td style="padding:12px;border:1px solid #ddd;">15</td>
+          </tr>
+
+          <tr>
+            <td style="padding:12px;border:1px solid #ddd;">004</td>
+            <td style="padding:12px;border:1px solid #ddd;">Marie</td>
+            <td style="padding:12px;border:1px solid #ddd;">S5A</td>
+            <td style="padding:12px;border:1px solid #ddd;">17</td>
+          </tr>
+
+        </table>
+      </div>
+
+      <h3>🎯 Using Criteria</h3>
+
+      <p>
+        A <strong>criterion</strong> is a condition used to select
+        particular records from a database.
+      </p>
+
+      <p>
+        For example, a school could search for students whose age is
+        greater than 15.
+      </p>
+
+      <p>
+        The criterion would be:
+      </p>
+
+      <div style="
+        background:#fff7e6;
+        border-left:5px solid #f59e0b;
+        padding:18px;
+        border-radius:10px;
+        margin:20px 0;
+      ">
+        <strong>Age &gt; 15</strong>
+      </div>
+
+      <p>
+        This query would return students aged 16 or 17 in our example.
+      </p>
+
+      <h3>➕ Comparison Operators</h3>
+
+      <div style="overflow-x:auto;margin:20px 0;">
+        <table style="width:100%;border-collapse:collapse;min-width:600px;">
+
+          <tr style="background:#0788cc;color:white;">
+            <th style="padding:12px;border:1px solid #ddd;">Operator</th>
+            <th style="padding:12px;border:1px solid #ddd;">Meaning</th>
+            <th style="padding:12px;border:1px solid #ddd;">Example</th>
+          </tr>
+
+          <tr>
+            <td style="padding:12px;border:1px solid #ddd;"><strong>=</strong></td>
+            <td style="padding:12px;border:1px solid #ddd;">Equal to</td>
+            <td style="padding:12px;border:1px solid #ddd;">Class = "S5A"</td>
+          </tr>
+
+          <tr>
+            <td style="padding:12px;border:1px solid #ddd;"><strong>&gt;</strong></td>
+            <td style="padding:12px;border:1px solid #ddd;">Greater than</td>
+            <td style="padding:12px;border:1px solid #ddd;">Age &gt; 15</td>
+          </tr>
+
+          <tr>
+            <td style="padding:12px;border:1px solid #ddd;"><strong>&lt;</strong></td>
+            <td style="padding:12px;border:1px solid #ddd;">Less than</td>
+            <td style="padding:12px;border:1px solid #ddd;">Age &lt; 17</td>
+          </tr>
+
+          <tr>
+            <td style="padding:12px;border:1px solid #ddd;"><strong>&gt;=</strong></td>
+            <td style="padding:12px;border:1px solid #ddd;">Greater than or equal to</td>
+            <td style="padding:12px;border:1px solid #ddd;">Age &gt;= 16</td>
+          </tr>
+
+          <tr>
+            <td style="padding:12px;border:1px solid #ddd;"><strong>&lt;=</strong></td>
+            <td style="padding:12px;border:1px solid #ddd;">Less than or equal to</td>
+            <td style="padding:12px;border:1px solid #ddd;">Age &lt;= 16</td>
+          </tr>
+
+        </table>
+      </div>
+
+      <h3>🔗 Using AND</h3>
+
+      <p>
+        <strong>AND</strong> is used when all conditions must be true.
+      </p>
+
+      <p>
+        Example:
+      </p>
+
+      <div style="
+        background:#f1f7fb;
+        border-left:5px solid #0788cc;
+        padding:18px;
+        border-radius:10px;
+        margin:20px 0;
+      ">
+        <strong>Class = "S5A" AND Age &gt; 15</strong>
+      </div>
+
+      <p>
+        This would find students who are in S5A <strong>and</strong>
+        are older than 15.
+      </p>
+
+      <h3>🔀 Using OR</h3>
+
+      <p>
+        <strong>OR</strong> is used when at least one of the conditions
+        must be true.
+      </p>
+
+      <p>
+        Example:
+      </p>
+
+      <div style="
+        background:#f1f7fb;
+        border-left:5px solid #0788cc;
+        padding:18px;
+        border-radius:10px;
+        margin:20px 0;
+      ">
+        <strong>Class = "S5A" OR Class = "S5B"</strong>
+      </div>
+
+      <p>
+        This would find students in either S5A or S5B.
+      </p>
+
+      <h3>↕️ Sorting Query Results</h3>
+
+      <p>
+        Query results can also be sorted into a particular order.
+      </p>
+
+      <ul>
+        <li><strong>Ascending:</strong> A to Z or smallest to largest.</li>
+        <li><strong>Descending:</strong> Z to A or largest to smallest.</li>
+      </ul>
+
+      <p>
+        For example, student records could be sorted by age from
+        youngest to oldest.
+      </p>
+
+      <h3>🇸🇨 Seychelles Real-Life Example</h3>
+
+      <p>
+        A secondary school in Seychelles could use queries to quickly
+        find students who meet particular conditions.
+      </p>
+
+      <p>For example, the school could query:</p>
+
+      <ul>
+        <li>All students in S5A.</li>
+        <li>Students aged over 15.</li>
+        <li>Students in S5A or S5B.</li>
+        <li>Students aged 16 or above.</li>
+      </ul>
+
+      <h3>📝 IGCSE Exam Tip</h3>
+
+      <p>
+        When an examination asks you to give a query criterion,
+        make sure you identify the correct field and condition.
+      </p>
+
+      <p>
+        For example, if the question asks for students aged over 15,
+        the criterion should be:
+      </p>
+
+      <div style="
+        background:#fff7e6;
+        border-left:5px solid #f59e0b;
+        padding:18px;
+        border-radius:10px;
+        margin:20px 0;
+      ">
+        <strong>Age &gt; 15</strong>
+      </div>
+
+      <h3>🧠 Check Your Understanding</h3>
+
+      <p>
+        <strong>Question 1:</strong><br>
+        What is the main purpose of a query?
+      </p>
+
+      <div style="display:grid;gap:10px;margin-bottom:25px;">
+
+        <button
+          onclick="alert('Correct! A query is used to find records that meet specified criteria.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          A. Find specific records
+        </button>
+
+        <button
+          onclick="alert('Not quite. A query is mainly used to search and retrieve information.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          B. Turn off the computer
+        </button>
+
+        <button
+          onclick="alert('Not quite. A query does not replace the database.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          C. Replace the database
+        </button>
+
+      </div>
+
+      <p>
+        <strong>Question 2:</strong><br>
+        Which criterion would find students older than 15?
+      </p>
+
+      <div style="display:grid;gap:10px;margin-bottom:25px;">
+
+        <button
+          onclick="alert('Correct! Age &gt; 15 means the age must be greater than 15.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          A. Age &gt; 15
+        </button>
+
+        <button
+          onclick="alert('Not quite. Age &lt; 15 means younger than 15.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          B. Age &lt; 15
+        </button>
+
+        <button
+          onclick="alert('Not quite. Age = 15 finds students exactly 15.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          C. Age = 15
+        </button>
+
+      </div>
+
+      <p>
+        <strong>Question 3:</strong><br>
+        Which operator means "equal to"?
+      </p>
+
+      <div style="display:grid;gap:10px;margin-bottom:25px;">
+
+        <button
+          onclick="alert('Correct! The = operator means equal to.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          A. =
+        </button>
+
+        <button
+          onclick="alert('Not quite. The &gt; operator means greater than.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          B. &gt;
+        </button>
+
+        <button
+          onclick="alert('Not quite. The &lt; operator means less than.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          C. &lt;
+        </button>
+
+      </div>
+    `
   }
-}
 };
 
   const lessonData = lessons[module]?.[lesson];
