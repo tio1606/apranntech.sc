@@ -1261,6 +1261,274 @@ function openModuleLesson(module, lesson = 1){
 
   </div>
     `
+    },
+  
+  2: {
+    title: "Lesson 2: Tables, Fields and Records",
+    content: `
+      <h3>🎯 Learning Objectives</h3>
+
+      <ul>
+        <li>Understand the meaning of a table, field and record.</li>
+        <li>Identify fields and records in a database table.</li>
+        <li>Explain the purpose of field names.</li>
+        <li>Use a simple student database as an example.</li>
+        <li>Answer IGCSE-style questions about database structures.</li>
+      </ul>
+
+      <h3>📋 What is a Table?</h3>
+
+      <p>
+        A <strong>table</strong> is used to store related data in a database.
+        Data in a table is organised into <strong>fields</strong> and
+        <strong>records</strong>.
+      </p>
+
+      <p>
+        For example, a school could have a table called
+        <strong>Students</strong>.
+      </p>
+
+      <div style="overflow-x:auto;margin:20px 0;">
+        <table style="width:100%;border-collapse:collapse;min-width:650px;">
+          <tr style="background:#0788cc;color:white;">
+            <th style="padding:12px;border:1px solid #ddd;">StudentID</th>
+            <th style="padding:12px;border:1px solid #ddd;">Name</th>
+            <th style="padding:12px;border:1px solid #ddd;">Class</th>
+            <th style="padding:12px;border:1px solid #ddd;">Age</th>
+          </tr>
+
+          <tr>
+            <td style="padding:12px;border:1px solid #ddd;">001</td>
+            <td style="padding:12px;border:1px solid #ddd;">Lucas</td>
+            <td style="padding:12px;border:1px solid #ddd;">S5A</td>
+            <td style="padding:12px;border:1px solid #ddd;">16</td>
+          </tr>
+
+          <tr>
+            <td style="padding:12px;border:1px solid #ddd;">002</td>
+            <td style="padding:12px;border:1px solid #ddd;">Jaelle</td>
+            <td style="padding:12px;border:1px solid #ddd;">S5B</td>
+            <td style="padding:12px;border:1px solid #ddd;">16</td>
+          </tr>
+
+          <tr>
+            <td style="padding:12px;border:1px solid #ddd;">003</td>
+            <td style="padding:12px;border:1px solid #ddd;">Daniel</td>
+            <td style="padding:12px;border:1px solid #ddd;">S4A</td>
+            <td style="padding:12px;border:1px solid #ddd;">15</td>
+          </tr>
+        </table>
+      </div>
+
+      <h3>🧩 What is a Field?</h3>
+
+      <p>
+        A <strong>field</strong> is a single category of information stored
+        in a database table.
+      </p>
+
+      <p>In the example above, the fields are:</p>
+
+      <ul>
+        <li>StudentID</li>
+        <li>Name</li>
+        <li>Class</li>
+        <li>Age</li>
+      </ul>
+
+      <div style="
+        background:#f1f7fb;
+        border-left:5px solid #0788cc;
+        padding:18px;
+        border-radius:10px;
+        margin:20px 0;
+      ">
+        <strong>Exam Tip:</strong><br>
+        A field represents one type or category of data.
+        For example, <strong>Name</strong> is a field.
+      </div>
+
+      <h3>👤 What is a Record?</h3>
+
+      <p>
+        A <strong>record</strong> is one complete set of related data about
+        a single item or person.
+      </p>
+
+      <p>
+        For example, this is one complete record:
+      </p>
+
+      <div style="
+        background:#fff7e6;
+        border-left:5px solid #f59e0b;
+        padding:18px;
+        border-radius:10px;
+        margin:20px 0;
+      ">
+        <strong>001 | Lucas | S5A | 16</strong>
+      </div>
+
+      <p>
+        This record contains information about one student.
+      </p>
+
+      <h3>🔎 Field vs Record</h3>
+
+      <div style="overflow-x:auto;margin:20px 0;">
+        <table style="width:100%;border-collapse:collapse;min-width:600px;">
+          <tr style="background:#0788cc;color:white;">
+            <th style="padding:12px;border:1px solid #ddd;">Term</th>
+            <th style="padding:12px;border:1px solid #ddd;">Meaning</th>
+            <th style="padding:12px;border:1px solid #ddd;">Example</th>
+          </tr>
+
+          <tr>
+            <td style="padding:12px;border:1px solid #ddd;">
+              <strong>Field</strong>
+            </td>
+            <td style="padding:12px;border:1px solid #ddd;">
+              A category of information
+            </td>
+            <td style="padding:12px;border:1px solid #ddd;">
+              Name
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:12px;border:1px solid #ddd;">
+              <strong>Record</strong>
+            </td>
+            <td style="padding:12px;border:1px solid #ddd;">
+              One complete set of information
+            </td>
+            <td style="padding:12px;border:1px solid #ddd;">
+              001, Lucas, S5A, 16
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <h3>🇸🇨 Seychelles School Example</h3>
+
+      <p>
+        Imagine a secondary school in Seychelles keeping records of students
+        in a database.
+      </p>
+
+      <p>
+        The database might contain fields such as:
+        <strong>Student ID, First Name, Surname, Class, Date of Birth,
+        Gender and Examination Results.</strong>
+      </p>
+
+      <p>
+        Each student would have one record containing their individual
+        information.
+      </p>
+
+      <h3>📝 IGCSE Exam Tip</h3>
+
+      <p>
+        Remember this simple rule:
+      </p>
+
+      <div style="
+        background:#f1f7fb;
+        border-left:5px solid #0788cc;
+        padding:18px;
+        border-radius:10px;
+        margin:20px 0;
+      ">
+        <strong>Field = column</strong><br>
+        <strong>Record = row</strong><br>
+        <strong>Table = collection of related records</strong>
+      </div>
+
+      <h3>🧠 Check Your Understanding</h3>
+
+      <p>
+        <strong>Question 1:</strong><br>
+        In a student database, which of the following is a field?
+      </p>
+
+      <div style="display:grid;gap:10px;margin-bottom:25px;">
+
+        <button
+          onclick="alert('Correct! Name is a field because it is a category of information.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          A. Name
+        </button>
+
+        <button
+          onclick="alert('Not quite. Lucas is a value stored in the Name field.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          B. Lucas
+        </button>
+
+        <button
+          onclick="alert('Not quite. The complete row represents a record.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          C. Lucas, S5A, 16
+        </button>
+
+      </div>
+
+      <p>
+        <strong>Question 2:</strong><br>
+        What is a record?
+      </p>
+
+      <div style="display:grid;gap:10px;margin-bottom:25px;">
+
+        <button
+          onclick="alert('Not quite. A field is a category of information.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          A. A column heading
+        </button>
+
+        <button
+          onclick="alert('Correct! A record contains a complete set of information about one item or person.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          B. A complete set of information
+        </button>
+
+        <button
+          onclick="alert('Not quite. A table contains multiple records.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          C. The name of a database
+        </button>
+
+      </div>
+
+      <p>
+        <strong>Question 3:</strong><br>
+        In a database table, a record is normally represented by a:
+      </p>
+
+      <div style="display:grid;gap:10px;margin-bottom:25px;">
+
+        <button
+          onclick="alert('Correct! A record is normally represented by a row.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          A. Row
+        </button>
+
+        <button
+          onclick="alert('Not quite. A field is normally represented by a column.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          B. Column
+        </button>
+
+        <button
+          onclick="alert('Not quite. A table contains rows and columns.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          C. Database
+        </button>
+
+      </div>
+    `
   }
 }
 };
