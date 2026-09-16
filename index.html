@@ -328,17 +328,230 @@ function openLesson(lesson){
   );
 }
 function openModuleLesson(module){
-  if(module === 'computer-systems'){
-    alert(
-      'COMPUTER SYSTEMS\n\n' +
-      'Learning Objectives:\n' +
-      '• Understand the main components of a computer system.\n' +
-      '• Distinguish between hardware and software.\n' +
-      '• Explain the role of the CPU, memory and storage.\n\n' +
-      'Lesson 1: Introduction to Computer Systems\n\n' +
-      'This lesson will introduce the main parts of a computer system and explain how hardware and software work together.'
-    );
+
+  if(module !== 'computer-systems'){
+    return;
   }
+
+  const lessonWindow = document.createElement('div');
+
+  lessonWindow.id = 'lessonWindow';
+
+  lessonWindow.style.cssText = `
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.65);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    z-index:9999;
+  `;
+
+  lessonWindow.innerHTML = `
+    <div style="
+      background:white;
+      width:min(900px,95vw);
+      max-height:90vh;
+      overflow-y:auto;
+      border-radius:18px;
+      padding:30px;
+      box-shadow:0 20px 60px rgba(0,0,0,0.3);
+    ">
+
+      <div style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:20px;
+        margin-bottom:20px;
+      ">
+
+        <div>
+          <p style="
+            margin:0 0 8px;
+            color:#0788cc;
+            font-weight:700;
+          ">
+            IGCSE ICT • COMPUTER SYSTEMS
+          </p>
+
+          <h2 style="
+            margin:0;
+            font-size:30px;
+          ">
+            Lesson 1: Introduction to Computer Systems
+          </h2>
+        </div>
+
+        <button
+          onclick="document.getElementById('lessonWindow').remove()"
+          style="
+            border:0;
+            background:#111;
+            color:white;
+            border-radius:10px;
+            padding:10px 15px;
+            cursor:pointer;
+            font-size:16px;
+          "
+        >
+          ✕
+        </button>
+
+      </div>
+
+      <hr>
+
+      <h3>🎯 Learning Objectives</h3>
+
+      <ul>
+        <li>Understand the main components of a computer system.</li>
+        <li>Distinguish between hardware and software.</li>
+        <li>Explain the role of the CPU, memory and storage.</li>
+        <li>Identify common input and output devices.</li>
+      </ul>
+
+      <h3>📘 What is a Computer System?</h3>
+
+      <p>
+        A computer system is made up of hardware and software that work
+        together to process data and produce useful information.
+      </p>
+
+      <h3>🖥️ Hardware</h3>
+
+      <p>
+        Hardware refers to the physical parts of a computer that you can
+        see and touch.
+      </p>
+
+      <p><strong>Examples:</strong></p>
+
+      <ul>
+        <li>Keyboard</li>
+        <li>Mouse</li>
+        <li>Monitor</li>
+        <li>CPU</li>
+        <li>Printer</li>
+        <li>Hard drive / SSD</li>
+      </ul>
+
+      <h3>💿 Software</h3>
+
+      <p>
+        Software consists of programs and instructions that tell the
+        computer what to do.
+      </p>
+
+      <p><strong>Examples:</strong></p>
+
+      <ul>
+        <li>Microsoft Windows</li>
+        <li>Microsoft Word</li>
+        <li>Microsoft Excel</li>
+        <li>Web browsers</li>
+        <li>Antivirus software</li>
+      </ul>
+
+      <h3>⚙️ How Hardware and Software Work Together</h3>
+
+      <p>
+        Hardware cannot perform useful tasks without software, while
+        software needs hardware to run.
+      </p>
+
+      <div style="
+        background:#f1f7fb;
+        border-left:5px solid #0788cc;
+        padding:18px;
+        border-radius:10px;
+        margin:20px 0;
+      ">
+
+        <strong>Example:</strong>
+
+        <p style="margin-bottom:0;">
+          When you type a document in Microsoft Word, the keyboard is
+          hardware, Microsoft Word is software, and the computer processes
+          your input to display the document on the monitor.
+        </p>
+
+      </div>
+
+      <h3>🧠 Check Your Understanding</h3>
+
+      <p>
+        <strong>Question:</strong>
+        Which of the following is hardware?
+      </p>
+
+      <div style="
+        display:grid;
+        gap:10px;
+        margin-bottom:25px;
+      ">
+
+        <button onclick="alert('Correct! A keyboard is a hardware device.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          A. Keyboard
+        </button>
+
+        <button onclick="alert('Not quite. Microsoft Word is software.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          B. Microsoft Word
+        </button>
+
+        <button onclick="alert('Not quite. Windows is software.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          C. Windows
+        </button>
+
+      </div>
+
+      <div style="
+        display:flex;
+        justify-content:space-between;
+        gap:15px;
+        border-top:1px solid #ddd;
+        padding-top:20px;
+      ">
+
+        <button
+          onclick="document.getElementById('lessonWindow').remove()"
+          style="
+            padding:12px 20px;
+            border:1px solid #ddd;
+            border-radius:8px;
+            background:white;
+            cursor:pointer;
+            font-weight:700;
+          "
+        >
+          ← Back to My Course
+        </button>
+
+        <button
+          onclick="alert('Next lesson will be added here.')"
+          style="
+            padding:12px 20px;
+            border:0;
+            border-radius:8px;
+            background:#0788cc;
+            color:white;
+            cursor:pointer;
+            font-weight:700;
+          "
+        >
+          Next Lesson →
+        </button>
+
+      </div>
+
+    </div>
+  `;
+
+  document.body.appendChild(lessonWindow);
 }
   </script>
 </body></html>
