@@ -320,12 +320,185 @@ function dashTab(id,btn){document.querySelectorAll('.dtab').forEach(x=>x.classLi
   }
 }
 
-function openLesson(lesson){
-  alert(
-    'Lesson: ' + lesson.title +
-    '\n\n' +
-    (lesson.content || 'Lesson content will be available soon.')
-  );
+function openModuleLesson(module, lesson = 1){
+
+  const lessons = {
+
+    "computer-systems": {
+
+      1: {
+        title: "Lesson 1: Introduction to Computer Systems",
+        content: `
+          <h3>🎯 Learning Objectives</h3>
+          <ul>
+            <li>Understand the main components of a computer system.</li>
+            <li>Distinguish between hardware and software.</li>
+            <li>Explain the role of CPU, memory and storage.</li>
+          </ul>
+
+          <h3>📘 What is a Computer System?</h3>
+          <p>A computer system is made up of hardware and software working together to process data into information.</p>
+
+          <h3>🧠 Quick Check</h3>
+          <p><b>Which is hardware?</b></p>
+
+          <button onclick="alert('Correct!')" class="quizBtn">Keyboard</button>
+          <button onclick="alert('Incorrect')" class="quizBtn">Microsoft Word</button>
+          <button onclick="alert('Incorrect')" class="quizBtn">Windows</button>
+        `
+      },
+
+      2: {
+        title: "Lesson 2: Hardware and Software",
+        content: `
+          <h3>🖥️ Hardware</h3>
+          <p>Hardware refers to the physical parts of a computer that can be seen and touched.</p>
+
+          <h4>Examples</h4>
+          <ul>
+            <li>Keyboard</li>
+            <li>Mouse</li>
+            <li>Monitor</li>
+            <li>CPU</li>
+            <li>Printer</li>
+          </ul>
+
+          <h3>💿 Software</h3>
+          <p>Software is a collection of programs and instructions that tell hardware what to do.</p>
+
+          <h4>System Software</h4>
+          <ul>
+            <li>Windows</li>
+            <li>Linux</li>
+            <li>Android</li>
+          </ul>
+
+          <h4>Application Software</h4>
+          <ul>
+            <li>Microsoft Word</li>
+            <li>Excel</li>
+            <li>PowerPoint</li>
+            <li>Google Chrome</li>
+          </ul>
+
+          <div style="background:#eef7ff;padding:15px;border-left:4px solid #0788cc;border-radius:8px;">
+            <b>Exam Tip:</b><br>
+            Hardware = Physical equipment<br>
+            Software = Programs and applications
+          </div>
+
+          <h3>📝 Mini Quiz</h3>
+          <p>Windows is an example of:</p>
+
+          <button onclick="alert('Correct! Windows is System Software.')" class="quizBtn">
+            System Software
+          </button>
+
+          <button onclick="alert('Incorrect')" class="quizBtn">
+            Hardware
+          </button>
+        `
+      }
+
+    }
+
+  };
+
+  const lessonData = lessons[module]?.[lesson];
+
+  if(!lessonData){
+    alert("Lesson not available yet.");
+    return;
+  }
+
+  const old = document.getElementById("lessonWindow");
+  if(old) old.remove();
+
+  const nextLesson =
+    lessons[module][lesson + 1] ? lesson + 1 : null;
+
+  const win = document.createElement("div");
+  win.id = "lessonWindow";
+
+  win.style.cssText = `
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.65);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:20px;
+    z-index:9999;
+  `;
+
+  win.innerHTML = `
+    <div style="
+      background:white;
+      width:min(920px,95vw);
+      max-height:90vh;
+      overflow:auto;
+      border-radius:18px;
+      padding:28px;
+    ">
+
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="color:#0788cc;font-weight:700;">IGCSE ICT • COMPUTER SYSTEMS</div>
+          <h2 style="margin-top:8px;">${lessonData.title}</h2>
+        </div>
+
+        <button onclick="document.getElementById('lessonWindow').remove()"
+          style="background:#111;color:#fff;border:none;border-radius:10px;padding:10px 14px;font-size:18px;cursor:pointer;">
+          ✕
+        </button>
+      </div>
+
+      <hr>
+
+      ${lessonData.content}
+
+      <style>
+        .quizBtn{
+          display:block;
+          width:100%;
+          text-align:left;
+          margin:10px 0;
+          padding:12px;
+          border:1px solid #ddd;
+          border-radius:8px;
+          background:white;
+          cursor:pointer;
+          font-size:15px;
+        }
+        .quizBtn:hover{
+          background:#f4f9ff;
+        }
+      </style>
+
+      <div style="display:flex;justify-content:space-between;margin-top:25px;">
+
+        <button onclick="document.getElementById('lessonWindow').remove()"
+          style="padding:12px 20px;border:1px solid #ccc;background:white;border-radius:8px;cursor:pointer;">
+          ← Back
+        </button>
+
+        ${
+          nextLesson
+          ? `<button onclick="openModuleLesson('${module}',${nextLesson})"
+              style="padding:12px 20px;background:#0788cc;color:white;border:none;border-radius:8px;cursor:pointer;">
+              Next Lesson →
+            </button>`
+          : `<button style="padding:12px 20px;background:#16a34a;color:white;border:none;border-radius:8px;">
+              Module Complete ✓
+            </button>`
+        }
+
+      </div>
+
+    </div>
+  `;
+
+  document.body.appendChild(win);
 }
 function openModuleLesson(module){
 
