@@ -1008,9 +1008,261 @@ function openModuleLesson(module, lesson = 1){
 
           </div>
         `
-      }
-    }
-  };
+      },
+    
+"databases": {
+  1: {
+    title: "Lesson 1: Introduction to Databases",
+    content: `
+      <h3>🎯 Learning Objectives</h3>
+
+      <ul>
+        <li>Understand what a database is.</li>
+        <li>Explain why databases are used.</li>
+        <li>Identify common examples of databases.</li>
+        <li>Understand the difference between a database and a spreadsheet.</li>
+        <li>Describe how databases can be used in real-life situations.</li>
+      </ul>
+
+      <h3>🧠 What is a Database?</h3>
+
+      <p>
+        A <strong>database</strong> is an organised collection of data that can be
+        easily stored, searched, updated and managed.
+      </p>
+
+      <div style="
+        background:#f1f7fb;
+        border-left:5px solid #0788cc;
+        padding:18px;
+        border-radius:10px;
+        margin:20px 0;
+      ">
+        <strong>Exam Tip:</strong><br>
+        A database is used to store and organise related data so that it can
+        be easily accessed and managed.
+      </div>
+
+      <h3>📋 Examples of Databases</h3>
+
+      <p>Databases are used in many places, including:</p>
+
+      <ul>
+        <li>Schools — storing student records.</li>
+        <li>Banks — storing customer and account information.</li>
+        <li>Hospitals — storing patient records.</li>
+        <li>Hotels — storing guest and booking information.</li>
+        <li>Shops — storing product and customer information.</li>
+        <li>Airlines — storing passenger and flight information.</li>
+      </ul>
+
+      <h3>🇸🇨 Seychelles Real-Life Example</h3>
+
+      <p>
+        Imagine a secondary school in Seychelles has a database containing
+        information about its students.
+      </p>
+
+      <p>The database could store:</p>
+
+      <ul>
+        <li>Student ID</li>
+        <li>Student name</li>
+        <li>Date of birth</li>
+        <li>Class</li>
+        <li>Subjects</li>
+        <li>Examination results</li>
+      </ul>
+
+      <p>
+        Instead of searching through hundreds of paper records, the school
+        can quickly find a student's information using the database.
+      </p>
+
+      <h3>📊 Database vs Spreadsheet</h3>
+
+      <div style="overflow-x:auto;margin:20px 0;">
+        <table style="width:100%;border-collapse:collapse;min-width:650px;">
+          <tr style="background:#0788cc;color:white;">
+            <th style="padding:12px;border:1px solid #ddd;">Database</th>
+            <th style="padding:12px;border:1px solid #ddd;">Spreadsheet</th>
+          </tr>
+
+          <tr>
+            <td style="padding:12px;border:1px solid #ddd;">
+              Designed to manage large amounts of related data.
+            </td>
+            <td style="padding:12px;border:1px solid #ddd;">
+              Often used for calculations and data analysis.
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:12px;border:1px solid #ddd;">
+              Can contain related tables.
+            </td>
+            <td style="padding:12px;border:1px solid #ddd;">
+              Usually organised into worksheets.
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:12px;border:1px solid #ddd;">
+              Can use queries to search for specific records.
+            </td>
+            <td style="padding:12px;border:1px solid #ddd;">
+              Uses formulas and functions for calculations.
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:12px;border:1px solid #ddd;">
+              Can use forms for controlled data entry.
+            </td>
+            <td style="padding:12px;border:1px solid #ddd;">
+              Data is normally entered directly into cells.
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <h3>🔗 What is a Relational Database?</h3>
+
+      <p>
+        A <strong>relational database</strong> stores data in separate tables
+        that can be linked together using common fields.
+      </p>
+
+      <p>
+        For example, a school database could have a
+        <strong>Students</strong> table and a <strong>Results</strong> table.
+        The tables can be linked using the student's ID.
+      </p>
+
+      <div style="
+        background:#fff7e6;
+        border-left:5px solid #f59e0b;
+        padding:18px;
+        border-radius:10px;
+        margin:20px 0;
+      ">
+        <strong>Remember:</strong><br>
+        Database = organised data.<br>
+        Table = collection of related records.<br>
+        Record = one complete item of information.
+      </div>
+
+      <h3>📝 IGCSE Exam Tip</h3>
+
+      <p>
+        When an examination asks you to explain why a database is suitable,
+        give a reason linked to the situation. For example:
+      </p>
+
+      <p>
+        <strong>
+        "A school could use a database because it can store many student
+        records and allow specific records to be searched quickly."
+        </strong>
+      </p>
+
+      <h3>🧩 Check Your Understanding</h3>
+
+      <p>
+        <strong>Question 1:</strong><br>
+        Which of the following best describes a database?
+      </p>
+
+      <div style="
+        display:grid;
+        gap:10px;
+        margin-bottom:25px;
+      ">
+
+        <button
+          onclick="alert('Correct! A database is an organised collection of data.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          A. An organised collection of data
+        </button>
+
+        <button
+          onclick="alert('Not quite. A database can contain much more than calculations.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          B. A program used only for calculations
+        </button>
+
+        <button
+          onclick="alert('Not quite. A database is not simply a web browser.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          C. A program used to browse websites
+        </button>
+
+      </div>
+
+      <p>
+        <strong>Question 2:</strong><br>
+        Which organisation could use a database to store student records?
+      </p>
+
+      <div style="
+        display:grid;
+        gap:10px;
+        margin-bottom:25px;
+      ">
+
+        <button
+          onclick="alert('Correct! Schools use databases to manage student information.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          A. A school
+        </button>
+
+        <button
+          onclick="alert('A database can be used by many organisations, but this question focuses on student records.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          B. A music player
+        </button>
+
+        <button
+          onclick="alert('A calculator is not normally used to store student records.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          C. A calculator
+        </button>
+
+      </div>
+
+      <p>
+        <strong>Question 3:</strong><br>
+        Why would a school database be useful?
+      </p>
+
+      <div style="
+        display:grid;
+        gap:10px;
+        margin-bottom:25px;
+      ">
+
+        <button
+          onclick="alert('Correct! Databases make it easier to store, search and manage records.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          A. It makes student information easier to store and search
+        </button>
+
+        <button
+          onclick="alert('Not quite. A database does not replace the need for teachers.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          B. It replaces all teachers
+        </button>
+
+        <button
+          onclick="alert('Not quite. The main purpose is managing data.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          C. It is only used to play videos
+        </button>
+
+      </div>
+    `
+  }
+}
 
   const lessonData = lessons[module]?.[lesson];
 
