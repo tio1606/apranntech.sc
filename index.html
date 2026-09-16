@@ -1529,6 +1529,343 @@ function openModuleLesson(module, lesson = 1){
 
       </div>
     `
+      `
+  },
+
+  3: {
+    title: "Lesson 3: Data Types and Validation",
+    content: `
+      <h3>🎯 Learning Objectives</h3>
+
+      <ul>
+        <li>Understand why data types are used in databases.</li>
+        <li>Identify common database data types.</li>
+        <li>Choose a suitable data type for different fields.</li>
+        <li>Understand what data validation means.</li>
+        <li>Identify common validation checks used in databases.</li>
+      </ul>
+
+      <h3>🔤 What is a Data Type?</h3>
+
+      <p>
+        A <strong>data type</strong> tells the database what kind of data
+        can be stored in a particular field.
+      </p>
+
+      <p>
+        Choosing the correct data type helps ensure that data is stored
+        correctly and can be processed accurately.
+      </p>
+
+      <div style="
+        background:#f1f7fb;
+        border-left:5px solid #0788cc;
+        padding:18px;
+        border-radius:10px;
+        margin:20px 0;
+      ">
+        <strong>Exam Tip:</strong><br>
+        Always choose a data type that matches the data being stored.
+      </div>
+
+      <h3>📊 Common Database Data Types</h3>
+
+      <div style="overflow-x:auto;margin:20px 0;">
+        <table style="width:100%;border-collapse:collapse;min-width:700px;">
+
+          <tr style="background:#0788cc;color:white;">
+            <th style="padding:12px;border:1px solid #ddd;">Data Type</th>
+            <th style="padding:12px;border:1px solid #ddd;">Purpose</th>
+            <th style="padding:12px;border:1px solid #ddd;">Example</th>
+          </tr>
+
+          <tr>
+            <td style="padding:12px;border:1px solid #ddd;">
+              <strong>Text</strong>
+            </td>
+            <td style="padding:12px;border:1px solid #ddd;">
+              Stores letters, words and other characters.
+            </td>
+            <td style="padding:12px;border:1px solid #ddd;">
+              Lucas Joseph
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:12px;border:1px solid #ddd;">
+              <strong>Number</strong>
+            </td>
+            <td style="padding:12px;border:1px solid #ddd;">
+              Stores numerical values.
+            </td>
+            <td style="padding:12px;border:1px solid #ddd;">
+              16
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:12px;border:1px solid #ddd;">
+              <strong>Date/Time</strong>
+            </td>
+            <td style="padding:12px;border:1px solid #ddd;">
+              Stores dates and times.
+            </td>
+            <td style="padding:12px;border:1px solid #ddd;">
+              17/09/2026
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:12px;border:1px solid #ddd;">
+              <strong>Boolean</strong>
+            </td>
+            <td style="padding:12px;border:1px solid #ddd;">
+              Stores one of two values, such as Yes/No.
+            </td>
+            <td style="padding:12px;border:1px solid #ddd;">
+              Yes
+            </td>
+          </tr>
+
+        </table>
+      </div>
+
+      <h3>🏫 School Database Example</h3>
+
+      <p>
+        Imagine a school database containing information about students.
+      </p>
+
+      <div style="overflow-x:auto;margin:20px 0;">
+        <table style="width:100%;border-collapse:collapse;min-width:650px;">
+
+          <tr style="background:#0788cc;color:white;">
+            <th style="padding:12px;border:1px solid #ddd;">Field</th>
+            <th style="padding:12px;border:1px solid #ddd;">Suitable Data Type</th>
+            <th style="padding:12px;border:1px solid #ddd;">Example</th>
+          </tr>
+
+          <tr>
+            <td style="padding:12px;border:1px solid #ddd;">Student Name</td>
+            <td style="padding:12px;border:1px solid #ddd;">Text</td>
+            <td style="padding:12px;border:1px solid #ddd;">Lucas Joseph</td>
+          </tr>
+
+          <tr>
+            <td style="padding:12px;border:1px solid #ddd;">Age</td>
+            <td style="padding:12px;border:1px solid #ddd;">Number</td>
+            <td style="padding:12px;border:1px solid #ddd;">16</td>
+          </tr>
+
+          <tr>
+            <td style="padding:12px;border:1px solid #ddd;">Date of Birth</td>
+            <td style="padding:12px;border:1px solid #ddd;">Date/Time</td>
+            <td style="padding:12px;border:1px solid #ddd;">05/03/2010</td>
+          </tr>
+
+          <tr>
+            <td style="padding:12px;border:1px solid #ddd;">Paid Fees</td>
+            <td style="padding:12px;border:1px solid #ddd;">Boolean</td>
+            <td style="padding:12px;border:1px solid #ddd;">Yes</td>
+          </tr>
+
+        </table>
+      </div>
+
+      <h3>🛡️ What is Data Validation?</h3>
+
+      <p>
+        <strong>Data validation</strong> is the process of checking that
+        data entered into a database is reasonable, suitable and follows
+        specified rules.
+      </p>
+
+      <p>
+        Validation helps prevent incorrect data from being entered.
+      </p>
+
+      <div style="
+        background:#fff7e6;
+        border-left:5px solid #f59e0b;
+        padding:18px;
+        border-radius:10px;
+        margin:20px 0;
+      ">
+        <strong>Remember:</strong><br>
+        Validation checks whether data is sensible and follows the rules.
+        It does not necessarily prove that the data is true.
+      </div>
+
+      <h3>🔢 Range Check</h3>
+
+      <p>
+        A <strong>range check</strong> ensures that a number falls between
+        a minimum and maximum value.
+      </p>
+
+      <p>
+        Example: A student's age could be restricted to between
+        <strong>11 and 19</strong>.
+      </p>
+
+      <h3>✏️ Length Check</h3>
+
+      <p>
+        A <strong>length check</strong> checks that the number of characters
+        entered is within an allowed limit.
+      </p>
+
+      <p>
+        Example: A student ID might need to contain exactly
+        <strong>6 characters</strong>.
+      </p>
+
+      <h3>📋 Presence Check</h3>
+
+      <p>
+        A <strong>presence check</strong> ensures that a field is not left
+        empty when information is required.
+      </p>
+
+      <p>
+        Example: A student's surname must be entered before the record
+        can be saved.
+      </p>
+
+      <h3>🔠 Format Check</h3>
+
+      <p>
+        A <strong>format check</strong> ensures that data follows a
+        particular pattern.
+      </p>
+
+      <p>
+        Example: A date field might require data in the format
+        <strong>DD/MM/YYYY</strong>.
+      </p>
+
+      <h3>🇸🇨 Seychelles Real-Life Example</h3>
+
+      <p>
+        A school in Seychelles could use validation when entering student
+        information into its database.
+      </p>
+
+      <p>For example:</p>
+
+      <ul>
+        <li>Age must be between 11 and 19 — <strong>range check</strong>.</li>
+        <li>Student ID must contain six characters — <strong>length check</strong>.</li>
+        <li>Student surname cannot be empty — <strong>presence check</strong>.</li>
+        <li>Date of birth must follow DD/MM/YYYY — <strong>format check</strong>.</li>
+      </ul>
+
+      <h3>📝 IGCSE Exam Tip</h3>
+
+      <p>
+        If an examination asks you to <strong>describe</strong> a validation
+        check, do not only give its name. Explain what it checks.
+      </p>
+
+      <p>
+        For example:
+      </p>
+
+      <div style="
+        background:#f1f7fb;
+        border-left:5px solid #0788cc;
+        padding:18px;
+        border-radius:10px;
+        margin:20px 0;
+      ">
+        <strong>Range check:</strong>
+        checks that a number is between a specified minimum and maximum value.
+      </div>
+
+      <h3>🧠 Check Your Understanding</h3>
+
+      <p>
+        <strong>Question 1:</strong><br>
+        Which data type is most suitable for storing a student's name?
+      </p>
+
+      <div style="display:grid;gap:10px;margin-bottom:25px;">
+
+        <button
+          onclick="alert('Correct! Student names are stored as text.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          A. Text
+        </button>
+
+        <button
+          onclick="alert('Not quite. A student name is not normally stored as a number.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          B. Number
+        </button>
+
+        <button
+          onclick="alert('Not quite. Date/Time is used for dates and times.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          C. Date/Time
+        </button>
+
+      </div>
+
+      <p>
+        <strong>Question 2:</strong><br>
+        Which validation check could be used to ensure a student's age
+        is between 11 and 19?
+      </p>
+
+      <div style="display:grid;gap:10px;margin-bottom:25px;">
+
+        <button
+          onclick="alert('Correct! A range check ensures a value falls between specified limits.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          A. Range check
+        </button>
+
+        <button
+          onclick="alert('Not quite. A presence check checks that data has been entered.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          B. Presence check
+        </button>
+
+        <button
+          onclick="alert('Not quite. A length check checks the number of characters.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          C. Length check
+        </button>
+
+      </div>
+
+      <p>
+        <strong>Question 3:</strong><br>
+        Which validation check ensures that a required field is not left blank?
+      </p>
+
+      <div style="display:grid;gap:10px;margin-bottom:25px;">
+
+        <button
+          onclick="alert('Correct! A presence check ensures that required data is entered.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          A. Presence check
+        </button>
+
+        <button
+          onclick="alert('Not quite. A range check checks numerical limits.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          B. Range check
+        </button>
+
+        <button
+          onclick="alert('Not quite. A format check checks the pattern of data.')"
+          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          C. Format check
+        </button>
+
+      </div>
+    `
   }
 }
 };
