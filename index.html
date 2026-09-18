@@ -138,9 +138,37 @@ Student Login
 <div id="dprogress" class="dtab hidden">
   <h1>My Progress</h1>
 
-  <div id="realProgress">
-    <p class="muted">Loading your progress...</p>
+ <div id="dprogress" class="dtab hidden">
+
+  <h1>My Progress</h1>
+
+  <div id="progressSummary" class="module" style="margin-bottom:20px;">
+    <h2>Overall Course Progress</h2>
+
+    <div style="font-size:32px;font-weight:700;margin:10px 0;">
+      <span id="overallProgressPercent">0%</span>
+    </div>
+
+    <div style="background:#e5e7eb;border-radius:10px;height:18px;overflow:hidden;">
+      <div
+        id="overallProgressBar"
+        style="width:0%;height:100%;background:#0ea5e9;transition:width .4s ease;">
+      </div>
+    </div>
+
+    <p class="muted" id="overallProgressText">
+      Loading your progress...
+    </p>
+
+    <p class="muted" id="lastCompletedLesson">
+      Last completed lesson: None
+    </p>
   </div>
+
+  <div id="realProgress">
+    <p class="muted">Loading your module progress...</p>
+  </div>
+
 </div>
 </div></div></section>
 
