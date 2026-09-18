@@ -737,6 +737,67 @@ async function cleanupExpiredSessions(
   }
 }
 
+async function handleLessonProgress(request, env) {
+  const user = await getSessionUser(request, env);
+
+  if (!user) {
+    return json(
+      { error: "Not authenticated." },
+      401
+    );
+  }
+
+  try {
+    const body = await request.json();
+
+    const moduleSlug = String(body.module || "").trim();
+    const lessonNumber = Number(body.lesson);
+
+    if (
+      !moduleSlug ||
+      !Number.isInteger(lessonNumber) ||
+      lessonNumber < 1
+    ) {
+      return json(
+        { error: "Invalid lesson data." },
+        400
+      );
+    }
+
+    await env.DB.prepare(`
+      INSERT INTO lesson_progress
+        (user_id, module_slug, lesson_number, completed, completed_at)
+      VALUES
+        (?, ?, ?, 1, datetime('now'))
+      ON CONFLICT(user_id, module_slug, lesson_number)
+      DO UPDATE SET
+        completed = 1,
+        completed_at = datetime('now')
+    `)
+      .bind(
+        user.id,
+        moduleSlug,
+        lessonNumber
+      )
+      .run();
+
+    return json({
+      success: true,
+      message: "Lesson progress saved."
+    });
+
+  } catch (error) {
+    console.error(
+      "lesson progress error",
+      error
+    );
+
+    return json(
+      { error: "Unable to save lesson progress." },
+      500
+    );
+  }
+}
 export default {
   async fetch(
     request,
@@ -799,6 +860,16 @@ export default {
           );
         }
 
+       if (
+  url.pathname ===
+  "/api/lesson-progress" &&
+  method === "POST"
+) {
+  return await handleLessonProgress(
+    request,
+    env
+  );
+}
         if (
           url.pathname ===
             "/api/courses" &&
