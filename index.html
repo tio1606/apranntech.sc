@@ -366,7 +366,8 @@ async function loadProgress() {
 
   if (!container) return;
 
-  container.innerHTML = '<p class="muted">Loading your progress...</p>';
+  container.innerHTML =
+    '<p class="muted">Loading your module progress...</p>';
 
   try {
     const response = await fetch('/api/lesson-progress');
@@ -378,6 +379,289 @@ async function loadProgress() {
         '<p class="muted">Unable to load your progress.</p>';
       return;
     }
+
+    const progress = data.progress || [];
+
+    /*
+      Total lessons in each module
+      Computer Systems = 4
+      Input & Output = 5
+      Networks = 5
+      Data Handling = 8
+      Databases = 5
+      ICT & Society = 5
+
+      Total = 32 lessons
+    */
+
+    const modules = {
+      'computer-systems': {
+        name: '🖥️ Computer Systems',
+        total: 4
+      },
+
+      'input-output': {
+        name: '⌨️ Input & Output',
+        total: 5
+      },
+
+      'networks': {
+        name: '🌐 Networks',
+        total: 5
+      },
+
+      'data-handling': {
+        name: '📊 Data Handling',
+        total: 8
+      },
+
+      'databases': {
+        name: '🗃️ Databases',
+        total: 5
+      },
+
+      'ict-society': {
+        name: '🔐 ICT & Society',
+        total: 5
+      }
+    };
+
+    let totalLessons = 0;
+    let completedLessons = 0;
+
+    Object.values(modules).forEach(module => {
+      totalLessons += module.total;
+    });
+
+    /*
+      Count completed lessons
+    */
+
+    progress.forEach(item => {
+
+      if (
+        item.completed === 1 ||
+        item.completed === true
+      ) {
+        completedLessons++;
+      }
+
+    });
+
+    /*
+      Calculate overall percentage
+    */
+
+    const overallPercent =
+      totalLessons > 0
+        ? Math.round((completedLessons / totalLessons) * 100)
+        : 0;
+
+    /*
+      Update overall progress
+    */
+
+    const overallPercentElement =
+      document.getElementById('overallProgressPercent');
+
+    const overallBar =
+      document.getElementById('overallProgressBar');
+
+    const overallText =
+      document.getElementById('overallProgressText');
+
+    if (overallPercentElement) {
+      overallPercentElement.textContent =
+        overallPercent + '%';
+    }
+
+    if (overallBar) {
+      overallBar.style.width =
+        overallPercent + '%';
+    }
+
+    if (overallText) {
+      overallText.textContent =
+        completedLessons +
+        ' of ' +
+        totalLessons +
+        ' lessons completed';
+    }
+
+    /*
+      Find the most recently completed lesson
+    */
+
+    let lastCompleted = null;
+
+    progress.forEach(item => {
+
+      if (
+        item.completed === 1 ||
+        item.completed === true
+      ) {
+
+        if (
+          !lastCompleted ||
+          (
+            item.completed_at &&
+            item.completed_at > lastCompleted.completed_at
+          )
+        ) {
+          lastCompleted = item;
+        }
+
+      }
+
+    });
+
+    const lastCompletedElement =
+      document.getElementById('lastCompletedLesson');
+
+    if (lastCompletedElement) {
+
+      if (lastCompleted) {
+
+        const moduleInfo =
+          modules[lastCompleted.module_slug];
+
+        const moduleName =
+          moduleInfo
+            ? moduleInfo.name
+            : lastCompleted.module_slug;
+
+        lastCompletedElement.textContent =
+          'Last completed: ' +
+          moduleName +
+          ' — Lesson ' +
+          lastCompleted.lesson_number;
+
+      } else {
+
+        lastCompletedElement.textContent =
+          'Last completed lesson: None yet';
+
+      }
+
+    }
+
+    /*
+      Build module progress
+    */
+
+    let html = '';
+
+    Object.keys(modules).forEach(moduleSlug => {
+
+      const module = modules[moduleSlug];
+
+      const completed =
+        progress.filter(item =>
+          item.module_slug === moduleSlug &&
+          (
+            item.completed === 1 ||
+            item.completed === true
+          )
+        ).length;
+
+      const percent =
+        module.total > 0
+          ? Math.round((completed / module.total) * 100)
+          : 0;
+
+      const completedItems =
+        progress.filter(item =>
+          item.module_slug === moduleSlug &&
+          (
+            item.completed === 1 ||
+            item.completed === true
+          )
+        );
+
+      html += `
+
+        <div class="module" style="margin-bottom:18px;">
+
+          <div style="
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:15px;
+            margin-bottom:8px;
+          ">
+
+            <h3 style="margin:0;">
+              ${module.name}
+            </h3>
+
+            <strong>
+              ${percent}%
+            </strong>
+
+          </div>
+
+          <div style="
+            background:#e5e7eb;
+            border-radius:10px;
+            height:14px;
+            overflow:hidden;
+            margin-bottom:8px;
+          ">
+
+            <div style="
+              width:${percent}%;
+              height:100%;
+              background:#0ea5e9;
+              transition:width .4s ease;
+            "></div>
+
+          </div>
+
+          <p class="muted" style="margin:5px 0 10px;">
+            ${completed} of ${module.total} lessons completed
+          </p>
+
+          ${
+            completedItems.length > 0
+              ? `
+                <ul style="margin:0;padding-left:20px;">
+                  ${
+                    completedItems.map(item => `
+                      <li>
+                        Lesson ${item.lesson_number}
+                        ✓ Completed
+                      </li>
+                    `).join('')
+                  }
+                </ul>
+              `
+              : `
+                <p class="muted">
+                  No lessons completed yet.
+                </p>
+              `
+          }
+
+        </div>
+
+      `;
+
+    });
+
+    container.innerHTML = html;
+
+  } catch (error) {
+
+    console.error(
+      'Progress loading error:',
+      error
+    );
+
+    container.innerHTML =
+      '<p class="muted">Unable to load your progress.</p>';
+
+  }
+}
 
     const progress = data.progress || [];
 
