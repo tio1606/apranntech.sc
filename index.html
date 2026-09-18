@@ -4145,7 +4145,7 @@ function openModuleLesson(module, lesson = 1){
               style="padding:12px 20px;background:#0788cc;color:white;border:none;border-radius:8px;cursor:pointer;">
               Next Lesson →
             </button>`
-          : `<button style="padding:12px 20px;background:#16a34a;color:white;border:none;border-radius:8px;">
+          : `<button onclick="completeLesson('${module}',${lesson})" style="padding:12px 20px;background:#16a34a;color:white;border:none;border-radius:8px;cursor:pointer;">
               Module Complete ✓
             </button>`
         }
@@ -5214,6 +5214,32 @@ function checkTuckShopFormulas() {
       <strong>Q4:</strong> =AVERAGE(E2:E5)
     </div>
   `;
+}
+  async function completeLesson(module, lesson) {
+  try {
+    const response = await fetch('/api/lesson-progress', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        module,
+        lesson
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      alert(data.error || 'Unable to save lesson progress.');
+      return;
+    }
+
+    alert('Lesson completed successfully! ✓');
+
+  } catch (error) {
+    alert('Unable to save your progress. Please try again.');
+  }
 }
 </script>
 </body></html>
