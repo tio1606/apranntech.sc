@@ -611,6 +611,50 @@ async function handleCourses(
   });
 }
 
+async function handleLessonProgressGet(request, env) {
+  const user = await getSessionUser(
+    request,
+    env
+  );
+
+  if (!user) {
+    return json(
+      { error: "Not authenticated" },
+      401
+    );
+  }
+
+  try {
+    const result = await env.DB.prepare(`
+      SELECT
+        module_slug,
+        lesson_number,
+        completed,
+        completed_at
+      FROM lesson_progress
+      WHERE user_id = ?
+      ORDER BY module_slug, lesson_number
+    `)
+      .bind(user.id)
+      .all();
+
+    return json({
+      success: true,
+      progress: result.results || []
+    });
+
+  } catch (error) {
+    console.error(
+      "lesson progress read error",
+      error
+    );
+
+    return json(
+      { error: "Unable to load lesson progress." },
+      500
+    );
+  }
+}
 async function handleCourse(
   request,
   env,
@@ -849,6 +893,16 @@ export default {
           );
         }
 
+       if (
+  url.pathname ===
+  "/api/lesson-progress" &&
+  method === "GET"
+) {
+  return await handleLessonProgressGet(
+    request,
+    env
+  );
+}
         if (
           url.pathname ===
             "/api/logout" &&
