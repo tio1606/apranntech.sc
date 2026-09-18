@@ -5556,7 +5556,7 @@ function checkTuckShopFormulas() {
     </div>
   `;
 }
-  async function completeLesson(module, lesson) {
+ async function completeLesson(module, lesson) {
   try {
     const response = await fetch('/api/lesson-progress', {
       method: 'POST',
@@ -5576,10 +5576,16 @@ function checkTuckShopFormulas() {
       return;
     }
 
+    await loadProgress();
+
     alert('Lesson completed successfully! ✓');
 
   } catch (error) {
-    alert('Unable to save your progress. Please try again.');
+    console.error('Lesson completion error:', error);
+
+    alert(
+      'Unable to save your progress. Please try again.'
+    );
   }
 }
 </script>
