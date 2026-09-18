@@ -662,62 +662,6 @@ async function loadProgress() {
 
   }
 
-    const progress = data.progress || [];
-
-    const modules = {
-      'computer-systems': 'Computer Systems',
-      'networks': 'Networks',
-      'data-handling': 'Data Handling'
-    };
-
-    if (progress.length === 0) {
-      container.innerHTML =
-        '<p class="muted">You have not completed any lessons yet.</p>';
-      return;
-    }
-
-    const grouped = {};
-
-    progress.forEach(item => {
-      if (!grouped[item.module_slug]) {
-        grouped[item.module_slug] = [];
-      }
-
-      grouped[item.module_slug].push(item);
-    });
-
-    let html = '';
-
-    Object.keys(grouped).forEach(moduleSlug => {
-      const lessons = grouped[moduleSlug];
-
-      html += `
-        <div class="module" style="margin-bottom:15px;">
-          <h3>${modules[moduleSlug] || moduleSlug}</h3>
-          <p class="muted">
-            ${lessons.length} lesson${lessons.length === 1 ? '' : 's'} completed
-          </p>
-          <ul>
-            ${lessons.map(item => `
-              <li>
-                Lesson ${item.lesson_number}
-                ✓ Completed
-              </li>
-            `).join('')}
-          </ul>
-        </div>
-      `;
-    });
-
-    container.innerHTML = html;
-
-   catch (error) {
-    console.error('Progress loading error:', error);
-
-    container.innerHTML =
-      '<p class="muted">Unable to load your progress.</p>';
-  }
-}
   function openModuleLesson(module, lesson = 1){
 
   const lessons = {
