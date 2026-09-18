@@ -261,8 +261,15 @@ async function registerStudent(){
     alert('Unable to connect to the server. Please try again.');
   }
 }
-function dashTab(id,btn){document.querySelectorAll('.dtab').forEach(x=>x.classList.add('hidden'));document.getElementById('d'+id).classList.remove('hidden');document.querySelectorAll('.side button').forEach(x=>x.classList.remove('active'));if(btn)btn.classList.add('active')}
+function dashTab(id,btn){
+  document.querySelectorAll('.dtab').forEach(x => x.classList.add('hidden'));
 
+  document.getElementById('d' + id).classList.remove('hidden');
+
+  if(id === 'progress'){
+    loadProgress();
+  }
+}
   async function loadMyCourse(){
   try{
     const response = await fetch('/api/courses/1');
