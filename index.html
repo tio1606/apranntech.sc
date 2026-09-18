@@ -4806,7 +4806,192 @@ function startDataActivity(){
 
       </div>
 
-      <h3 style="color:#102a43;">Step 3 — Quick Check</h3>
+      <div style="
+  background:#f7f9fb;
+  padding:20px;
+  border:1px solid #d9e2ec;
+  border-radius:10px;
+  margin:25px 0;
+">
+
+  <h3 style="color:#102a43;">
+    🧮 Step 3 — Formula Challenge / 20 Marks
+  </h3>
+
+  <p>
+    Complete the spreadsheet formulas below. Each question is worth
+    <strong>5 marks</strong>.
+  </p>
+
+  <div style="
+    background:white;
+    padding:15px;
+    border-radius:8px;
+    margin:15px 0;
+  ">
+
+    <strong>Question 1 — Total Sales (5 marks)</strong>
+
+    <p>
+      Write the spreadsheet formula to calculate Total Sales for the
+      Sandwich in cell E2.
+    </p>
+
+    <p>
+      Selling Price is in <strong>B2</strong> and Quantity Sold is in
+      <strong>D2</strong>.
+    </p>
+
+    <input
+      id="formula1"
+      type="text"
+      placeholder="Example: =B2*D2"
+      style="
+        width:100%;
+        max-width:500px;
+        padding:10px;
+        border:1px solid #ccd6e0;
+        border-radius:6px;
+        font-size:16px;
+      "
+    >
+
+  </div>
+
+
+  <div style="
+    background:white;
+    padding:15px;
+    border-radius:8px;
+    margin:15px 0;
+  ">
+
+    <strong>Question 2 — Profit (5 marks)</strong>
+
+    <p>
+      Write the formula to calculate Profit for the Sandwich in cell F2.
+    </p>
+
+    <p>
+      Selling Price is <strong>B2</strong>, Cost Price is
+      <strong>C2</strong>, and Quantity Sold is <strong>D2</strong>.
+    </p>
+
+    <input
+      id="formula2"
+      type="text"
+      placeholder="Example: =(B2-C2)*D2"
+      style="
+        width:100%;
+        max-width:500px;
+        padding:10px;
+        border:1px solid #ccd6e0;
+        border-radius:6px;
+        font-size:16px;
+      "
+    >
+
+  </div>
+
+
+  <div style="
+    background:white;
+    padding:15px;
+    border-radius:8px;
+    margin:15px 0;
+  ">
+
+    <strong>Question 3 — Total Sales (5 marks)</strong>
+
+    <p>
+      Write the formula to calculate the total sales for all four products.
+    </p>
+
+    <p>
+      The Total Sales values are in cells <strong>E2:E5</strong>.
+    </p>
+
+    <input
+      id="formula3"
+      type="text"
+      placeholder="Example: =SUM(E2:E5)"
+      style="
+        width:100%;
+        max-width:500px;
+        padding:10px;
+        border:1px solid #ccd6e0;
+        border-radius:6px;
+        font-size:16px;
+      "
+    >
+
+  </div>
+
+
+  <div style="
+    background:white;
+    padding:15px;
+    border-radius:8px;
+    margin:15px 0;
+  ">
+
+    <strong>Question 4 — Average Sales (5 marks)</strong>
+
+    <p>
+      Write the formula to calculate the average sales for the four products.
+    </p>
+
+    <p>
+      The Total Sales values are in cells <strong>E2:E5</strong>.
+    </p>
+
+    <input
+      id="formula4"
+      type="text"
+      placeholder="Example: =AVERAGE(E2:E5)"
+      style="
+        width:100%;
+        max-width:500px;
+        padding:10px;
+        border:1px solid #ccd6e0;
+        border-radius:6px;
+        font-size:16px;
+      "
+    >
+
+  </div>
+
+
+  <button
+    onclick="checkTuckShopFormulas()"
+    style="
+      padding:13px 22px;
+      background:#0788cc;
+      color:white;
+      border:none;
+      border-radius:8px;
+      cursor:pointer;
+      font-size:16px;
+      font-weight:bold;
+    "
+  >
+    ✓ Check My Answers
+  </button>
+
+
+  <div
+    id="formulaResult"
+    style="
+      margin-top:20px;
+      padding:15px;
+      background:#eef8fd;
+      border-radius:8px;
+      display:none;
+    "
+  ></div>
+
+</div>
+      <h3 style="color:#102a43;">Step 4 — Quick Check</h3>
 
       <p>
         Which spreadsheet function would you normally use to calculate the
@@ -4945,5 +5130,90 @@ function calculateDataActivity(){
     'SCR ' + averageSales.toFixed(2);
 
 } 
+function checkTuckShopFormulas() {
+
+  const answers = [
+    document.getElementById("formula1").value.trim().toUpperCase().replace(/\s/g, ""),
+    document.getElementById("formula2").value.trim().toUpperCase().replace(/\s/g, ""),
+    document.getElementById("formula3").value.trim().toUpperCase().replace(/\s/g, ""),
+    document.getElementById("formula4").value.trim().toUpperCase().replace(/\s/g, "")
+  ];
+
+  const correctAnswers = [
+    ["=B2*D2"],
+    ["=(B2-C2)*D2", "=(B2-C2)*D2"],
+    ["=SUM(E2:E5)"],
+    ["=AVERAGE(E2:E5)"]
+  ];
+
+  let score = 0;
+  let feedback = [];
+
+  for (let i = 0; i < answers.length; i++) {
+
+    if (correctAnswers[i].includes(answers[i])) {
+      score += 5;
+      feedback.push(
+        "Question " + (i + 1) + ": ✓ Correct — 5 marks"
+      );
+    } else {
+      feedback.push(
+        "Question " + (i + 1) + ": ✗ Incorrect — 0 marks"
+      );
+    }
+  }
+
+  const percentage = (score / 20) * 100;
+
+  let message = "";
+
+  if (score === 20) {
+    message = "🎉 Excellent! You got full marks.";
+  } else if (score >= 15) {
+    message = "👏 Very good! Review the questions you missed.";
+  } else if (score >= 10) {
+    message = "👍 Good attempt. Keep practising spreadsheet formulas.";
+  } else {
+    message = "📚 Keep practising. Review the spreadsheet formulas and try again.";
+  }
+
+  const result = document.getElementById("formulaResult");
+
+  result.style.display = "block";
+
+  result.innerHTML = `
+    <h3 style="color:#102a43;">📊 Formula Challenge Result</h3>
+
+    <p style="font-size:20px;">
+      <strong>Score: ${score} / 20</strong>
+    </p>
+
+    <p>
+      <strong>Percentage: ${percentage}%</strong>
+    </p>
+
+    <p>${message}</p>
+
+    <hr>
+
+    <ul>
+      ${feedback.map(item => `<li>${item}</li>`).join("")}
+    </ul>
+
+    <div style="
+      background:#fff8e6;
+      padding:15px;
+      border-left:5px solid #f0ad00;
+      border-radius:8px;
+      margin-top:15px;
+    ">
+      <strong>📌 Correct formulas:</strong><br><br>
+      <strong>Q1:</strong> =B2*D2<br>
+      <strong>Q2:</strong> =(B2-C2)*D2<br>
+      <strong>Q3:</strong> =SUM(E2:E5)<br>
+      <strong>Q4:</strong> =AVERAGE(E2:E5)
+    </div>
+  `;
+}
 </script>
 </body></html>
