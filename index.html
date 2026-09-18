@@ -133,7 +133,7 @@ Student Login
 <div id="dhome" class="dtab"><h1 id="studentWelcome">Welcome back, Student 👋</h1><p class="muted">Continue your IGCSE ICT preparation.</p></div>
 <div id="dcourse" class="dtab hidden"><h1>My Course</h1><div class="module-grid"><div class="module"><h3>🖥️ Computer Systems</h3><p class="muted">82% complete</p><button class="outline" onclick="openModuleLesson('computer-systems')">Open</button></div><div class="module"><h3>⌨️ Input & Output</h3><p class="muted">70% complete</p><button class="outline" onclick="openModuleLesson('input-output',1)">Open</button></div><div class="module"><h3>🌐 Networks</h3><p class="muted">55% complete</p><button class="outline" onclick="openModuleLesson('networks',1)">Open</button></div><div class="module"><h3>📊 Data Handling</h3><p class="muted">58% complete</p><button class="outline" onclick="openModuleLesson('data-handling',1)">Open</button></div><div class="module"><h3>🗃️ Databases</h3><p class="muted">45% complete</p><button class="outline" onclick="openModuleLesson('databases',1)">Open</button></div><div class="module"><h3>🔐 ICT & Society</h3><p class="muted">61% complete</p><button class="outline" onclick="openModuleLesson('ict-society',1)">Open</button></div></div></div>
 <div id="dactivity" class="dtab hidden"><h1>Practical Activities</h1><table class="table"><tr><th>Activity</th><th>Skill</th><th>Status</th></tr><tr><td>School Tuck Shop Spreadsheet</td><td>Excel</td><td>✅ Completed</td></tr><tr><td>Business Letter</td><td>Word</td><td>🟡 In progress</td></tr><tr><td>Hotel Booking Database</td><td>Database</td><td>🔒 Premium</td></tr></table></div>
-<div id="dquiz" class="dtab hidden"><h1>Quizzes</h1><div class="module"><h3>Data Security Quick Quiz</h3><p class="muted">10 exam-style questions • 10 minutes</p><button class="primary" onclick="alert('Quiz engine will be connected to the question database in the production version.')">Start Quiz</button></div></div>
+<div id="dquiz" class="dtab hidden"><h1>Quizzes</h1><div class="module"><h3>Data Security Quick Quiz</h3><p class="muted">10 exam-style questions • 10 minutes</p><button class="primary" onclick="startQuiz()">Start Quiz</button></div></div>
 <div id="dexam" class="dtab hidden"><h1>Exam Centre</h1><div class="module-grid"><div class="module"><h3>Paper 1 Theory Practice</h3><p class="muted">Timed practice</p><button class="primary">Start</button></div><div class="module"><h3>Paper 2 Practical</h3><p class="muted">Word processing</p><button class="primary">Start</button></div><div class="module"><h3>Paper 3 Practical</h3><p class="muted">Spreadsheet/database</p><button class="primary">Start</button></div></div></div>
 <div id="dprogress" class="dtab hidden"><h1>My Progress</h1><table class="table"><tr><th>Topic</th><th>Progress</th><th>Average</th><th>Action</th></tr><tr><td>Computer Systems</td><td>82%</td><td>86%</td><td>Ready</td></tr><tr><td>Networks</td><td>55%</td><td>62%</td><td>Review</td></tr><tr><td>Spreadsheets</td><td>58%</td><td>68%</td><td>Practice</td></tr><tr><td>Databases</td><td>45%</td><td>54%</td><td>Needs attention</td></tr></table></div>
 </div></div></section>
@@ -4157,6 +4157,365 @@ function openModuleLesson(module, lesson = 1){
 
   document.body.appendChild(win);
 
+}
+  function startQuiz(){
+
+  const old = document.getElementById("quizWindow");
+  if(old) old.remove();
+
+  const questions = [
+    {
+      q: "What is data?",
+      options: [
+        "Processed information",
+        "Raw facts and figures",
+        "A computer program",
+        "A storage device"
+      ],
+      answer: 1
+    },
+    {
+      q: "Which of the following is an example of numerical data?",
+      options: [
+        "Blue",
+        "Steve",
+        "125",
+        "Male"
+      ],
+      answer: 2
+    },
+    {
+      q: "Which validation check ensures that data is within an acceptable range?",
+      options: [
+        "Range check",
+        "Length check",
+        "Presence check",
+        "Type check"
+      ],
+      answer: 0
+    },
+    {
+      q: "Which verification method compares data entered twice?",
+      options: [
+        "Range check",
+        "Double entry",
+        "Format check",
+        "Presence check"
+      ],
+      answer: 1
+    },
+    {
+      q: "Which data type is most suitable for storing a person's name?",
+      options: [
+        "Integer",
+        "Boolean",
+        "Text",
+        "Date"
+      ],
+      answer: 2
+    },
+    {
+      q: "What is data processing?",
+      options: [
+        "Deleting all data",
+        "Changing raw data into useful information",
+        "Printing a document",
+        "Connecting computers"
+      ],
+      answer: 1
+    },
+    {
+      q: "Which spreadsheet feature can be used to display data visually?",
+      options: [
+        "Chart",
+        "Keyboard",
+        "Scanner",
+        "Password"
+      ],
+      answer: 0
+    },
+    {
+      q: "Which of the following is an example of personal data?",
+      options: [
+        "School building",
+        "Student's date of birth",
+        "Computer monitor",
+        "Classroom table"
+      ],
+      answer: 1
+    },
+    {
+      q: "Why is accurate data important?",
+      options: [
+        "It makes computers faster",
+        "It produces reliable information",
+        "It increases screen size",
+        "It removes the need for storage"
+      ],
+      answer: 1
+    },
+    {
+      q: "A school records the marks of students and calculates their average. This is an example of:",
+      options: [
+        "Data processing",
+        "Data deletion",
+        "Data transmission",
+        "Data encryption"
+      ],
+      answer: 0
+    }
+  ];
+
+  let current = 0;
+  let score = 0;
+
+  const win = document.createElement("div");
+  win.id = "quizWindow";
+
+  win.style.cssText = `
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.65);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:20px;
+    z-index:10000;
+  `;
+
+  function showQuestion(){
+
+    const item = questions[current];
+
+    win.innerHTML = `
+      <div style="
+        background:white;
+        width:min(850px,95vw);
+        max-height:90vh;
+        overflow:auto;
+        border-radius:18px;
+        padding:30px;
+        box-shadow:0 20px 60px rgba(0,0,0,.25);
+      ">
+
+        <div style="
+          display:flex;
+          justify-content:space-between;
+          align-items:center;
+          margin-bottom:20px;
+        ">
+          <div>
+            <div style="
+              color:#0788cc;
+              font-weight:700;
+              font-size:15px;
+            ">
+              IGCSE ICT • DATA HANDLING
+            </div>
+
+            <h2 style="
+              margin:8px 0 0;
+              color:#102a43;
+            ">
+              Data Handling Quick Quiz
+            </h2>
+          </div>
+
+          <button
+            onclick="document.getElementById('quizWindow').remove()"
+            style="
+              border:0;
+              background:#111;
+              color:white;
+              width:42px;
+              height:42px;
+              border-radius:10px;
+              font-size:24px;
+              cursor:pointer;
+            "
+          >
+            ×
+          </button>
+        </div>
+
+        <div style="
+          background:#eef7fc;
+          padding:12px 16px;
+          border-radius:10px;
+          margin-bottom:22px;
+          color:#456;
+        ">
+          Question ${current + 1} of ${questions.length}
+        </div>
+
+        <h3 style="
+          color:#102a43;
+          font-size:22px;
+          line-height:1.4;
+        ">
+          ${item.q}
+        </h3>
+
+        <div style="margin-top:20px;">
+          ${item.options.map((option,index)=>`
+            <button
+              onclick="answerQuiz(${index})"
+              style="
+                display:block;
+                width:100%;
+                margin:12px 0;
+                padding:15px 18px;
+                text-align:left;
+                border:1px solid #d5dce5;
+                background:white;
+                border-radius:10px;
+                cursor:pointer;
+                font-size:16px;
+              "
+            >
+              ${String.fromCharCode(65 + index)}. ${option}
+            </button>
+          `).join("")}
+        </div>
+
+        <div style="
+          margin-top:25px;
+          color:#64748b;
+          font-size:14px;
+        ">
+          Choose the answer you think is correct.
+        </div>
+
+      </div>
+    `;
+
+    window.answerQuiz = function(index){
+
+      if(index === item.answer){
+        score++;
+        alert("Correct! ✓");
+      }else{
+        alert(
+          "Not quite. The correct answer is " +
+          String.fromCharCode(65 + item.answer) +
+          "."
+        );
+      }
+
+      current++;
+
+      if(current < questions.length){
+        showQuestion();
+      }else{
+        showResult();
+      }
+    };
+  }
+
+  function showResult(){
+
+    const percentage = Math.round(
+      (score / questions.length) * 100
+    );
+
+    let message = "";
+
+    if(percentage >= 80){
+      message = "Excellent work! You have a strong understanding of Data Handling.";
+    }else if(percentage >= 60){
+      message = "Good work! Review a few areas and try the quiz again.";
+    }else{
+      message = "Keep practising. Review the Data Handling lesson and try again.";
+    }
+
+    win.innerHTML = `
+      <div style="
+        background:white;
+        width:min(650px,95vw);
+        border-radius:18px;
+        padding:40px;
+        text-align:center;
+        box-shadow:0 20px 60px rgba(0,0,0,.25);
+      ">
+
+        <div style="
+          font-size:48px;
+          margin-bottom:10px;
+        ">
+          🏆
+        </div>
+
+        <h2 style="
+          color:#102a43;
+          margin-bottom:10px;
+        ">
+          Quiz Complete!
+        </h2>
+
+        <div style="
+          font-size:42px;
+          font-weight:800;
+          color:#0788cc;
+          margin:20px 0;
+        ">
+          ${score} / ${questions.length}
+        </div>
+
+        <p style="
+          font-size:20px;
+          font-weight:700;
+          color:#102a43;
+        ">
+          ${percentage}%
+        </p>
+
+        <p style="
+          color:#52606d;
+          line-height:1.6;
+        ">
+          ${message}
+        </p>
+
+        <div style="margin-top:25px;">
+
+          <button
+            onclick="startQuiz()"
+            style="
+              padding:13px 22px;
+              background:#0788cc;
+              color:white;
+              border:0;
+              border-radius:8px;
+              cursor:pointer;
+              margin-right:10px;
+            "
+          >
+            Try Again
+          </button>
+
+          <button
+            onclick="document.getElementById('quizWindow').remove()"
+            style="
+              padding:13px 22px;
+              background:white;
+              color:#102a43;
+              border:1px solid #ccd6e0;
+              border-radius:8px;
+              cursor:pointer;
+            "
+          >
+            Close
+          </button>
+
+        </div>
+
+      </div>
+    `;
+  }
+
+  document.body.appendChild(win);
+
+  showQuestion();
 }
   </script>
 </body></html>
