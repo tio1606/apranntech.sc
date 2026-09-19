@@ -205,6 +205,69 @@ function hideAll(){
   document.getElementById('registerArea').style.display='none';
   document.getElementById('app').style.display='none';
 }
+async function selectPlan(plan){
+  const details={
+    basic:{name:'Basic',amount:150},
+    standard:{name:'Standard',amount:250},
+    premium:{name:'Premium',amount:600}
+  }[plan];
+
+  if(!details){ alert('Invalid membership plan.'); return; }
+
+  const meResponse=await fetch('/api/me');
+  const meData=await meResponse.json();
+
+  if(!meData.authenticated){
+    alert('Please log in or create your student account first.');
+    login();
+    return;
+  }
+
+  try{
+    const response=await fetch('/api/create-payment',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({plan})
+    });
+    const data=await response.json();
+
+    if(!response.ok){
+      alert(data.error||'Unable to create payment request.');
+      return;
+    }
+
+    const p=data.payment;
+    const message='Hello Aprann Tech, I have paid for my '+p.plan_name+' membership. Payment reference: '+p.reference+'. Student name: '+p.student_name+'. Email: '+p.student_email+'. Amount: SCR '+p.amount+'.';
+    const whatsappUrl='https://wa.me/2482661186?text='+encodeURIComponent(message);
+
+    const old=document.getElementById('paymentWindow');
+    if(old) old.remove();
+
+    const win=document.createElement('div');
+    win.id='paymentWindow';
+    win.style='position:fixed;inset:0;background:rgba(0,0,0,.68);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+    win.innerHTML=`
+      <div style="background:white;width:min(560px,96vw);max-height:92vh;overflow:auto;border-radius:18px;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:15px;">
+          <div><div style="color:#0284c7;font-weight:800;">APRANN TECH PAYMENT</div><h2 style="margin:6px 0;">${p.plan_name} — SCR ${p.amount}</h2></div>
+          <button onclick="document.getElementById('paymentWindow').remove()" style="background:#111;color:white;width:42px;height:42px;border-radius:9px;font-size:22px;">×</button>
+        </div>
+        <div style="background:#e0f2fe;border-left:5px solid #0284c7;padding:15px;border-radius:8px;margin:18px 0;"><strong>Payment Reference</strong><div style="font-size:22px;font-weight:900;margin-top:5px;">${p.reference}</div></div>
+        <h3>1. Pay with eboo</h3>
+        <div style="border:2px dashed #cbd5e1;border-radius:14px;padding:22px;text-align:center;background:#f8fafc;"><div style="font-size:46px;">📱</div><strong>Scan the Aprann Tech eboo QR code</strong><p class="muted" style="margin-bottom:0;">Use your eboo app to pay <strong>SCR ${p.amount}</strong>.</p></div>
+        <h3 style="margin-top:22px;">2. Send your payment confirmation</h3>
+        <p class="muted">After paying, send the payment reference and your payment confirmation through WhatsApp.</p>
+        <a href="${whatsappUrl}" target="_blank" rel="noopener" style="display:block;text-align:center;background:#16a34a;color:white;padding:14px;border-radius:9px;font-weight:800;text-decoration:none;">📱 I've Paid — Contact Aprann Tech on WhatsApp</a>
+        <div style="background:#fff8e6;border-left:5px solid #f0ad00;padding:15px;border-radius:8px;margin-top:18px;"><strong>Important</strong><p style="margin:6px 0 0;">Your membership remains pending until Aprann Tech verifies your eboo payment. Once verified, your ${p.plan_name} access will be activated for <strong>30 days</strong>.</p></div>
+        <button onclick="document.getElementById('paymentWindow').remove()" style="width:100%;margin-top:18px;padding:12px;background:white;border:1px solid #cbd5e1;border-radius:9px;font-weight:700;">Close</button>
+      </div>`;
+    document.body.appendChild(win);
+  }catch(error){
+    console.error('Payment request error',error);
+    alert('Unable to create the payment request. Please try again.');
+  }
+}
+
 function home(){hideAll();document.getElementById('public').style.display='block';window.scrollTo(0,0)}
 function login(){hideAll();document.getElementById('loginArea').style.display='block';window.scrollTo(0,0)}
 async function enterApp(){
