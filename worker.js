@@ -901,6 +901,12 @@ export default {
     const url =
       new URL(request.url);
 
+    try {
+      await ensureMembershipColumns(env);
+    } catch (error) {
+      console.error("membership initialization error", error);
+    }
+
     if (
       url.pathname.startsWith(
         "/api/"
@@ -1029,12 +1035,6 @@ export default {
     ctx.waitUntil(
       cleanupExpiredSessions(env)
     );
-
-    try {
-      await ensureMembershipColumns(env);
-    } catch (error) {
-      console.error("membership initialization error", error);
-    }
 
     return env.ASSETS.fetch(
       request
