@@ -248,6 +248,8 @@ async function getSessionUser(request, env) {
       u.email,
       u.name,
       u.plan,
+      u.plan_started_at,
+      u.plan_expires_at,
       u.created_at,
       s.token,
       s.expires_at
@@ -269,12 +271,64 @@ async function getSessionUser(request, env) {
   return row;
 }
 
+async function ensureMembershipColumns(env) {
+  try {
+    const columns = await env.DB.prepare("PRAGMA table_info(users)").all();
+    const names = new Set((columns.results || []).map(column => column.name));
+
+    if (!names.has("plan_started_at")) {
+      await env.DB.prepare("ALTER TABLE users ADD COLUMN plan_started_at TEXT").run();
+    }
+
+    if (!names.has("plan_expires_at")) {
+      await env.DB.prepare("ALTER TABLE users ADD COLUMN plan_expires_at TEXT").run();
+    }
+  } catch (error) {
+    console.error("membership schema check error", error);
+    throw error;
+  }
+}
+
+function membershipInfo(user) {
+  const plan = String(user.plan || "free").toLowerCase();
+  const paidPlans = ["basic", "standard", "premium"];
+
+  if (!paidPlans.includes(plan) || !user.plan_expires_at) {
+    return {
+      plan: "free",
+      active: false,
+      started_at: user.plan_started_at || null,
+      expires_at: user.plan_expires_at || null
+    };
+  }
+
+  const expiresAt = new Date(
+    String(user.plan_expires_at).replace(" ", "T") + "Z"
+  );
+
+  const active =
+    !Number.isNaN(expiresAt.getTime()) &&
+    expiresAt.getTime() > Date.now();
+
+  return {
+    plan: active ? plan : "free",
+    active,
+    started_at: user.plan_started_at || null,
+    expires_at: user.plan_expires_at
+  };
+}
+
 function publicUser(user) {
+  const membership = membershipInfo(user);
+
   return {
     id: user.id,
     email: user.email,
     name: user.name || "",
-    plan: user.plan || "free",
+    plan: membership.plan,
+    membership_active: membership.active,
+    plan_started_at: membership.started_at,
+    plan_expires_at: membership.expires_at,
     created_at: user.created_at
   };
 }
@@ -454,6 +508,8 @@ async function handleLogin(request, env) {
         password_hash,
         name,
         plan,
+        plan_started_at,
+        plan_expires_at,
         created_at
        FROM users
        WHERE lower(email) = ?
@@ -729,13 +785,7 @@ async function handleCourse(
       .bind(courseId)
       .all();
 
-  const isPaid = [
-    "basic",
-    "standard",
-    "premium"
-  ].includes(
-    (user.plan || "").toLowerCase()
-  );
+  const isPaid = membershipInfo(user).active;
 
   return json({
     user: publicUser(user),
@@ -979,6 +1029,12 @@ export default {
     ctx.waitUntil(
       cleanupExpiredSessions(env)
     );
+
+    try {
+      await ensureMembershipColumns(env);
+    } catch (error) {
+      console.error("membership initialization error", error);
+    }
 
     return env.ASSETS.fetch(
       request
