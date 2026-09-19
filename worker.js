@@ -893,6 +893,96 @@ async function handleCreatePayment(request, env) {
   }
 }
 
+
+function isAdminEmail(email) {
+  return normalizeEmail(email) === "digitalie.sc@gmail.com";
+}
+
+async function requireAdmin(request, env) {
+  const user = await getSessionUser(request, env);
+  if (!user || !isAdminEmail(user.email)) return null;
+  return user;
+}
+
+async function handleAdminPayments(request, env) {
+  const admin = await requireAdmin(request, env);
+  if (!admin) return json({ error: "Admin access required." }, 403);
+
+  const result = await env.DB.prepare(`
+    SELECT id, user_email, amount, currency, status, payment_intent_id,
+           created_at, description, transaction_reference, plan
+    FROM payments
+    WHERE status = 'pending'
+    ORDER BY id DESC
+  `).all();
+
+  return json({ success:true, payments: result.results || [] });
+}
+
+async function handleAdminApprovePayment(request, env) {
+  const admin = await requireAdmin(request, env);
+  if (!admin) return json({ error: "Admin access required." }, 403);
+
+  try {
+    const body = await request.json();
+    const paymentId = Number(body.payment_id);
+    const transactionReference = String(body.transaction_reference || "").trim();
+
+    if (!Number.isInteger(paymentId) || paymentId < 1) {
+      return json({ error: "Invalid payment." }, 400);
+    }
+
+    const payment = await env.DB.prepare(`
+      SELECT id, user_email, amount, currency, status, transaction_reference, plan
+      FROM payments WHERE id = ? LIMIT 1
+    `).bind(paymentId).first();
+
+    if (!payment) return json({ error: "Payment not found." }, 404);
+    if (payment.status === "paid") return json({ error: "Payment is already approved." }, 409);
+
+    const details = paymentPlanDetails(payment.plan);
+    if (!details) return json({ error: "Invalid membership plan on payment." }, 400);
+
+    const user = await env.DB.prepare(`
+      SELECT id, email, name FROM users WHERE lower(email) = ? LIMIT 1
+    `).bind(normalizeEmail(payment.user_email)).first();
+
+    if (!user) return json({ error: "Student account not found." }, 404);
+
+    const started = new Date();
+    const expires = new Date(started.getTime() + 30 * 86400000);
+    const startedSql = started.toISOString().slice(0,19).replace("T"," ");
+    const expiresSql = expires.toISOString().slice(0,19).replace("T"," ");
+
+    await env.DB.prepare(`
+      UPDATE users
+      SET plan = ?, plan_started_at = ?, plan_expires_at = ?
+      WHERE id = ?
+    `).bind(payment.plan, startedSql, expiresSql, user.id).run();
+
+    await env.DB.prepare(`
+      UPDATE payments
+      SET status = 'paid',
+          transaction_reference = ?
+      WHERE id = ?
+    `).bind(transactionReference || payment.transaction_reference, paymentId).run();
+
+    return json({
+      success:true,
+      message:"Payment approved and 30-day membership activated.",
+      membership:{
+        plan: details.name,
+        started_at: startedSql,
+        expires_at: expiresSql,
+        student_email: user.email
+      }
+    });
+  } catch(error) {
+    console.error("admin payment approval error", error);
+    return json({ error:"Unable to approve payment." }, 500);
+  }
+}
+
 async function handleLessonProgress(request, env) {
   const user = await getSessionUser(request, env);
 
@@ -1009,6 +1099,22 @@ export default {
             request,
             env
           );
+        }
+
+        if (
+          url.pathname ===
+            "/api/admin/payments" &&
+          method === "GET"
+        ) {
+          return await handleAdminPayments(request, env);
+        }
+
+        if (
+          url.pathname ===
+            "/api/admin/approve-payment" &&
+          method === "POST"
+        ) {
+          return await handleAdminApprovePayment(request, env);
         }
 
         if (
