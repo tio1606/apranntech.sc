@@ -831,6 +831,68 @@ async function cleanupExpiredSessions(
   }
 }
 
+function paymentPlanDetails(plan) {
+  const plans = {
+    basic: { name: "Basic", amount: 150 },
+    standard: { name: "Standard", amount: 250 },
+    premium: { name: "Premium", amount: 600 }
+  };
+  return plans[String(plan || "").toLowerCase()] || null;
+}
+
+async function createPaymentReference() {
+  const bytes = await randomBytes(5);
+  return "AT-" + new Date().toISOString().slice(0,10).replace(/-/g,"") + "-" +
+    bytesToHex(bytes).slice(0, 8).toUpperCase();
+}
+
+async function handleCreatePayment(request, env) {
+  const user = await getSessionUser(request, env);
+
+  if (!user) return json({ error: "Not authenticated." }, 401);
+
+  try {
+    const body = await request.json();
+    const plan = String(body.plan || "").trim().toLowerCase();
+    const details = paymentPlanDetails(plan);
+
+    if (!details) return json({ error: "Invalid membership plan." }, 400);
+
+    const reference = await createPaymentReference();
+
+    await env.DB.prepare(`
+      INSERT INTO payments
+        (user_email, amount, currency, status, payment_intent_id, description, transaction_reference, plan)
+      VALUES (?, ?, 'SCR', 'pending', ?, ?, ?, ?)
+    `).bind(
+      user.email,
+      details.amount,
+      reference,
+      `Aprann Tech ${details.name} membership - 30 days`,
+      reference,
+      plan
+    ).run();
+
+    return json({
+      success: true,
+      payment: {
+        reference,
+        plan,
+        plan_name: details.name,
+        amount: details.amount,
+        currency: "SCR",
+        status: "pending",
+        access_period_days: 30,
+        student_name: user.name || "",
+        student_email: user.email
+      }
+    });
+  } catch (error) {
+    console.error("payment creation error", error);
+    return json({ error: "Unable to create payment request." }, 500);
+  }
+}
+
 async function handleLessonProgress(request, env) {
   const user = await getSessionUser(request, env);
 
@@ -944,6 +1006,17 @@ export default {
           method === "GET"
         ) {
           return await handleMe(
+            request,
+            env
+          );
+        }
+
+        if (
+          url.pathname ===
+            "/api/create-payment" &&
+          method === "POST"
+        ) {
+          return await handleCreatePayment(
             request,
             env
           );
