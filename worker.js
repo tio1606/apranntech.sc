@@ -919,6 +919,21 @@ async function handleAdminPayments(request, env) {
   return json({ success:true, payments: result.results || [] });
 }
 
+async function handleAdminPaymentHistory(request, env) {
+  const admin = await requireAdmin(request, env);
+  if (!admin) return json({ error: "Admin access required." }, 403);
+
+  const result = await env.DB.prepare(`
+    SELECT id, user_email, amount, currency, status, payment_intent_id,
+           created_at, description, transaction_reference, plan, approved_at
+    FROM payments
+    WHERE status = 'paid'
+    ORDER BY id DESC
+  `).all();
+
+  return json({ success: true, payments: result.results || [] });
+}
+
 async function handleAdminApprovePayment(request, env) {
   const admin = await requireAdmin(request, env);
   if (!admin) return json({ error: "Admin access required." }, 403);
@@ -1107,6 +1122,14 @@ export default {
           method === "GET"
         ) {
           return await handleAdminPayments(request, env);
+        }
+
+        if (
+          url.pathname ===
+            "/api/admin/payments/history" &&
+          method === "GET"
+        ) {
+          return await handleAdminPaymentHistory(request, env);
         }
 
         if (
