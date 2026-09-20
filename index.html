@@ -42,12 +42,12 @@ section{padding:58px 0}.section-title{text-align:center;margin-bottom:30px}.sect
 <main id="public">
 <section class="hero">
 <div class="container hero-grid">
-<div><span class="badge">🇸🇨 Seychelles • Digital Learning</span><h1>Master IGCSE ICT with Aprann Tech.</h1><p>Learn theory, build practical skills, practise exam questions and track your progress from one mobile-friendly learning platform.</p>
-<div class="hero-actions"><button class="btn primary" onclick="login()">Start Learning</button><button class="outline" onclick="document.getElementById('pricing').scrollIntoView({behavior:'smooth'})">View Membership</button></div></div>
+<div><span class="badge">🇸🇨 Seychelles • Digital Learning</span><h1>Learn ICT Skills.<br>Build a <span style="color:#08d8e7">Brighter Future.</span></h1><p>Interactive lessons, practical activities, quizzes and exam preparation for IGCSE ICT and National Exams in Seychelles.</p>
+<div class="hero-actions"><button class="btn primary" onclick="login()">Get Started →</button><button class="outline" onclick="document.getElementById('courses').scrollIntoView({behavior:'smooth'})">View Courses</button></div></div>
 <div class="mock"><div class="mock-top"><b>Student Dashboard</b><span>64%</span></div><div class="mock-card"><b>IGCSE ICT Progress</b><div class="bar"><i style="width:64%"></i></div><small class="muted">Theory • Practical • Exam Practice</small></div><div class="mock-card">📝 Quiz Average <b>78%</b></div><div class="mock-card">🔥 Study Streak <b>7 days</b></div><div class="mock-card">🎯 Recommended: Spreadsheet IF Function</div></div>
 </div></section>
 
-<section id="features"><div class="container"><div class="section-title"><h2>Everything students need</h2><p>A structured pathway from learning to exam readiness.</p></div>
+<section id="features"><div class="container"><div class="section-title"><h2>Why Aprann Tech?</h2><p>Learn, practise and prepare with a clear pathway to ICT success.</p></div>
 <div class="cards">
 <div class="card"><div class="icon">📚</div><h3>Structured Lessons</h3><p class="muted">Topic-by-topic IGCSE ICT learning with notes, examples and key terms.</p></div>
 <div class="card"><div class="icon">💻</div><h3>Practical Activities</h3><p class="muted">Word processing, spreadsheets, databases, presentations and other hands-on tasks.</p></div>
@@ -57,7 +57,7 @@ section{padding:58px 0}.section-title{text-align:center;margin-bottom:30px}.sect
 <div class="card"><div class="icon">📊</div><h3>Progress Tracking</h3><p class="muted">Students see their performance by topic and receive recommendations.</p></div>
 </div></div></section>
 
-<section id="courses"><div class="container"><div class="section-title"><h2>IGCSE ICT Learning Pathway</h2><p>Built to support theory, practical competence and examination preparation.</p></div>
+<section id="courses"><div class="container"><div class="section-title"><h2>Our Programmes</h2><p>Choose the right learning pathway for your goals.</p></div>
 <div class="cards"><div class="card"><span class="badge">Module 1</span><h3>Computer Systems</h3><p class="muted">Hardware, software, storage and operating systems.</p></div><div class="card"><span class="badge">Module 2</span><h3>Input & Output</h3><p class="muted">Devices, uses and selection of technology.</p></div><div class="card"><span class="badge">Module 3</span><h3>Networks</h3><p class="muted">LAN, WAN, topologies, protocols and security.</p></div><div class="card"><span class="badge">Module 4</span><h3>Data Handling</h3><p class="muted">Spreadsheets, formulas, functions and charts.</p></div><div class="card"><span class="badge">Module 5</span><h3>Databases</h3><p class="muted">Tables, queries, forms, reports and validation.</p></div><div class="card"><span class="badge">Exam Centre</span><h3>Exam Practice</h3><p class="muted">Theory practice, practical tasks and mock exams.</p></div></div></div></section>
 
 <section id="pricing"><div class="container"><div class="section-title"><h2>Choose your membership</h2><p>Suggested starting plans for Aprann Tech.</p></div><div class="cards">
@@ -4742,7 +4742,202 @@ async function loadProgress() {
         .quizBtn:hover{
           background:#f4f9ff;
         }
-      </style>
+      
+/* Aprann Tech Seychelles visual refresh — presentation layer only */
+:root{
+  --navy:#062f4f;
+  --blue:#087fe8;
+  --blue2:#0757c9;
+  --cyan:#08c7df;
+  --sky:#eef8ff;
+  --bg:#f6fbff;
+  --text:#102a56;
+  --muted:#61738f;
+  --line:#d8e6f2;
+  --green:#12a95a;
+  --gold:#f4b400;
+  --red:#ef3f3f;
+}
+body{
+  background:linear-gradient(180deg,#f8fcff 0%,#eef7fd 100%);
+  color:var(--text);
+}
+header{
+  background:rgba(255,255,255,.97);
+  box-shadow:0 4px 18px rgba(6,47,79,.07);
+  border-bottom:1px solid #e2edf6;
+}
+.head{height:78px}
+.brand{gap:12px}
+.brand b{font-size:21px;color:#082f67;letter-spacing:-.2px}
+.brand small{font-size:13px}
+.nav{gap:24px;color:#183a69;font-weight:600}
+.nav a{transition:color .2s ease}
+.nav a:hover{color:var(--blue)}
+.head>div:last-child .outline{
+  background:linear-gradient(135deg,#087fe8,#0757c9);
+  color:#fff;
+  border:0;
+  padding:12px 20px;
+  box-shadow:0 7px 18px rgba(8,127,232,.2);
+}
+.hero{
+  position:relative;
+  overflow:hidden;
+  padding:76px 0 66px;
+  background:
+    radial-gradient(circle at 85% 20%,rgba(8,199,223,.32),transparent 30%),
+    linear-gradient(135deg,#063f72 0%,#075fc7 58%,#0b8fe5 100%);
+}
+.hero:before,.hero:after{
+  content:"";
+  position:absolute;
+  border-radius:48%;
+  background:rgba(255,255,255,.055);
+  transform:rotate(-18deg);
+  pointer-events:none;
+}
+.hero:before{width:480px;height:260px;left:-130px;top:-80px}
+.hero:after{width:520px;height:300px;right:-180px;bottom:-150px}
+.hero-grid{position:relative;z-index:1;grid-template-columns:1.08fr .92fr;gap:54px}
+.hero h1{
+  font-size:clamp(42px,5vw,64px);
+  line-height:1.02;
+  letter-spacing:-1.8px;
+  margin-bottom:20px;
+}
+.hero h1::first-line{color:#fff}
+.hero p{
+  max-width:650px;
+  font-size:18px;
+  line-height:1.65;
+  color:#e8f7ff;
+}
+.hero .badge{
+  background:rgba(255,255,255,.12);
+  color:#fff;
+  border:1px solid rgba(255,255,255,.25);
+  backdrop-filter:blur(5px);
+  letter-spacing:.2px;
+}
+.hero-actions{margin-top:28px}
+.hero-actions .primary{
+  background:#fff;
+  color:#0757c9;
+  padding:13px 23px;
+  box-shadow:0 10px 24px rgba(0,0,0,.14);
+}
+.hero-actions .outline{
+  padding:13px 23px;
+  border:1px solid rgba(255,255,255,.75);
+  background:rgba(255,255,255,.08);
+}
+.mock{
+  position:relative;
+  border:1px solid rgba(255,255,255,.65);
+  border-radius:24px;
+  padding:24px;
+  box-shadow:0 24px 60px rgba(0,20,60,.28);
+  transform:translateY(2px);
+}
+.mock:before{
+  content:"APRANN TECH";
+  display:block;
+  font-size:11px;
+  letter-spacing:2px;
+  color:#087fe8;
+  font-weight:900;
+  margin-bottom:13px;
+}
+.mock-top b{font-size:20px}
+.mock-card{
+  border:1px solid #e4edf5;
+  background:#f7fbff;
+  padding:15px;
+  transition:transform .2s ease,box-shadow .2s ease;
+}
+.mock-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(8,87,160,.08)}
+.bar{height:9px}
+section{padding:66px 0}
+section:nth-of-type(even){background:#fff}
+.section-title{margin-bottom:34px}
+.section-title h2{
+  color:#092f68;
+  font-size:34px;
+  letter-spacing:-.7px;
+}
+.section-title p{font-size:16px}
+.cards{gap:20px}
+.card{
+  border:1px solid #dce9f3;
+  border-radius:18px;
+  padding:25px;
+  box-shadow:0 8px 24px rgba(17,64,105,.055);
+  transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease;
+}
+.card:hover{
+  transform:translateY(-4px);
+  box-shadow:0 15px 30px rgba(17,64,105,.10);
+  border-color:#bcdaf1;
+}
+.card h3{color:#092f68;font-size:19px}
+.icon{
+  width:52px;height:52px;
+  display:grid;place-items:center;
+  border-radius:50%;
+  background:#e8f6ff;
+  font-size:27px;
+}
+#features .cards .card:nth-child(2) .icon{background:#e9fbef}
+#features .cards .card:nth-child(3) .icon{background:#f1eaff}
+#features .cards .card:nth-child(4) .icon{background:#fff2df}
+#features .cards .card:nth-child(5) .icon{background:#ffe9ec}
+#features .cards .card:nth-child(6) .icon{background:#e8f6ff}
+#courses .card:nth-child(1),#courses .card:nth-child(4){background:linear-gradient(145deg,#eef9ff,#fff)}
+#courses .card:nth-child(2),#courses .card:nth-child(5){background:linear-gradient(145deg,#fff5f3,#fff)}
+#courses .card:nth-child(3),#courses .card:nth-child(6){background:linear-gradient(145deg,#effbf3,#fff)}
+#pricing .card{min-height:100%}
+#pricing .featured{
+  border:2px solid var(--blue);
+  box-shadow:0 14px 34px rgba(8,127,232,.13);
+}
+.price{font-size:32px}
+.badge{
+  background:#e9f5ff;
+  color:#0757c9;
+}
+#contact{background:#f3f9fd}
+#contact .card{background:#fff}
+footer{
+  background:linear-gradient(135deg,#062f4f,#031e36);
+  padding:42px 0 34px;
+  border-top:4px solid transparent;
+  border-image:linear-gradient(90deg,#0072bc,#f4c300,#d62828,#009e60) 1;
+}
+.footer-grid{align-items:flex-start}
+.small a:hover{color:#fff}
+.login-area{background:linear-gradient(180deg,#f4faff,#eef7fd)}
+.login-box{
+  box-shadow:0 18px 45px rgba(17,64,105,.10);
+  border-color:#dce9f3;
+}
+@media(max-width:800px){
+  .head{height:72px}
+  .hero{padding:58px 0}
+  .hero-grid{gap:30px}
+  .hero h1{font-size:42px;letter-spacing:-1px}
+}
+@media(max-width:500px){
+  .head{height:68px}
+  .brand b{font-size:18px}
+  .logo-image{width:46px;height:46px}
+  .hero{padding:48px 0}
+  .hero h1{font-size:37px}
+  .section-title h2{font-size:28px}
+  section{padding:50px 0}
+}
+
+</style>
 
       <div style="display:flex;justify-content:space-between;margin-top:25px;">
 
