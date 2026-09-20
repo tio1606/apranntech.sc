@@ -4937,6 +4937,156 @@ footer{
   section{padding:50px 0}
 }
 
+
+/* Seychelles-inspired identity enhancement — visual only */
+:root{
+  --sey-blue:#003f88;
+  --sey-cyan:#00a9d6;
+  --sey-green:#2f9e44;
+  --sey-gold:#f2c94c;
+  --sey-red:#d83a3a;
+}
+.hero{
+  background:
+    radial-gradient(circle at 78% 18%,rgba(0,210,235,.28),transparent 28%),
+    radial-gradient(circle at 12% 88%,rgba(47,158,68,.16),transparent 25%),
+    linear-gradient(135deg,#06395f 0%,#075fc7 55%,#0798dc 100%);
+}
+.hero:before{
+  width:520px;height:210px;left:-160px;top:-80px;
+  background:linear-gradient(120deg,rgba(0,63,136,.22),rgba(0,210,235,.04));
+}
+.hero:after{
+  width:620px;height:220px;right:-210px;bottom:-135px;
+  background:linear-gradient(120deg,rgba(47,158,68,.05),rgba(242,201,76,.12));
+}
+.hero .container:after{
+  content:"LEARN • PRACTISE • SUCCEED";
+  display:block;
+  position:absolute;
+  left:0;bottom:-38px;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:2.2px;
+  color:rgba(255,255,255,.55);
+}
+.hero-grid{position:relative}
+.hero-grid:after{
+  content:"";
+  position:absolute;
+  right:-18px;top:22px;
+  width:92px;height:92px;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:50%;
+  box-shadow:0 0 0 14px rgba(255,255,255,.035),0 0 0 28px rgba(255,255,255,.025);
+  pointer-events:none;
+}
+.section-title{
+  position:relative;
+}
+.section-title:after{
+  content:"";
+  display:block;
+  width:58px;height:4px;
+  margin:14px auto 0;
+  border-radius:99px;
+  background:linear-gradient(90deg,var(--sey-blue),var(--sey-cyan),var(--sey-gold),var(--sey-red));
+}
+#features{
+  position:relative;
+  background:
+    linear-gradient(rgba(238,248,255,.94),rgba(238,248,255,.94)),
+    radial-gradient(circle at 10% 20%,rgba(0,169,214,.08),transparent 22%);
+}
+#features:before,#features:after{
+  content:"";
+  position:absolute;
+  width:120px;height:120px;
+  border-radius:50%;
+  border:1px solid rgba(0,63,136,.08);
+  pointer-events:none;
+}
+#features:before{left:-55px;top:70px}
+#features:after{right:-55px;bottom:70px}
+#courses{
+  background:linear-gradient(180deg,#fff 0%,#f5fbff 100%);
+}
+#courses .card{
+  position:relative;
+  overflow:hidden;
+}
+#courses .card:before{
+  content:"";
+  position:absolute;
+  top:0;left:0;right:0;height:4px;
+  background:linear-gradient(90deg,var(--sey-blue),var(--sey-cyan));
+}
+#courses .card:nth-child(2):before{background:linear-gradient(90deg,var(--sey-red),#ff7b65)}
+#courses .card:nth-child(3):before{background:linear-gradient(90deg,var(--sey-green),#8ac926)}
+#courses .card:nth-child(4):before{background:linear-gradient(90deg,var(--sey-gold),#ffd166)}
+#courses .card:nth-child(5):before{background:linear-gradient(90deg,var(--sey-blue),var(--sey-cyan))}
+#courses .card:nth-child(6):before{background:linear-gradient(90deg,var(--sey-red),var(--sey-gold))}
+#courses .card .primary,
+#courses .card button{
+  transition:transform .18s ease,box-shadow .18s ease;
+}
+#courses .card .primary:hover,
+#courses .card button:hover{
+  transform:translateY(-2px);
+  box-shadow:0 8px 16px rgba(7,95,199,.16);
+}
+#about{
+  background:
+    radial-gradient(circle at 8% 50%,rgba(0,169,214,.07),transparent 24%),
+    linear-gradient(180deg,#f3faff,#fff);
+}
+#about .card{
+  border-top:3px solid var(--sey-cyan);
+}
+#contact{
+  background:
+    linear-gradient(180deg,#edf8ff 0%,#f7fbff 100%);
+}
+#contact .card{
+  position:relative;
+  overflow:hidden;
+}
+#contact .card:after{
+  content:"";
+  position:absolute;
+  width:70px;height:70px;
+  right:-28px;top:-28px;
+  border-radius:50%;
+  background:rgba(0,169,214,.07);
+}
+footer{
+  position:relative;
+  overflow:hidden;
+  border-top:0;
+}
+footer:before{
+  content:"";
+  position:absolute;
+  left:0;right:0;top:0;height:5px;
+  background:linear-gradient(90deg,#003f88 0 25%,#00a9d6 25% 50%,#2f9e44 50% 70%,#f2c94c 70% 85%,#d83a3a 85% 100%);
+}
+footer:after{
+  content:"SEYCHELLES • DIGITAL LEARNING • ICT";
+  position:absolute;
+  right:28px;bottom:10px;
+  font-size:9px;
+  letter-spacing:1.7px;
+  color:rgba(255,255,255,.22);
+  font-weight:800;
+}
+@media(max-width:800px){
+  .hero .container:after{display:none}
+  .hero-grid:after{display:none}
+}
+@media(max-width:500px){
+  footer:after{display:none}
+}
+
 </style>
 
       <div style="display:flex;justify-content:space-between;margin-top:25px;">
