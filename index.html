@@ -29,6 +29,235 @@ section{padding:58px 0}.section-title{text-align:center;margin-bottom:30px}.sect
 .footer-logo{width:190px;max-width:100%;height:auto;display:block;background:#000;border-radius:10px;padding:4px}
 .small a{color:#bae6fd}
 </style>
+
+<style id="aprann-visual-refresh">
+/* Aprann Tech visual refresh — presentation only. No application logic changed. */
+:root{
+  --at-navy:#062b49;
+  --at-blue:#0077b6;
+  --at-cyan:#00c2e8;
+  --at-sky:#eaf8ff;
+  --at-green:#2f9e44;
+  --at-gold:#f2c94c;
+  --at-red:#d83a3a;
+  --at-ink:#102a43;
+}
+body{
+  background:
+    radial-gradient(circle at 8% 20%,rgba(0,194,232,.07),transparent 22%),
+    radial-gradient(circle at 92% 55%,rgba(47,158,68,.05),transparent 20%),
+    #f5f9fc;
+}
+header{
+  height:78px;
+  border-bottom:0;
+  box-shadow:0 4px 22px rgba(6,43,73,.09);
+  background:rgba(255,255,255,.96);
+  backdrop-filter:blur(12px);
+}
+header::after{
+  content:"";
+  position:absolute;
+  left:0;right:0;bottom:0;height:4px;
+  background:linear-gradient(90deg,var(--at-blue) 0 28%,var(--at-cyan) 28% 52%,var(--at-green) 52% 72%,var(--at-gold) 72% 86%,var(--at-red) 86% 100%);
+}
+.head{height:78px}
+.brand{gap:12px}
+.logo-image{
+  width:54px;height:54px;border-radius:14px;
+  box-shadow:0 7px 18px rgba(6,43,73,.18);
+}
+.brand b{font-size:21px;letter-spacing:-.3px;color:var(--at-navy)}
+.brand small{font-size:12px}
+.nav{gap:26px;font-size:15px;font-weight:600;color:#334e68}
+.nav a{position:relative;padding:27px 0}
+.nav a::after{
+  content:"";position:absolute;left:0;right:100%;bottom:17px;height:2px;
+  background:var(--at-cyan);transition:right .2s ease;
+}
+.nav a:hover::after{right:0}
+.head>.outline{
+  border:1px solid #c9d9e6;
+  border-radius:12px;
+  padding:12px 19px;
+  background:white;
+  box-shadow:0 5px 14px rgba(6,43,73,.06);
+}
+.head>.outline:hover{
+  background:var(--at-navy);color:white;border-color:var(--at-navy);
+}
+.hero{
+  position:relative;overflow:hidden;
+  padding:92px 0 98px;
+  background:
+    radial-gradient(circle at 78% 35%,rgba(0,194,232,.24),transparent 28%),
+    radial-gradient(circle at 15% 90%,rgba(47,158,68,.14),transparent 24%),
+    linear-gradient(135deg,#062b49 0%,#075985 48%,#0088c7 100%);
+}
+.hero::before,.hero::after{
+  content:"";position:absolute;border-radius:50%;pointer-events:none;
+}
+.hero::before{
+  width:420px;height:420px;right:-160px;top:-190px;
+  border:70px solid rgba(255,255,255,.07);
+}
+.hero::after{
+  width:260px;height:260px;left:-150px;bottom:-150px;
+  background:rgba(0,194,232,.08);
+}
+.hero-grid{position:relative;z-index:1;gap:64px}
+.hero h1{
+  font-size:58px;line-height:1.01;letter-spacing:-2px;
+  max-width:720px;margin-bottom:22px;
+  text-shadow:0 5px 24px rgba(0,0,0,.12);
+}
+.hero h1 span{
+  background:linear-gradient(90deg,#54e5ff,#00c2e8,#7fffd4);
+  -webkit-background-clip:text;background-clip:text;color:transparent!important;
+}
+.hero p{
+  max-width:650px;font-size:20px;line-height:1.7;color:#e8f7ff;
+}
+.hero .badge{
+  background:rgba(255,255,255,.14);color:white;
+  border:1px solid rgba(255,255,255,.28);
+  padding:8px 13px;backdrop-filter:blur(8px);
+}
+.hero-actions{margin-top:30px}
+.hero-actions button{
+  min-height:50px;padding:13px 22px;border-radius:12px;font-size:15px;
+}
+.hero .primary{
+  background:linear-gradient(135deg,#00a9e8,#0077b6);
+  box-shadow:0 10px 25px rgba(0,0,0,.18);
+}
+.hero .primary:hover{transform:translateY(-2px);box-shadow:0 14px 30px rgba(0,0,0,.22)}
+.hero .outline{
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.55);
+}
+.mock{
+  position:relative;
+  border:1px solid rgba(255,255,255,.7);
+  border-radius:26px;
+  padding:24px;
+  box-shadow:0 30px 70px rgba(0,20,40,.32);
+  transform:rotate(1deg);
+}
+.mock::before{
+  content:"";display:block;width:58px;height:5px;border-radius:10px;
+  background:linear-gradient(90deg,var(--at-blue),var(--at-cyan),var(--at-green));
+  margin-bottom:17px;
+}
+.mock-top{font-size:20px}
+.mock-top span{
+  color:var(--at-blue);font-weight:800;
+  background:#eaf7ff;padding:5px 10px;border-radius:20px;
+}
+.mock-card{
+  border:1px solid #e3edf4;
+  background:linear-gradient(135deg,#f8fbfd,#eef7fb);
+  border-radius:15px;padding:16px;margin-top:14px;
+}
+.mock-card b{color:var(--at-navy)}
+.bar{height:10px;margin-top:8px}
+.bar i{background:linear-gradient(90deg,var(--at-blue),var(--at-cyan))}
+section{padding:78px 0}
+section:nth-of-type(even){background:#eef7fb}
+.section-title{margin-bottom:38px}
+.section-title h2{
+  font-size:36px;letter-spacing:-.8px;color:var(--at-navy);
+}
+.section-title h2::after{
+  content:"";display:block;width:58px;height:4px;border-radius:5px;
+  margin:13px auto 0;
+  background:linear-gradient(90deg,var(--at-blue),var(--at-cyan),var(--at-green));
+}
+.section-title p{font-size:16px;max-width:650px;margin:13px auto 0}
+.cards{gap:22px}
+.card{
+  position:relative;overflow:hidden;
+  border:1px solid #d9e6ee;border-radius:20px;
+  padding:27px;background:rgba(255,255,255,.96);
+  box-shadow:0 8px 24px rgba(6,43,73,.06);
+  transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease;
+}
+.card::before{
+  content:"";position:absolute;left:0;top:0;right:0;height:4px;
+  background:linear-gradient(90deg,var(--at-blue),var(--at-cyan));
+}
+.card:hover{
+  transform:translateY(-5px);
+  box-shadow:0 16px 34px rgba(6,43,73,.12);
+  border-color:#b9d8e8;
+}
+.icon{
+  width:52px;height:52px;display:grid;place-items:center;
+  border-radius:15px;background:#e8f7fd;font-size:27px;
+}
+.card h3{font-size:20px;color:var(--at-navy);margin:15px 0 8px}
+.card .muted{font-size:15px}
+#features .card:nth-child(2)::before,#courses .card:nth-child(4)::before{background:linear-gradient(90deg,var(--at-green),#6bcf7b)}
+#features .card:nth-child(3)::before,#courses .card:nth-child(5)::before{background:linear-gradient(90deg,var(--at-gold),#ffd966)}
+#features .card:nth-child(4)::before,#courses .card:nth-child(6)::before{background:linear-gradient(90deg,var(--at-red),#ff7373)}
+#features .card:nth-child(5)::before{background:linear-gradient(90deg,#7c3aed,#b084ff)}
+.badge{
+  background:#e7f6fd;color:var(--at-navy);
+  border:1px solid #c6e7f4;padding:6px 10px;
+}
+#courses .card{min-height:190px}
+#courses .card .badge{font-size:11px}
+#pricing .cards{align-items:stretch}
+#pricing .card{display:flex;flex-direction:column}
+#pricing .card ul{flex:1}
+#pricing .featured{
+  border:2px solid var(--at-blue);
+  box-shadow:0 18px 38px rgba(0,119,182,.16);
+  transform:translateY(-7px);
+}
+#pricing .featured:hover{transform:translateY(-12px)}
+.price{font-size:34px;color:var(--at-navy);margin:7px 0 5px}
+.price small{font-size:13px;color:var(--muted);font-weight:600}
+#pricing .card button{border-radius:12px!important;min-height:46px}
+#about .card{
+  max-width:900px;margin:auto;
+  padding:36px;
+  background:linear-gradient(135deg,#ffffff,#eef9fd);
+}
+#about .card h2{color:var(--at-navy);font-size:30px}
+footer{
+  position:relative;
+  background:linear-gradient(135deg,#041f36,#062b49);
+  padding:48px 0 30px;
+  border-top:5px solid transparent;
+  border-image:linear-gradient(90deg,var(--at-blue),var(--at-cyan),var(--at-green),var(--at-gold),var(--at-red)) 1;
+}
+footer::after{
+  content:"SEYCHELLES  •  DIGITAL LEARNING  •  ICT";
+  display:block;text-align:center;margin-top:28px;
+  font-size:11px;letter-spacing:2px;color:#8fb5c9;
+}
+.footer-grid{align-items:center}
+.small{color:#b8cfdb}
+.small a{color:#69dfff}
+@media(max-width:800px){
+  header,.head{height:70px}
+  .head{padding:0 16px}
+  .hero{padding:62px 0 70px}
+  .hero h1{font-size:43px;letter-spacing:-1.2px}
+  .hero p{font-size:17px}
+  .hero-grid{gap:35px}
+  .mock{transform:none}
+  section{padding:60px 0}
+  .section-title h2{font-size:30px}
+  #pricing .featured{transform:none}
+}
+@media(max-width:500px){
+  .hero h1{font-size:37px}
+  .hero-actions button{width:100%}
+  .card{padding:22px}
+}
+</style>
 </head>
 <body>
 <header>
