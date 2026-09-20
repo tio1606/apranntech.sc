@@ -301,16 +301,8 @@ async function loadAdminPayments(){
     box.innerHTML='<p class="muted">Unable to load payments.</p>';
     if(historyBox) historyBox.innerHTML='<p class="muted">Unable to load approved payment history.</p>';
   }
-}:10px;">
-          <div><strong>Student</strong><br>${p.user_email}</div><div><strong>Plan</strong><br>${(p.plan||'').toUpperCase()}</div>
-          <div><strong>Amount</strong><br>SCR ${p.amount}</div><div><strong>Reference</strong><br>${p.transaction_reference||'-'}</div>
-          <div><strong>Status</strong><br><span style="color:#b45309;font-weight:700;">PENDING</span></div>
-        </div>
-        <div style="margin-top:14px;"><input id="txn-${p.id}" class="field" style="margin:0;width:100%;max-width:420px;" placeholder="Optional eboo transaction reference">
-        <button onclick="approvePayment(${p.id})" style="margin-top:10px;background:#16a34a;color:white;">âœ“ Approve Payment & Activate 30 Days</button></div>
-      </div>`).join('');
-  }catch(error){console.error(error);box.innerHTML='<p class="muted">Unable to load pending payments.</p>';}
 }
+
 async function approvePayment(paymentId){
   const input=document.getElementById('txn-'+paymentId); const transactionReference=input?input.value.trim():'';
   if(!confirm('Confirm that you have verified this eboo payment and want to activate 30 days of access?'))return;
