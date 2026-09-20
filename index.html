@@ -86,7 +86,7 @@ section{padding:58px 0}.section-title{text-align:center;margin-bottom:30px}.sect
 <label>Password</label>
 <input class="field" id="pass" type="password" placeholder="Password">
 
-<button class="primary" style="width:100%" onclick="enterApp()">Log In</button>
+<button id="loginSubmit" class="primary" type="button" style="width:100%">Log In</button>
 
 <p class="muted" style="text-align:center;margin-top:18px">
 New student?
@@ -5821,5 +5821,19 @@ function checkTuckShopFormulas() {
     );
   }
 }
+
+document.addEventListener('DOMContentLoaded', function(){
+  const loginButton = document.getElementById('loginSubmit');
+  if (loginButton) {
+    loginButton.addEventListener('click', enterApp);
+  }
+  const loginForm = document.getElementById('loginForm');
+  if (loginForm) {
+    loginForm.addEventListener('submit', function(e){
+      e.preventDefault();
+      enterApp();
+    });
+  }
+});
 </script>
 </body></html>
