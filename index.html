@@ -299,6 +299,7 @@ async function loadAdminPayments(){
     box.innerHTML='<p class="muted">Unable to load payments.</p>';
     if(historyBox) historyBox.innerHTML='<p class="muted">Unable to load approved payment history.</p>';
   }
+}
 
 async function approvePayment(paymentId){
   const input=document.getElementById('txn-'+paymentId); const transactionReference=input?input.value.trim():'';
