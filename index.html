@@ -384,13 +384,56 @@ async function selectPlan(plan){
 
 function showPricing(event){
   if(event) event.preventDefault();
+
+  const app=document.getElementById('app');
+  const appVisible=app && getComputedStyle(app).display!=='none';
+
+  if(appVisible){
+    const old=document.getElementById('pricingWindow');
+    if(old) old.remove();
+
+    const win=document.createElement('div');
+    win.id='pricingWindow';
+    win.style='position:fixed;inset:0;background:rgba(0,0,0,.68);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto;';
+    win.innerHTML=`
+      <div style="background:white;width:min(1000px,96vw);max-height:90vh;overflow:auto;border-radius:18px;padding:25px;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:18px;">
+          <div>
+            <div style="color:#0284c7;font-weight:800;">APRANN TECH MEMBERSHIP</div>
+            <h2 style="margin:6px 0;">Choose your membership</h2>
+            <p class="muted" style="margin:0;">Your student login remains active while you view pricing.</p>
+          </div>
+          <button onclick="document.getElementById('pricingWindow').remove()" style="background:#111;color:white;width:42px;height:42px;border-radius:9px;font-size:22px;">×</button>
+        </div>
+        <div class="cards">
+          <div class="card">
+            <h3>Basic</h3><div class="price">SCR 150<small>/30 days</small></div>
+            <ul><li>Theory lessons</li><li>Quizzes</li><li>Selected videos</li><li>Basic activities</li></ul>
+            <button type="button" onclick="document.getElementById('pricingWindow').remove();selectPlan('basic')" style="width:100%;padding:12px;margin-top:15px;border:0;border-radius:8px;background:#082f49;color:white;font-weight:700;cursor:pointer;">Choose Basic</button>
+          </div>
+          <div class="card featured">
+            <span class="badge">MOST POPULAR</span><h3>Standard</h3><div class="price">SCR 250<small>/30 days</small></div>
+            <ul><li>Everything in Basic</li><li>Full video library</li><li>Practical activities</li><li>Exam practice</li><li>Progress tracking</li></ul>
+            <button type="button" onclick="document.getElementById('pricingWindow').remove();selectPlan('standard')" style="width:100%;padding:12px;margin-top:15px;border:0;border-radius:8px;background:#0284c7;color:white;font-weight:700;cursor:pointer;">Choose Standard</button>
+          </div>
+          <div class="card">
+            <h3>Premium</h3><div class="price">SCR 600<small>/30 days</small></div>
+            <ul><li>Everything in Standard</li><li>Teacher-marked work</li><li>Face-to-Face tutoring</li><li>Personal feedback</li><li>Mock examinations</li><li>Priority support</li></ul>
+            <button type="button" onclick="document.getElementById('pricingWindow').remove();selectPlan('premium')" style="width:100%;padding:12px;margin-top:15px;border:0;border-radius:8px;background:#16a34a;color:white;font-weight:700;cursor:pointer;">Choose Premium</button>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(win);
+    return;
+  }
+
   hideAll();
   document.getElementById('public').style.display='block';
   setTimeout(()=>{
     document.getElementById('pricing').scrollIntoView({behavior:'smooth'});
   },50);
 }
-
 function home(){hideAll();document.getElementById('public').style.display='block';window.scrollTo(0,0)}
 function login(){hideAll();document.getElementById('loginArea').style.display='block';window.scrollTo(0,0)}
 async function enterApp(){
