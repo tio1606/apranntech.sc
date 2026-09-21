@@ -989,7 +989,7 @@ async function loadAdminDashboard(){
     else resultEl.innerHTML=`<table class="table"><thead><tr><th>Student</th><th>Exam</th><th>Score</th><th>%</th><th>Date</th></tr></thead><tbody>${resultList.slice(0,100).map(x=>`<tr><td>${escapeAdminHtml(x.student_name||x.studentName||x.name||x.email||'Student')}</td><td>${escapeAdminHtml(x.examTitle||x.exam_title||x.exam||'Exam')}</td><td>${escapeAdminHtml(x.score??'N/A')}/${escapeAdminHtml(x.total??'N/A')}</td><td><strong>${escapeAdminHtml(x.percentage??'N/A')}%</strong></td><td>${x.submittedAt||x.submitted_at?new Date(x.submittedAt||x.submitted_at).toLocaleDateString():'Not set'}</td></tr>`).join('')}</tbody></table>`;
     if(notice) notice.innerHTML='<strong>Admin data connected</strong><p class="muted" style="margin-bottom:0;">Student and activity information is being loaded from the protected admin API.</p>';
   }catch(e){
-    if(notice) notice.innerHTML='<strong>Admin data connection required</strong><p class="muted" style="margin-bottom:0;">The Admin Dashboard is ready. Connect the protected admin API to display live student, membership and exam data. Your existing student features remain unchanged.</p>';
+    if(notice) notice.innerHTML='<strong>Admin data connection required</strong><p class="muted" style="margin-bottom:0;">The Admin Dashboard is connected to the protected server API. Deploy the updated worker file to activate live student, membership, exam and video data.</p>';
     const msg=document.getElementById('adminStudentTable'); if(msg) msg.innerHTML='<p class="muted">Admin student data is unavailable until the protected admin API is connected.</p>';
     const res=document.getElementById('adminResultsTable'); if(res) res.innerHTML='<p class="muted">Admin results data is unavailable until the protected admin API is connected.</p>';
     console.warn('Admin dashboard:',e);
@@ -1174,10 +1174,13 @@ async function getStudentIdentity(){
 
 async function saveExamResult(exam, score, total, percentage, autoSubmitted){
   const identity=await getStudentIdentity();
+  const submittedAt=new Date().toISOString();
+
   const store=getLocalStudentProgress();
   const key=identity.email;
   if(!store[key]) store[key]={exams:[],watchedVideos:{}};
   if(!Array.isArray(store[key].exams)) store[key].exams=[];
+
   store[key].exams.unshift({
     examId:exam.id,
     examTitle:exam.title,
@@ -1185,23 +1188,61 @@ async function saveExamResult(exam, score, total, percentage, autoSubmitted){
     score,
     total,
     percentage,
-    submittedAt:new Date().toISOString(),
+    submittedAt,
     autoSubmitted:!!autoSubmitted
   });
   store[key].exams=store[key].exams.slice(0,50);
   saveLocalStudentProgress(store);
   renderExamAndVideoSummary(identity.email);
+
+  try{
+    const response=await fetch('/api/exam-results',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Accept':'application/json'},
+      body:JSON.stringify({
+        exam_id:exam.id,
+        exam_title:exam.title,
+        exam_type:exam.type,
+        score,
+        total,
+        percentage,
+        auto_submitted:!!autoSubmitted
+      })
+    });
+    if(!response.ok){
+      const data=await response.json().catch(()=>({}));
+      console.warn('Server exam result was not saved:',data.error||response.status);
+    }
+  }catch(error){
+    console.warn('Server exam result unavailable; local result retained.',error);
+  }
 }
 
 async function markVideoWatched(index){
   const identity=await getStudentIdentity();
+  const watchedAt=new Date().toISOString();
+
   const store=getLocalStudentProgress();
   const key=identity.email;
   if(!store[key]) store[key]={exams:[],watchedVideos:{}};
   if(!store[key].watchedVideos) store[key].watchedVideos={};
-  store[key].watchedVideos[String(index)]={watchedAt:new Date().toISOString()};
+  store[key].watchedVideos[String(index)]={watchedAt};
   saveLocalStudentProgress(store);
   renderExamAndVideoSummary(identity.email);
+
+  try{
+    const response=await fetch('/api/video-activity',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Accept':'application/json'},
+      body:JSON.stringify({video_index:index})
+    });
+    if(!response.ok){
+      const data=await response.json().catch(()=>({}));
+      console.warn('Server video activity was not saved:',data.error||response.status);
+    }
+  }catch(error){
+    console.warn('Server video activity unavailable; local activity retained.',error);
+  }
 }
 
 async function renderExamAndVideoSummary(email){
