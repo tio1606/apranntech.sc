@@ -917,7 +917,7 @@ async function requireMembership(area){
   win.style.cssText = 'position:fixed;inset:0;background:rgba(3,24,38,.72);display:flex;justify-content:center;align-items:center;padding:18px;z-index:12000;';
   win.innerHTML = `
     <div style="background:white;width:min(560px,96vw);border-radius:20px;padding:30px;box-shadow:0 25px 70px rgba(0,0,0,.35);text-align:center;">
-      <div class="lock-icon">ðŸ”’</div>
+      <div class="lock-icon">&#128274;</div>
       <span class="membership-pill">STANDARD MEMBERSHIP</span>
       <h2 style="color:#062b49;margin:12px 0 8px;">${areaName} is a member feature</h2>
       <p style="color:#64748b;line-height:1.6;">
@@ -935,12 +935,11 @@ async function requireMembership(area){
 }
 
 function openMembershipPlans(){
-  const pricing = document.getElementById('pricing');
-  if(pricing){
-    hideAll();
-    document.getElementById('public').style.display='block';
-    setTimeout(()=>pricing.scrollIntoView({behavior:'smooth'}),50);
-  }
+  // Keep the student dashboard and login session visible.
+  // showPricing() already provides a membership modal when the app is open.
+  const gate = document.getElementById('membershipGate');
+  if(gate) gate.remove();
+  showPricing();
 }
   async function loadMyCourse(){
   try{
