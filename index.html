@@ -374,8 +374,32 @@ Student Login
 </section>
 
 <section id="app" class="app">
-<div class="app-grid"><aside class="side"><b style="font-size:18px">AT</b><button class="active" onclick="dashTab('home',this)"><span>Dashboard</span></button><button onclick="dashTab('course',this)"><span>My Course</span></button><button onclick="dashTab('activity',this)"><span>Activities</span></button><button onclick="dashTab('quiz',this)"><span>Quizzes</span></button><button onclick="dashTab('exam',this)"><span>Exam Centre</span></button><button onclick="dashTab('videos',this)"><span>Videos</span></button><button onclick="dashTab('progress',this)"><span>Progress</span></button><button id="adminPaymentsButton" class="hidden" onclick="dashTab('adminPayments',this);loadAdminPayments()"><span>Payments</span></button></aside>
+<div class="app-grid"><aside class="side"><b style="font-size:18px">AT</b><button class="active" onclick="dashTab('home',this)"><span>Dashboard</span></button><button onclick="dashTab('course',this)"><span>My Course</span></button><button onclick="dashTab('activity',this)"><span>Activities</span></button><button onclick="dashTab('quiz',this)"><span>Quizzes</span></button><button onclick="dashTab('exam',this)"><span>Exam Centre</span></button><button onclick="dashTab('videos',this)"><span>Videos</span></button><button onclick="dashTab('progress',this)"><span>Progress</span></button><button id="adminPaymentsButton" class="hidden" onclick="dashTab('adminPayments',this);loadAdminPayments()"><span>Payments</span></button><button id="adminDashboardButton" class="hidden" onclick="dashTab('adminDashboard',this);loadAdminDashboard()"><span>Admin Dashboard</span></button></aside>
 <div class="dash">
+<div id="dadminDashboard" class="dtab hidden">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;">
+    <div><h1 style="margin-bottom:6px;">Admin Dashboard</h1><p class="muted" style="margin-top:0;">Manage students, memberships and learning activity.</p></div>
+    <button class="outline" onclick="loadAdminDashboard()">Refresh</button>
+  </div>
+  <div id="adminBackendNotice" class="module" style="margin-top:18px;background:#fff8e6;border-left:5px solid #f2c94c;">
+    <strong>Admin data</strong><p class="muted" style="margin-bottom:0;">Loading secure admin data...</p>
+  </div>
+  <div id="adminStatsGrid" class="module-grid" style="margin-top:18px;">
+    <div class="module"><span class="badge">STUDENTS</span><h3 id="adminStudentCount" style="font-size:30px;margin:12px 0 4px;">â€”</h3><p class="muted">Registered students</p></div>
+    <div class="module"><span class="badge">ACTIVE</span><h3 id="adminActiveCount" style="font-size:30px;margin:12px 0 4px;">â€”</h3><p class="muted">Active memberships</p></div>
+    <div class="module"><span class="badge">EXAMS</span><h3 id="adminExamCount" style="font-size:30px;margin:12px 0 4px;">â€”</h3><p class="muted">Recorded exam attempts</p></div>
+    <div class="module"><span class="badge">VIDEOS</span><h3 id="adminVideoCount" style="font-size:30px;margin:12px 0 4px;">â€”</h3><p class="muted">Video activity records</p></div>
+  </div>
+  <div class="module" style="margin-top:18px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;"><div><h2 style="margin:0 0 6px;">Student Management</h2><p class="muted" style="margin:0;">Search students and review membership status.</p></div><input id="adminStudentSearch" class="field" style="max-width:320px;margin:0;" placeholder="Search name or email" oninput="filterAdminStudents()"></div>
+    <div id="adminStudentTable" style="overflow:auto;margin-top:16px;"><p class="muted">Loading students...</p></div>
+  </div>
+  <div class="module" style="margin-top:18px;">
+    <h2 style="margin-top:0;">Recent Exam Results</h2>
+    <div id="adminResultsTable" style="overflow:auto;"><p class="muted">Loading results...</p></div>
+  </div>
+</div>
+
 <div id="dadminPayments" class="dtab hidden">
   <div style="display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;">
     <div>
@@ -763,7 +787,10 @@ try{
 
   if(welcome && meData.authenticated && meData.user){
     const adminButton=document.getElementById('adminPaymentsButton');
-    if(adminButton && meData.user.email.toLowerCase()==='digitalie.sc@gmail.com') adminButton.classList.remove('hidden');
+    if(adminButton && (meData.user.email||'').toLowerCase()==='digitalie.sc@gmail.com') adminButton.classList.remove('hidden');
+    const adminDashButton=document.getElementById('adminDashboardButton');
+    const isAdmin = String(meData.user.role||meData.user.user_role||'').toLowerCase()==='admin' || (meData.user.email||'').toLowerCase()==='digitalie.sc@gmail.com';
+    if(adminDashButton && isAdmin) adminDashButton.classList.remove('hidden');
 
     welcome.textContent = `Welcome back, ${meData.user.name || 'Student'} \uD83D\uDC4B`;
  const membership = document.getElementById('membershipPlan');
@@ -873,6 +900,11 @@ async function dashTab(id,btn){
     if(!allowed) return;
   }
 
+  if(id === 'adminDashboard' && !(await isCurrentAdmin())){
+    alert('Administrator access is required.');
+    return;
+  }
+
   target.classList.remove('hidden');
 
   document.querySelectorAll('.side button').forEach(x => x.classList.remove('active'));
@@ -888,6 +920,79 @@ async function dashTab(id,btn){
 
   if(id === 'videos'){
     loadVideos();
+  }
+}
+
+async function isCurrentAdmin(){
+  try{
+    const r=await fetch('/api/me');
+    const d=await r.json();
+    if(!r.ok || !d.authenticated || !d.user) return false;
+    const role=String(d.user.role||d.user.user_role||'').toLowerCase();
+    return role==='admin' || (d.user.email||'').toLowerCase()==='digitalie.sc@gmail.com';
+  }catch(e){ return false; }
+}
+
+let adminStudentsCache=[];
+
+async function adminFetch(path){
+  const r=await fetch(path,{headers:{'Accept':'application/json'}});
+  let d={};
+  try{d=await r.json();}catch(e){d={};}
+  if(!r.ok) throw new Error(d.error||('Request failed ('+r.status+')'));
+  return d;
+}
+
+function escapeAdminHtml(value){
+  return String(value==null?'':value).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+function adminStudentRows(students){
+  return students.map((u,i)=>{
+    const plan=String(u.plan||'free');
+    const expires=u.membership_expires||u.expires_at||u.expiry_date||'';
+    const active=plan!=='free' && (!expires || new Date(expires)>=new Date());
+    return `<tr><td>${escapeAdminHtml(u.name||'Student')}</td><td>${escapeAdminHtml(u.email||'')}</td><td>${escapeAdminHtml(plan)}</td><td>${active?'Active':'Inactive'}</td><td>${expires?new Date(expires).toLocaleDateString():'â€”'}</td></tr>`;
+  }).join('');
+}
+
+function renderAdminStudents(){
+  const el=document.getElementById('adminStudentTable');
+  if(!el) return;
+  const q=(document.getElementById('adminStudentSearch')?.value||'').trim().toLowerCase();
+  const rows=adminStudentsCache.filter(u=>`${u.name||''} ${u.email||''}`.toLowerCase().includes(q));
+  if(!rows.length){el.innerHTML='<p class="muted">No students found.</p>';return;}
+  el.innerHTML=`<table class="table"><thead><tr><th>Name</th><th>Email</th><th>Plan</th><th>Status</th><th>Expiry</th></tr></thead><tbody>${adminStudentRows(rows)}</tbody></table>`;
+}
+function filterAdminStudents(){renderAdminStudents();}
+
+async function loadAdminDashboard(){
+  const notice=document.getElementById('adminBackendNotice');
+  try{
+    if(!(await isCurrentAdmin())){if(notice) notice.innerHTML='<strong>Access denied</strong><p class="muted" style="margin-bottom:0;">Administrator access is required.</p>';return;}
+    const [stats,students,results]=await Promise.all([
+      adminFetch('/api/admin/stats'),
+      adminFetch('/api/admin/students'),
+      adminFetch('/api/admin/results')
+    ]);
+    const statsData=stats.stats||stats||{};
+    const list=Array.isArray(students.students)?students.students:(Array.isArray(students.users)?students.users:(Array.isArray(students)?students:[]));
+    adminStudentsCache=list;
+    document.getElementById('adminStudentCount').textContent=statsData.students ?? statsData.studentCount ?? list.length;
+    document.getElementById('adminActiveCount').textContent=statsData.activeMemberships ?? statsData.active_memberships ?? list.filter(u=>u.plan&&u.plan!=='free').length;
+    document.getElementById('adminExamCount').textContent=statsData.examAttempts ?? statsData.exams ?? 'â€”';
+    document.getElementById('adminVideoCount').textContent=statsData.videoActivity ?? statsData.videos ?? 'â€”';
+    renderAdminStudents();
+    const resultList=Array.isArray(results.results)?results.results:(Array.isArray(results)?results:[]);
+    const resultEl=document.getElementById('adminResultsTable');
+    if(!resultList.length){resultEl.innerHTML='<p class="muted">No server-side exam results returned yet.</p>';}
+    else resultEl.innerHTML=`<table class="table"><thead><tr><th>Student</th><th>Exam</th><th>Score</th><th>%</th><th>Date</th></tr></thead><tbody>${resultList.slice(0,100).map(x=>`<tr><td>${escapeAdminHtml(x.student_name||x.studentName||x.name||x.email||'Student')}</td><td>${escapeAdminHtml(x.examTitle||x.exam_title||x.exam||'Exam')}</td><td>${escapeAdminHtml(x.score??'â€”')}/${escapeAdminHtml(x.total??'â€”')}</td><td><strong>${escapeAdminHtml(x.percentage??'â€”')}%</strong></td><td>${x.submittedAt||x.submitted_at?new Date(x.submittedAt||x.submitted_at).toLocaleDateString():'â€”'}</td></tr>`).join('')}</tbody></table>`;
+    if(notice) notice.innerHTML='<strong>Admin data connected</strong><p class="muted" style="margin-bottom:0;">Student and activity information is being loaded from the protected admin API.</p>';
+  }catch(e){
+    if(notice) notice.innerHTML='<strong>Admin backend not connected yet</strong><p class="muted" style="margin-bottom:0;">The dashboard is ready, but the server must provide <code>/api/admin/stats</code>, <code>/api/admin/students</code> and <code>/api/admin/results</code>. Your existing student features remain unchanged.</p>';
+    const msg=document.getElementById('adminStudentTable'); if(msg) msg.innerHTML='<p class="muted">Admin student data is unavailable until the protected admin API is connected.</p>';
+    const res=document.getElementById('adminResultsTable'); if(res) res.innerHTML='<p class="muted">Admin results data is unavailable until the protected admin API is connected.</p>';
+    console.warn('Admin dashboard:',e);
   }
 }
 
