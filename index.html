@@ -257,6 +257,17 @@ footer::after{
   .hero-actions button{width:100%}
   .card{padding:22px}
 }
+
+<style id="membership-access-styles">
+.membership-lock{
+  border:1px solid #cbd5e1;background:linear-gradient(135deg,#f8fbfd,#eef7fb);
+  border-radius:18px;padding:26px;text-align:center;margin:18px 0;
+}
+.membership-lock .lock-icon{font-size:42px;margin-bottom:8px}
+.membership-lock h2{color:#062b49;margin:8px 0}
+.membership-lock p{color:#64748b;line-height:1.6}
+.membership-pill{display:inline-block;padding:6px 10px;border-radius:999px;background:#eaf8ff;color:#062b49;font-weight:800;font-size:12px}
+</style>
 </style>
 </head>
 <body>
@@ -363,7 +374,7 @@ Student Login
 </section>
 
 <section id="app" class="app">
-<div class="app-grid"><aside class="side"><b style="font-size:18px">AT</b><button class="active" onclick="dashTab('home',this)"><span>Dashboard</span></button><button onclick="dashTab('course',this)"><span>My Course</span></button><button onclick="dashTab('activity',this)"><span>Activities</span></button><button onclick="dashTab('quiz',this)"><span>Quizzes</span></button><button onclick="dashTab('exam',this);loadExamCentre()"><span>Exam Centre</span></button><button onclick="dashTab('videos',this);loadVideos()"><span>Videos</span></button><button onclick="dashTab('progress',this)"><span>Progress</span></button><button id="adminPaymentsButton" class="hidden" onclick="dashTab('adminPayments',this);loadAdminPayments()"><span>Payments</span></button></aside>
+<div class="app-grid"><aside class="side"><b style="font-size:18px">AT</b><button class="active" onclick="dashTab('home',this)"><span>Dashboard</span></button><button onclick="dashTab('course',this)"><span>My Course</span></button><button onclick="dashTab('activity',this)"><span>Activities</span></button><button onclick="dashTab('quiz',this)"><span>Quizzes</span></button><button onclick="dashTab('exam',this)"><span>Exam Centre</span></button><button onclick="dashTab('videos',this)"><span>Videos</span></button><button onclick="dashTab('progress',this)"><span>Progress</span></button><button id="adminPaymentsButton" class="hidden" onclick="dashTab('adminPayments',this);loadAdminPayments()"><span>Payments</span></button></aside>
 <div class="dash">
 <div id="dadminPayments" class="dtab hidden">
   <div style="display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;">
@@ -752,15 +763,23 @@ if (membership) {
   };
 
   const planName = planNames[plan] || 'Free';
+  const expires = meData.user.membership_expires || meData.user.expires_at || meData.user.expiry_date || '';
+  const active = plan !== 'free' && expires ? new Date(expires) >= new Date() : plan !== 'free';
 
   membership.innerHTML = `
-    <h3 style="margin:0 0 8px;">Membership Plan</h3>
-    <p style="margin:0;font-size:20px;font-weight:700;">
-      ${planName}
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+      <div>
+        <h3 style="margin:0 0 8px;">Membership Plan</h3>
+        <p style="margin:0;font-size:20px;font-weight:700;">${planName}</p>
+      </div>
+      <span style="display:inline-block;padding:7px 11px;border-radius:999px;font-size:12px;font-weight:800;background:${active ? '#e9f8ee' : '#fff1f2'};color:${active ? '#166534' : '#b91c1c'};">
+        ${active ? 'ACTIVE' : 'INACTIVE'}
+      </span>
+    </div>
+    <p class="muted" style="margin:8px 0 0;">
+      ${expires ? 'Access until: ' + new Date(expires).toLocaleDateString() : (plan === 'free' ? 'Free account â€” membership features are locked.' : 'Membership access is active.')}
     </p>
-    <p class="muted" style="margin:6px 0 0;">
-      Your current Aprann Tech membership
-    </p>
+    ${plan === 'free' || !active ? '<button class="primary" style="margin-top:12px;" onclick="openMembershipPlans()">Upgrade Membership</button>' : ''}
   `;
   }
 } 
@@ -821,13 +840,19 @@ async function registerStudent(){
     alert('Unable to connect to the server. Please try again.');
   }
 }
-function dashTab(id,btn){
+async function dashTab(id,btn){
   document.querySelectorAll('.dtab').forEach(x => x.classList.add('hidden'));
 
   const target = document.getElementById('d' + id);
   if(!target){
     console.error('Dashboard tab not found:', id);
     return;
+  }
+
+  // Membership-protected areas.
+  if(id === 'exam' || id === 'videos'){
+    const allowed = await requireMembership(id);
+    if(!allowed) return;
   }
 
   target.classList.remove('hidden');
@@ -845,6 +870,76 @@ function dashTab(id,btn){
 
   if(id === 'videos'){
     loadVideos();
+  }
+}
+
+async function getCurrentMembership(){
+  try{
+    const response = await fetch('/api/me');
+    const data = await response.json();
+
+    if(!response.ok || !data.authenticated || !data.user){
+      return {plan:'free', authenticated:false, user:null};
+    }
+
+    return {
+      plan:(data.user.plan || 'free').toLowerCase(),
+      authenticated:true,
+      user:data.user
+    };
+  }catch(error){
+    console.error('Membership check failed:',error);
+    return {plan:'free', authenticated:false, user:null};
+  }
+}
+
+function membershipRank(plan){
+  return {free:0,basic:1,standard:2,premium:3}[plan] || 0;
+}
+
+async function requireMembership(area){
+  const membership = await getCurrentMembership();
+
+  // Standard membership is required for the full Video Library and Exam Centre.
+  const requiredPlan = 'standard';
+
+  if(membership.authenticated && membershipRank(membership.plan) >= membershipRank(requiredPlan)){
+    return true;
+  }
+
+  const areaName = area === 'videos' ? 'Video Library' : 'Exam Centre';
+
+  const old = document.getElementById('membershipGate');
+  if(old) old.remove();
+
+  const win = document.createElement('div');
+  win.id = 'membershipGate';
+  win.style.cssText = 'position:fixed;inset:0;background:rgba(3,24,38,.72);display:flex;justify-content:center;align-items:center;padding:18px;z-index:12000;';
+  win.innerHTML = `
+    <div style="background:white;width:min(560px,96vw);border-radius:20px;padding:30px;box-shadow:0 25px 70px rgba(0,0,0,.35);text-align:center;">
+      <div class="lock-icon">ðŸ”’</div>
+      <span class="membership-pill">STANDARD MEMBERSHIP</span>
+      <h2 style="color:#062b49;margin:12px 0 8px;">${areaName} is a member feature</h2>
+      <p style="color:#64748b;line-height:1.6;">
+        Your current membership does not include the full ${areaName.toLowerCase()}.
+        Upgrade to <strong>Standard</strong> or <strong>Premium</strong> to unlock it.
+      </p>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:20px;">
+        <button class="primary" onclick="document.getElementById('membershipGate').remove();openMembershipPlans()">View Membership Plans</button>
+        <button class="outline" onclick="document.getElementById('membershipGate').remove()">Close</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(win);
+  return false;
+}
+
+function openMembershipPlans(){
+  const pricing = document.getElementById('pricing');
+  if(pricing){
+    hideAll();
+    document.getElementById('public').style.display='block';
+    setTimeout(()=>pricing.scrollIntoView({behavior:'smooth'}),50);
   }
 }
   async function loadMyCourse(){
