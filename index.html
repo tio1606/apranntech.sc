@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" content="Aprann Tech IGCSE ICT Extra-Class &#x2014; digital lessons, practical activities, quizzes, videos and exam preparation for students in Seychelles.">
+<meta name="description" content="Aprann Tech IGCSE ICT Academy &#x2014; digital lessons, practical activities, quizzes, videos and exam preparation for students in Seychelles.">
 <meta name="theme-color" content="#082f49">
-<meta property="og:title" content="Aprann Tech | IGCSE ICT Extra-Class">
+<meta property="og:title" content="Aprann Tech | IGCSE ICT Academy">
 <meta property="og:description" content="Learn IGCSE ICT theory, practical skills and exam preparation with Aprann Tech.">
 <meta property="og:type" content="website">
 
-<title>Aprann Tech | IGCSE ICT Extra-Class | Seychelles</title>
+<title>Aprann Tech | IGCSE ICT Academy | Seychelles</title>
 <style>
 :root{--navy:#082f49;--blue:#0284c7;--sky:#e0f2fe;--bg:#f8fafc;--text:#172033;--muted:#64748b;--white:#fff;--line:#dbe3ea;--green:#16a34a}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,Arial,sans-serif;background:var(--bg);color:var(--text)}a{text-decoration:none;color:inherit}button{border:0;border-radius:9px;padding:11px 17px;font-weight:700;cursor:pointer}.primary{background:var(--blue);color:white}.outline{background:white;border:1px solid var(--line);color:var(--navy)}.container{max-width:1180px;margin:auto;padding:0 22px}
@@ -926,12 +926,33 @@ async function requireMembership(area){
       </p>
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:20px;">
         <button class="primary" onclick="document.getElementById('membershipGate').remove();openMembershipPlans()">View Membership Plans</button>
-        <button class="outline" onclick="document.getElementById('membershipGate').remove()">Close</button>
+        <button class="outline" onclick="closeMembershipGate()">Close</button>
       </div>
     </div>
   `;
   document.body.appendChild(win);
   return false;
+}
+
+function closeMembershipGate(){
+  const gate = document.getElementById('membershipGate');
+  if(gate) gate.remove();
+
+  // Keep the student logged in and restore the dashboard view.
+  const app = document.getElementById('app');
+  const publicPage = document.getElementById('public');
+
+  if(app) app.style.display = 'block';
+  if(publicPage) publicPage.style.display = 'none';
+
+  // Return to the dashboard without changing the login/session.
+  document.querySelectorAll('.dtab').forEach(x => x.classList.add('hidden'));
+  const dashboard = document.getElementById('ddashboard');
+  if(dashboard) dashboard.classList.remove('hidden');
+
+  document.querySelectorAll('.side button').forEach(x => x.classList.remove('active'));
+  const dashboardButton = document.querySelector('.side button[onclick*="dashTab(\'dashboard\'"]');
+  if(dashboardButton) dashboardButton.classList.add('active');
 }
 
 function openMembershipPlans(){
