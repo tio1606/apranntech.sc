@@ -413,6 +413,11 @@ Student Login
   </div>
 
   <p class="muted">Continue your IGCSE ICT preparation.</p>
+  <div id="dashboardLearningStats" class="module-grid" style="margin-top:18px;">
+    <div class="module"><span class="badge">EXAMS</span><h3 id="dashboardExamCount" style="font-size:28px;margin:12px 0 4px;">0</h3><p class="muted" style="margin:0;">Completed</p></div>
+    <div class="module"><span class="badge">AVERAGE</span><h3 id="dashboardExamAverage" style="font-size:28px;margin:12px 0 4px;">0%</h3><p class="muted" style="margin:0;">Theory score</p></div>
+    <div class="module"><span class="badge">VIDEOS</span><h3 id="dashboardVideoCount" style="font-size:28px;margin:12px 0 4px;">0</h3><p class="muted" style="margin:0;">Watched</p></div>
+  </div>
 </div>
 <div id="dcourse" class="dtab hidden"><h1>My Course</h1><div class="module-grid"><div class="module"><h3>&#x1F5A5;&#xFE0F; Computer Systems</h3><p class="muted">82% complete</p><button class="outline" onclick="openModuleLesson('computer-systems')">Open</button></div><div class="module"><h3>&#x2328;&#xFE0F; Input & Output</h3><p class="muted">70% complete</p><button class="outline" onclick="openModuleLesson('input-output',1)">Open</button></div><div class="module"><h3>&#x1F310; Networks</h3><p class="muted">55% complete</p><button class="outline" onclick="openModuleLesson('networks',1)">Open</button></div><div class="module"><h3>&#x1F4CA; Data Handling</h3><p class="muted">58% complete</p><button class="outline" onclick="openModuleLesson('data-handling',1)">Open</button></div><div class="module"><h3>&#x1F5C3;&#xFE0F; Databases</h3><p class="muted">45% complete</p><button class="outline" onclick="openModuleLesson('databases',1)">Open</button></div><div class="module"><h3>&#x1F510; ICT & Society</h3><p class="muted">61% complete</p><button class="outline" onclick="openModuleLesson('ict-society',1)">Open</button></div></div></div>
 <div id="dactivity" class="dtab hidden"><h1>Practical Activities</h1><table class="table"><tr><th>Activity</th><th>Skill</th><th>Status</th></tr><tr><td>School Tuck Shop Spreadsheet</td><td>Excel</td><td><button class="outline" onclick="startDataActivity()">Open</button></td></tr><tr><td>Business Letter</td><td>Word</td><td>&#x1F7E1; In progress</td></tr><tr><td>Hotel Booking Database</td><td>Database</td><td>&#x1F512; Premium</td></tr></table></div>
@@ -478,6 +483,17 @@ Student Login
     <p class="muted" id="lastCompletedLesson">
       Last completed lesson: None
     </p>
+  </div>
+
+  <div id="progressActivitySummary" class="module-grid" style="margin-bottom:20px;">
+    <div class="module"><span class="badge">EXAMS</span><h3 id="progressExamCount" style="font-size:28px;margin:12px 0 4px;">0</h3><p class="muted" style="margin:0;">Exams completed</p></div>
+    <div class="module"><span class="badge">AVERAGE</span><h3 id="progressExamAverage" style="font-size:28px;margin:12px 0 4px;">0%</h3><p class="muted" style="margin:0;">Theory exam average</p></div>
+    <div class="module"><span class="badge">VIDEOS</span><h3 id="progressVideoCount" style="font-size:28px;margin:12px 0 4px;">0</h3><p class="muted" style="margin:0;">Videos watched</p></div>
+  </div>
+
+  <div class="module" style="margin-bottom:20px;">
+    <h2 style="margin-top:0;">My Exam Results</h2>
+    <div id="examResultsTable"><p class="muted">No exam attempts yet.</p></div>
   </div>
 
   <div id="realProgress">
@@ -787,6 +803,8 @@ if (membership) {
   console.error('Could not load student profile', error);
 }
 
+try{ const identity=await getStudentIdentity(); await renderExamAndVideoSummary(identity.email); }catch(e){ console.warn('Could not load learning stats.',e); }
+
 window.scrollTo(0,0);
   }catch(error){
     alert('Unable to connect to the server. Please try again.');
@@ -1025,8 +1043,95 @@ function openMembershipPlans(){
   }
 }
 
+function getStudentProgressKey(){
+  return 'aprannTechProgress_v1';
+}
+
+function getLocalStudentProgress(){
+  try{return JSON.parse(localStorage.getItem(getStudentProgressKey()) || '{}');}
+  catch(e){return {};}
+}
+
+function saveLocalStudentProgress(data){
+  localStorage.setItem(getStudentProgressKey(), JSON.stringify(data));
+}
+
+async function getStudentIdentity(){
+  try{
+    const r=await fetch('/api/me');
+    const d=await r.json();
+    if(d.authenticated && d.user){
+      return {email:(d.user.email||'student').toLowerCase(),name:d.user.name||'Student'};
+    }
+  }catch(e){console.warn('Could not identify student for local progress.',e);}
+  return {email:'student',name:'Student'};
+}
+
+async function saveExamResult(exam, score, total, percentage, autoSubmitted){
+  const identity=await getStudentIdentity();
+  const store=getLocalStudentProgress();
+  const key=identity.email;
+  if(!store[key]) store[key]={exams:[],watchedVideos:{}};
+  if(!Array.isArray(store[key].exams)) store[key].exams=[];
+  store[key].exams.unshift({
+    examId:exam.id,
+    examTitle:exam.title,
+    type:exam.type,
+    score,
+    total,
+    percentage,
+    submittedAt:new Date().toISOString(),
+    autoSubmitted:!!autoSubmitted
+  });
+  store[key].exams=store[key].exams.slice(0,50);
+  saveLocalStudentProgress(store);
+  renderExamAndVideoSummary(identity.email);
+}
+
+async function markVideoWatched(index){
+  const identity=await getStudentIdentity();
+  const store=getLocalStudentProgress();
+  const key=identity.email;
+  if(!store[key]) store[key]={exams:[],watchedVideos:{}};
+  if(!store[key].watchedVideos) store[key].watchedVideos={};
+  store[key].watchedVideos[String(index)]={watchedAt:new Date().toISOString()};
+  saveLocalStudentProgress(store);
+  renderExamAndVideoSummary(identity.email);
+}
+
+async function renderExamAndVideoSummary(email){
+  const store=getLocalStudentProgress();
+  const student=store[email] || {exams:[],watchedVideos:{}};
+  const exams=Array.isArray(student.exams)?student.exams:[];
+  const theory=exams.filter(x=>x.type==='theory');
+  const avg=theory.length ? Math.round(theory.reduce((a,x)=>a+(Number(x.percentage)||0),0)/theory.length) : 0;
+  const watched=Object.keys(student.watchedVideos||{}).length;
+  const countEl=document.getElementById('progressExamCount');
+  const avgEl=document.getElementById('progressExamAverage');
+  const videoEl=document.getElementById('progressVideoCount');
+  const dashCount=document.getElementById('dashboardExamCount');
+  const dashAvg=document.getElementById('dashboardExamAverage');
+  const dashVideo=document.getElementById('dashboardVideoCount');
+  if(countEl) countEl.textContent=exams.length;
+  if(avgEl) avgEl.textContent=avg+'%';
+  if(videoEl) videoEl.textContent=watched;
+  if(dashCount) dashCount.textContent=exams.length;
+  if(dashAvg) dashAvg.textContent=avg+'%';
+  if(dashVideo) dashVideo.textContent=watched;
+
+  const table=document.getElementById('examResultsTable');
+  if(table){
+    if(!exams.length){
+      table.innerHTML='<p class="muted">No exam attempts yet. Complete a theory exam to see your results here.</p>';
+    }else{
+      table.innerHTML=`<div style="overflow:auto;"><table class="table"><thead><tr><th>Exam</th><th>Type</th><th>Score</th><th>Percentage</th><th>Date</th></tr></thead><tbody>${exams.map(x=>`<tr><td>${x.examTitle}</td><td>${x.type==='theory'?'Theory':'Practical'}</td><td>${x.score}/${x.total}</td><td><strong>${x.percentage}%</strong></td><td>${new Date(x.submittedAt).toLocaleDateString()}</td></tr>`).join('')}</tbody></table></div>`;
+    }
+  }
+}
+
 async function loadProgress() {
   const container = document.getElementById('realProgress');
+  try{ const identity=await getStudentIdentity(); await renderExamAndVideoSummary(identity.email); }catch(e){ console.warn('Activity progress summary unavailable.',e); }
 
   if (!container) return;
 
@@ -6969,6 +7074,7 @@ function renderTheoryExam(win, exam){
 
     const percentage = Math.round((score/exam.questions.length)*100);
     const unanswered = answers.filter(x=>x===null).length;
+    saveExamResult(exam, score, exam.questions.length, percentage, autoSubmitted);
 
     win.innerHTML = `
       <div style="background:white;width:min(650px,94vw);border-radius:20px;padding:38px;text-align:center;box-shadow:0 25px 70px rgba(0,0,0,.3);">
@@ -7051,12 +7157,17 @@ function renderPracticalExam(win, exam){
   },1000);
 }
 
-function loadVideos(){
+async function loadVideos(){
   const grid = document.getElementById('videoGrid');
   if(!grid) return;
+  const identity=await getStudentIdentity();
+  const store=getLocalStudentProgress();
+  const student=store[identity.email] || {watchedVideos:{}};
+  const watched=student.watchedVideos || {};
 
   grid.innerHTML = videoLibrary.map((video,index)=>{
     const ready = Boolean(video.url);
+    const wasWatched=!!watched[String(index)];
     return `
       <div class="module" style="overflow:hidden;padding:0;">
         <div style="height:150px;background:linear-gradient(135deg,#062b49,#0077b6);display:grid;place-items:center;color:white;font-size:48px;">
@@ -7066,6 +7177,7 @@ function loadVideos(){
           <span class="badge">${video.topic}</span>
           <h3 style="margin:12px 0 7px;">${video.title}</h3>
           <p class="muted">${video.description}</p>
+          ${wasWatched ? '<div style="margin-top:10px;color:#166534;font-weight:800;font-size:13px;">âœ“ Watched</div>' : ''}
           ${ready
             ? `<button class="primary" style="width:100%;margin-top:10px;" onclick="openVideo(${index})">\u25B6 Watch Video</button>`
             : `<button class="outline" style="width:100%;margin-top:10px;" onclick="alert('This video is not connected yet. Add the YouTube link to videoLibrary in the HTML file.')">\uD83C\uDFA5 Video Coming Soon</button>`
@@ -7079,6 +7191,7 @@ function loadVideos(){
 function openVideo(index){
   const video = videoLibrary[index];
   if(!video || !video.url) return;
+  markVideoWatched(index);
 
   const old = document.getElementById('videoWindow');
   if(old) old.remove();
