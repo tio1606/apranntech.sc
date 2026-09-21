@@ -1,11 +1,9 @@
-/**
- * Aprann Tech - Cloudflare Worker backend
- * Version 1: authentication, sessions and membership
- */
+var __defProp = Object.defineProperty;
+var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
-const SESSION_DAYS = 7;
-const PBKDF2_ITERATIONS = 100000;
-
+// worker.js
+var SESSION_DAYS = 7;
+var PBKDF2_ITERATIONS = 1e5;
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
@@ -15,45 +13,37 @@ function json(data, status = 200) {
     }
   });
 }
-
+__name(json, "json");
 function normalizeEmail(value) {
   return String(value || "").trim().toLowerCase();
 }
-
+__name(normalizeEmail, "normalizeEmail");
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
-
+__name(isValidEmail, "isValidEmail");
 function bytesToHex(bytes) {
-  return [...new Uint8Array(bytes)]
-    .map(b => b.toString(16).padStart(2, "0"))
-    .join("");
+  return [...new Uint8Array(bytes)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
-
+__name(bytesToHex, "bytesToHex");
 function bytesToBase64Url(bytes) {
   let binary = "";
   for (const b of new Uint8Array(bytes)) binary += String.fromCharCode(b);
-  return btoa(binary)
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/g, "");
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
-
+__name(bytesToBase64Url, "bytesToBase64Url");
 function base64UrlToBytes(value) {
-  const base64 =
-    value.replace(/-/g, "+").replace(/_/g, "/") +
-    "===".slice((value.length + 3) % 4);
-
+  const base64 = value.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((value.length + 3) % 4);
   const binary = atob(base64);
-  return Uint8Array.from(binary, c => c.charCodeAt(0));
+  return Uint8Array.from(binary, (c) => c.charCodeAt(0));
 }
-
+__name(base64UrlToBytes, "base64UrlToBytes");
 async function randomBytes(length) {
   const bytes = new Uint8Array(length);
   crypto.getRandomValues(bytes);
   return bytes;
 }
-
+__name(randomBytes, "randomBytes");
 async function sha256Hex(text) {
   const digest = await crypto.subtle.digest(
     "SHA-256",
@@ -61,10 +51,9 @@ async function sha256Hex(text) {
   );
   return bytesToHex(digest);
 }
-
+__name(sha256Hex, "sha256Hex");
 async function hashPassword(password) {
   const salt = await randomBytes(16);
-
   const key = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(password),
@@ -72,7 +61,6 @@ async function hashPassword(password) {
     false,
     ["deriveBits"]
   );
-
   const bits = await crypto.subtle.deriveBits(
     {
       name: "PBKDF2",
@@ -83,33 +71,26 @@ async function hashPassword(password) {
     key,
     256
   );
-
   return `pbkdf2$${PBKDF2_ITERATIONS}$${bytesToBase64Url(
     salt
   )}$${bytesToBase64Url(new Uint8Array(bits))}`;
 }
-
+__name(hashPassword, "hashPassword");
 function constantTimeEqual(a, b) {
   if (a.length !== b.length) return false;
-
   let result = 0;
-
   for (let i = 0; i < a.length; i++) {
     result |= a.charCodeAt(i) ^ b.charCodeAt(i);
   }
-
   return result === 0;
 }
-
+__name(constantTimeEqual, "constantTimeEqual");
 async function verifyPassword(password, stored) {
   if (!stored) {
     return { ok: false, upgrade: false };
   }
-
-  // Support existing SHA-256 password hashes.
   if (/^[0-9a-f]{64}$/i.test(stored)) {
     const candidate = await sha256Hex(password);
-
     return {
       ok: constantTimeEqual(
         candidate.toLowerCase(),
@@ -118,26 +99,14 @@ async function verifyPassword(password, stored) {
       upgrade: true
     };
   }
-
   const parts = stored.split("$");
-
-  if (
-    parts.length !== 4 ||
-    parts[0] !== "pbkdf2"
-  ) {
+  if (parts.length !== 4 || parts[0] !== "pbkdf2") {
     return { ok: false, upgrade: false };
   }
-
   const iterations = Number(parts[1]);
-
-  if (
-    !Number.isInteger(iterations) ||
-    iterations < 10000 ||
-    iterations > 1000000
-  ) {
+  if (!Number.isInteger(iterations) || iterations < 1e4 || iterations > 1e6) {
     return { ok: false, upgrade: false };
   }
-
   try {
     const salt = base64UrlToBytes(parts[2]);
     const key = await crypto.subtle.importKey(
@@ -147,7 +116,6 @@ async function verifyPassword(password, stored) {
       false,
       ["deriveBits"]
     );
-
     const bits = await crypto.subtle.deriveBits(
       {
         name: "PBKDF2",
@@ -158,11 +126,9 @@ async function verifyPassword(password, stored) {
       key,
       256
     );
-
     const candidate = bytesToBase64Url(
       new Uint8Array(bits)
     );
-
     return {
       ok: constantTimeEqual(candidate, parts[3]),
       upgrade: false
@@ -171,31 +137,23 @@ async function verifyPassword(password, stored) {
     return { ok: false, upgrade: false };
   }
 }
-
+__name(verifyPassword, "verifyPassword");
 async function newSession(env, userId) {
   const token = bytesToBase64Url(
     await randomBytes(32)
   );
-
   const expires = new Date(
-    Date.now() + SESSION_DAYS * 86400000
-  )
-    .toISOString()
-    .slice(0, 19)
-    .replace("T"," ");
-
+    Date.now() + SESSION_DAYS * 864e5
+  ).toISOString().slice(0, 19).replace("T", " ");
   await env.DB.prepare(
     "INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)"
-  )
-    .bind(token, userId, expires)
-    .run();
-
+  ).bind(token, userId, expires).run();
   return {
     token,
     expires
   };
 }
-
+__name(newSession, "newSession");
 function sessionCookie(token, expires) {
   return [
     `AT_SESSION=${token}`,
@@ -206,7 +164,7 @@ function sessionCookie(token, expires) {
     `Expires=${new Date(expires).toUTCString()}`
   ].join("; ");
 }
-
+__name(sessionCookie, "sessionCookie");
 function clearSessionCookie() {
   return [
     "AT_SESSION=",
@@ -217,31 +175,26 @@ function clearSessionCookie() {
     "Max-Age=0"
   ].join("; ");
 }
-
+__name(clearSessionCookie, "clearSessionCookie");
 function getCookie(request, name) {
   const raw = request.headers.get("Cookie") || "";
-
   for (const part of raw.split(";")) {
     const [key, ...rest] = part.trim().split("=");
-
     if (key === name) {
       return rest.join("=");
     }
   }
-
   return null;
 }
-
+__name(getCookie, "getCookie");
 async function getSessionUser(request, env) {
   const token = getCookie(
     request,
     "AT_SESSION"
   );
-
   if (!token) {
     return null;
   }
-
   const row = await env.DB.prepare(`
     SELECT
       u.id,
@@ -260,26 +213,20 @@ async function getSessionUser(request, env) {
       s.token = ?
       AND s.expires_at > datetime('now')
     LIMIT 1
-  `)
-    .bind(token)
-    .first();
-
+  `).bind(token).first();
   if (!row) {
     return null;
   }
-
   return row;
 }
-
+__name(getSessionUser, "getSessionUser");
 async function ensureMembershipColumns(env) {
   try {
     const columns = await env.DB.prepare("PRAGMA table_info(users)").all();
-    const names = new Set((columns.results || []).map(column => column.name));
-
+    const names = new Set((columns.results || []).map((column) => column.name));
     if (!names.has("plan_started_at")) {
       await env.DB.prepare("ALTER TABLE users ADD COLUMN plan_started_at TEXT").run();
     }
-
     if (!names.has("plan_expires_at")) {
       await env.DB.prepare("ALTER TABLE users ADD COLUMN plan_expires_at TEXT").run();
     }
@@ -288,11 +235,215 @@ async function ensureMembershipColumns(env) {
     throw error;
   }
 }
+__name(ensureMembershipColumns, "ensureMembershipColumns");
+async function ensurePaymentColumns(env) {
+  try {
+    const columns = await env.DB.prepare("PRAGMA table_info(payments)").all();
+    const names = new Set((columns.results || []).map((column) => column.name));
+    if (!names.has("approved_at")) {
+      await env.DB.prepare("ALTER TABLE payments ADD COLUMN approved_at TEXT").run();
+    }
+  } catch (error) {
+    console.error("payment schema check error", error);
+    throw error;
+  }
+}
+__name(ensurePaymentColumns, "ensurePaymentColumns");
+
+async function ensureActivityTables(env) {
+  try {
+    await env.DB.prepare(`
+      CREATE TABLE IF NOT EXISTS exam_results (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        exam_id TEXT NOT NULL,
+        exam_title TEXT NOT NULL,
+        exam_type TEXT NOT NULL,
+        score INTEGER NOT NULL,
+        total INTEGER NOT NULL,
+        percentage REAL NOT NULL,
+        auto_submitted INTEGER NOT NULL DEFAULT 0,
+        submitted_at TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY(user_id) REFERENCES users(id)
+      )
+    `).run();
+
+    await env.DB.prepare(`
+      CREATE TABLE IF NOT EXISTS video_activity (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        video_index INTEGER NOT NULL,
+        watched_at TEXT NOT NULL DEFAULT (datetime('now')),
+        UNIQUE(user_id, video_index),
+        FOREIGN KEY(user_id) REFERENCES users(id)
+      )
+    `).run();
+  } catch (error) {
+    console.error("activity schema check error", error);
+    throw error;
+  }
+}
+__name(ensureActivityTables, "ensureActivityTables");
+
+async function handleSaveExamResult(request, env) {
+  const user = await getSessionUser(request, env);
+  if (!user) return json({ error: "Not authenticated." }, 401);
+
+  try {
+    const body = await request.json();
+    const examId = String(body.exam_id || "").trim();
+    const examTitle = String(body.exam_title || "").trim();
+    const examType = String(body.exam_type || "").trim().toLowerCase();
+    const score = Number(body.score);
+    const total = Number(body.total);
+    const percentage = Number(body.percentage);
+    const autoSubmitted = body.auto_submitted ? 1 : 0;
+
+    if (!examId || !examTitle || !["theory","practical"].includes(examType) ||
+        !Number.isInteger(score) || !Number.isInteger(total) ||
+        total < 1 || score < 0 || score > total ||
+        !Number.isFinite(percentage) || percentage < 0 || percentage > 100) {
+      return json({ error: "Invalid exam result." }, 400);
+    }
+
+    await env.DB.prepare(`
+      INSERT INTO exam_results
+        (user_id, exam_id, exam_title, exam_type, score, total, percentage, auto_submitted)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      user.id, examId, examTitle, examType,
+      score, total, percentage, autoSubmitted
+    ).run();
+
+    return json({ success: true });
+  } catch (error) {
+    console.error("exam result save error", error);
+    return json({ error: "Unable to save exam result." }, 500);
+  }
+}
+__name(handleSaveExamResult, "handleSaveExamResult");
+
+async function handleSaveVideoActivity(request, env) {
+  const user = await getSessionUser(request, env);
+  if (!user) return json({ error: "Not authenticated." }, 401);
+
+  try {
+    const body = await request.json();
+    const videoIndex = Number(body.video_index);
+    if (!Number.isInteger(videoIndex) || videoIndex < 0) {
+      return json({ error: "Invalid video activity." }, 400);
+    }
+
+    await env.DB.prepare(`
+      INSERT INTO video_activity (user_id, video_index, watched_at)
+      VALUES (?, ?, datetime('now'))
+      ON CONFLICT(user_id, video_index)
+      DO UPDATE SET watched_at = datetime('now')
+    `).bind(user.id, videoIndex).run();
+
+    return json({ success: true });
+  } catch (error) {
+    console.error("video activity save error", error);
+    return json({ error: "Unable to save video activity." }, 500);
+  }
+}
+__name(handleSaveVideoActivity, "handleSaveVideoActivity");
+
+async function handleAdminStats(request, env) {
+  const admin = await requireAdmin(request, env);
+  if (!admin) return json({ error: "Admin access required." }, 403);
+
+  const [students, active, exams, videos] = await Promise.all([
+    env.DB.prepare(`SELECT COUNT(*) AS count FROM users`).first(),
+    env.DB.prepare(`
+      SELECT COUNT(*) AS count
+      FROM users
+      WHERE lower(plan) IN ('basic','standard','premium')
+        AND plan_expires_at IS NOT NULL
+        AND plan_expires_at > datetime('now')
+    `).first(),
+    env.DB.prepare(`SELECT COUNT(*) AS count FROM exam_results`).first(),
+    env.DB.prepare(`SELECT COUNT(*) AS count FROM video_activity`).first()
+  ]);
+
+  return json({
+    success: true,
+    stats: {
+      students: Number(students?.count || 0),
+      activeMemberships: Number(active?.count || 0),
+      examAttempts: Number(exams?.count || 0),
+      videoActivity: Number(videos?.count || 0)
+    }
+  });
+}
+__name(handleAdminStats, "handleAdminStats");
+
+async function handleAdminStudents(request, env) {
+  const admin = await requireAdmin(request, env);
+  if (!admin) return json({ error: "Admin access required." }, 403);
+
+  const result = await env.DB.prepare(`
+    SELECT
+      id,
+      name,
+      email,
+      plan,
+      plan_started_at,
+      plan_expires_at,
+      created_at
+    FROM users
+    ORDER BY id DESC
+  `).all();
+
+  const students = (result.results || []).map((user) => {
+    const membership = membershipInfo(user);
+    return {
+      id: user.id,
+      name: user.name || "",
+      email: user.email || "",
+      plan: membership.plan,
+      membership_active: membership.active,
+      plan_started_at: membership.started_at,
+      plan_expires_at: membership.expires_at,
+      created_at: user.created_at
+    };
+  });
+
+  return json({ success: true, students });
+}
+__name(handleAdminStudents, "handleAdminStudents");
+
+async function handleAdminResults(request, env) {
+  const admin = await requireAdmin(request, env);
+  if (!admin) return json({ error: "Admin access required." }, 403);
+
+  const result = await env.DB.prepare(`
+    SELECT
+      er.id,
+      er.exam_id,
+      er.exam_title,
+      er.exam_type,
+      er.score,
+      er.total,
+      er.percentage,
+      er.auto_submitted,
+      er.submitted_at,
+      u.id AS student_id,
+      u.name AS student_name,
+      u.email AS student_email
+    FROM exam_results er
+    JOIN users u ON u.id = er.user_id
+    ORDER BY er.submitted_at DESC, er.id DESC
+    LIMIT 500
+  `).all();
+
+  return json({ success: true, results: result.results || [] });
+}
+__name(handleAdminResults, "handleAdminResults");
 
 function membershipInfo(user) {
   const plan = String(user.plan || "free").toLowerCase();
   const paidPlans = ["basic", "standard", "premium"];
-
   if (!paidPlans.includes(plan) || !user.plan_expires_at) {
     return {
       plan: "free",
@@ -301,15 +452,10 @@ function membershipInfo(user) {
       expires_at: user.plan_expires_at || null
     };
   }
-
-  const expiresAt = new Date(
+  const expiresAt = /* @__PURE__ */ new Date(
     String(user.plan_expires_at).replace(" ", "T") + "Z"
   );
-
-  const active =
-    !Number.isNaN(expiresAt.getTime()) &&
-    expiresAt.getTime() > Date.now();
-
+  const active = !Number.isNaN(expiresAt.getTime()) && expiresAt.getTime() > Date.now();
   return {
     plan: active ? plan : "free",
     active,
@@ -317,10 +463,9 @@ function membershipInfo(user) {
     expires_at: user.plan_expires_at
   };
 }
-
+__name(membershipInfo, "membershipInfo");
 function publicUser(user) {
   const membership = membershipInfo(user);
-
   return {
     id: user.id,
     email: user.email,
@@ -332,10 +477,9 @@ function publicUser(user) {
     created_at: user.created_at
   };
 }
-
+__name(publicUser, "publicUser");
 async function handleRegister(request, env) {
   let body;
-
   try {
     body = await request.json();
   } catch {
@@ -344,104 +488,75 @@ async function handleRegister(request, env) {
       400
     );
   }
-
   const name = String(
     body.name || ""
   ).trim();
-
   const email = normalizeEmail(
     body.email
   );
-
   const password = String(
     body.password || ""
   );
-
   if (name.length < 2) {
     return json(
       { error: "Please enter your name." },
       400
     );
   }
-
   if (!isValidEmail(email)) {
     return json(
       { error: "Please enter a valid email address." },
       400
     );
   }
-
   if (password.length < 8) {
     return json(
       {
-        error:
-          "Password must be at least 8 characters."
+        error: "Password must be at least 8 characters."
       },
       400
     );
   }
-
   const existing = await env.DB.prepare(
     "SELECT id FROM users WHERE lower(email) = ? LIMIT 1"
-  )
-    .bind(email)
-    .first();
-
+  ).bind(email).first();
   if (existing) {
     return json(
       {
-        error:
-          "An account with this email already exists."
+        error: "An account with this email already exists."
       },
       409
     );
   }
-
-  const passwordHash =
-    await hashPassword(password);
-
+  const passwordHash = await hashPassword(password);
   try {
     const result = await env.DB.prepare(
       "INSERT INTO users (email, password_hash, name, plan) VALUES (?, ?, ?, 'free')"
-    )
-      .bind(
-        email,
-        passwordHash,
-        name
-      )
-      .run();
-
-    const userId =
-      result.meta?.last_row_id;
-
+    ).bind(
+      email,
+      passwordHash,
+      name
+    ).run();
+    const userId = result.meta?.last_row_id;
     if (!userId) {
       return json(
         {
-          error:
-            "Account created, but the session could not be started."
+          error: "Account created, but the session could not be started."
         },
         500
       );
     }
-
-    const session =
-      await newSession(
-        env,
-        userId
-      );
-
-    const user =
-      await env.DB.prepare(
-        "SELECT id, email, name, plan, created_at FROM users WHERE id = ?"
-      )
-        .bind(userId)
-        .first();
-
+    const session = await newSession(
+      env,
+      userId
+    );
+    const user = await env.DB.prepare(
+      "SELECT id, email, name, plan, created_at FROM users WHERE id = ?"
+    ).bind(userId).first();
     const response = json({
       ok: true,
       user: publicUser(user)
     });
-
     response.headers.append(
       "Set-Cookie",
       sessionCookie(
@@ -449,27 +564,23 @@ async function handleRegister(request, env) {
         session.expires
       )
     );
-
     return response;
   } catch (error) {
     console.error(
       "register error",
       error
     );
-
     return json(
       {
-        error:
-          "Could not create the account."
+        error: "Could not create the account."
       },
       500
     );
   }
 }
-
+__name(handleRegister, "handleRegister");
 async function handleLogin(request, env) {
   let body;
-
   try {
     body = await request.json();
   } catch {
@@ -478,31 +589,22 @@ async function handleLogin(request, env) {
       400
     );
   }
-
   const email = normalizeEmail(
     body.email
   );
-
   const password = String(
     body.password || ""
   );
-
-  if (
-    !isValidEmail(email) ||
-    !password
-  ) {
+  if (!isValidEmail(email) || !password) {
     return json(
       {
-        error:
-          "Please enter your email and password."
+        error: "Please enter your email and password."
       },
       400
     );
   }
-
-  const user =
-    await env.DB.prepare(
-      `SELECT
+  const user = await env.DB.prepare(
+    `SELECT
         id,
         email,
         password_hash,
@@ -514,63 +616,44 @@ async function handleLogin(request, env) {
        FROM users
        WHERE lower(email) = ?
        LIMIT 1`
-    )
-      .bind(email)
-      .first();
-
+  ).bind(email).first();
   if (!user) {
     return json(
       {
-        error:
-          "Incorrect email or password."
+        error: "Incorrect email or password."
       },
       401
     );
   }
-
-  const check =
-    await verifyPassword(
-      password,
-      user.password_hash
-    );
-
+  const check = await verifyPassword(
+    password,
+    user.password_hash
+  );
   if (!check.ok) {
     return json(
       {
-        error:
-          "Incorrect email or password."
+        error: "Incorrect email or password."
       },
       401
     );
   }
-
-  // Upgrade old SHA-256 passwords
-  // after a successful login.
   if (check.upgrade) {
-    const upgraded =
-      await hashPassword(password);
-
+    const upgraded = await hashPassword(password);
     await env.DB.prepare(
       "UPDATE users SET password_hash = ? WHERE id = ?"
-    )
-      .bind(
-        upgraded,
-        user.id
-      )
-      .run();
-  }
-
-  const session =
-    await newSession(
-      env,
+    ).bind(
+      upgraded,
       user.id
-    );
-
+    ).run();
+  }
+  const session = await newSession(
+    env,
+    user.id
+  );
   const response = json({
     ok: true,
     user: publicUser(user)
   });
-
   response.headers.append(
     "Set-Cookie",
     sessionCookie(
@@ -578,73 +661,52 @@ async function handleLogin(request, env) {
       session.expires
     )
   );
-
   return response;
 }
-
+__name(handleLogin, "handleLogin");
 async function handleMe(request, env) {
-  const user =
-    await getSessionUser(
-      request,
-      env
-    );
-
+  const user = await getSessionUser(
+    request,
+    env
+  );
   return json({
     authenticated: !!user,
-    user: user
-      ? publicUser(user)
-      : null
+    user: user ? publicUser(user) : null
   });
 }
-
+__name(handleMe, "handleMe");
 async function handleLogout(request, env) {
-  const token =
-    getCookie(
-      request,
-      "AT_SESSION"
-    );
-
+  const token = getCookie(
+    request,
+    "AT_SESSION"
+  );
   if (token) {
     await env.DB.prepare(
       "DELETE FROM sessions WHERE token = ?"
-    )
-      .bind(token)
-      .run();
+    ).bind(token).run();
   }
-
-  const response =
-    json({ ok: true });
-
+  const response = json({ ok: true });
   response.headers.append(
     "Set-Cookie",
     clearSessionCookie()
   );
-
   return response;
 }
-
-async function handleCourses(
-  request,
-  env
-) {
-  const user =
-    await getSessionUser(
-      request,
-      env
-    );
-
+__name(handleLogout, "handleLogout");
+async function handleCourses(request, env) {
+  const user = await getSessionUser(
+    request,
+    env
+  );
   if (!user) {
     return json(
       {
-        error:
-          "Not authenticated"
+        error: "Not authenticated"
       },
       401
     );
   }
-
-  const result =
-    await env.DB.prepare(`
+  const result = await env.DB.prepare(`
       SELECT
         id,
         title,
@@ -657,29 +719,24 @@ async function handleCourses(
       FROM courses
       WHERE is_published = 1
       ORDER BY id
-    `)
-      .all();
-
+    `).all();
   return json({
     user: publicUser(user),
-    courses:
-      result.results || []
+    courses: result.results || []
   });
 }
-
+__name(handleCourses, "handleCourses");
 async function handleLessonProgressGet(request, env) {
   const user = await getSessionUser(
     request,
     env
   );
-
   if (!user) {
     return json(
       { error: "Not authenticated" },
       401
     );
   }
-
   try {
     const result = await env.DB.prepare(`
       SELECT
@@ -690,50 +747,37 @@ async function handleLessonProgressGet(request, env) {
       FROM lesson_progress
       WHERE user_id = ?
       ORDER BY module_slug, lesson_number
-    `)
-      .bind(user.id)
-      .all();
-
+    `).bind(user.id).all();
     return json({
       success: true,
       progress: result.results || []
     });
-
   } catch (error) {
     console.error(
       "lesson progress read error",
       error
     );
-
     return json(
       { error: "Unable to load lesson progress." },
       500
     );
   }
 }
-async function handleCourse(
-  request,
-  env,
-  courseId
-) {
-  const user =
-    await getSessionUser(
-      request,
-      env
-    );
-
+__name(handleLessonProgressGet, "handleLessonProgressGet");
+async function handleCourse(request, env, courseId) {
+  const user = await getSessionUser(
+    request,
+    env
+  );
   if (!user) {
     return json(
       {
-        error:
-          "Not authenticated"
+        error: "Not authenticated"
       },
       401
     );
   }
-
-  const course =
-    await env.DB.prepare(`
+  const course = await env.DB.prepare(`
       SELECT
         id,
         title,
@@ -747,22 +791,16 @@ async function handleCourse(
       WHERE
         id = ?
         AND is_published = 1
-    `)
-      .bind(courseId)
-      .first();
-
+    `).bind(courseId).first();
   if (!course) {
     return json(
       {
-        error:
-          "Course not found."
+        error: "Course not found."
       },
       404
     );
   }
-
-  const lessons =
-    await env.DB.prepare(`
+  const lessons = await env.DB.prepare(`
       SELECT
         id,
         course_id,
@@ -781,44 +819,26 @@ async function handleCourse(
       ORDER BY
         sort_order,
         id
-    `)
-      .bind(courseId)
-      .all();
-
+    `).bind(courseId).all();
   const isPaid = membershipInfo(user).active;
-
   return json({
     user: publicUser(user),
     course,
-    lessons:
-      (lessons.results || [])
-        .map(lesson => {
-          const allowed =
-            Number(
-              lesson.is_free
-            ) === 1 ||
-            isPaid;
-
-          return {
-            ...lesson,
-            content:
-              allowed
-                ? lesson.content
-                : "",
-            video_url:
-              allowed
-                ? lesson.video_url
-                : "",
-            locked:
-              !allowed
-          };
-        })
+    lessons: (lessons.results || []).map((lesson) => {
+      const allowed = Number(
+        lesson.is_free
+      ) === 1 || isPaid;
+      return {
+        ...lesson,
+        content: allowed ? lesson.content : "",
+        video_url: allowed ? lesson.video_url : "",
+        locked: !allowed
+      };
+    })
   });
 }
-
-async function cleanupExpiredSessions(
-  env
-) {
+__name(handleCourse, "handleCourse");
+async function cleanupExpiredSessions(env) {
   try {
     await env.DB.prepare(
       "DELETE FROM sessions WHERE expires_at <= datetime('now')"
@@ -830,7 +850,7 @@ async function cleanupExpiredSessions(
     );
   }
 }
-
+__name(cleanupExpiredSessions, "cleanupExpiredSessions");
 function paymentPlanDetails(plan) {
   const plans = {
     basic: { name: "Basic", amount: 150 },
@@ -839,27 +859,21 @@ function paymentPlanDetails(plan) {
   };
   return plans[String(plan || "").toLowerCase()] || null;
 }
-
+__name(paymentPlanDetails, "paymentPlanDetails");
 async function createPaymentReference() {
   const bytes = await randomBytes(5);
-  return "AT-" + new Date().toISOString().slice(0,10).replace(/-/g,"") + "-" +
-    bytesToHex(bytes).slice(0, 8).toUpperCase();
+  return "AT-" + (/* @__PURE__ */ new Date()).toISOString().slice(0, 10).replace(/-/g, "") + "-" + bytesToHex(bytes).slice(0, 8).toUpperCase();
 }
-
+__name(createPaymentReference, "createPaymentReference");
 async function handleCreatePayment(request, env) {
   const user = await getSessionUser(request, env);
-
   if (!user) return json({ error: "Not authenticated." }, 401);
-
   try {
     const body = await request.json();
     const plan = String(body.plan || "").trim().toLowerCase();
     const details = paymentPlanDetails(plan);
-
     if (!details) return json({ error: "Invalid membership plan." }, 400);
-
     const reference = await createPaymentReference();
-
     await env.DB.prepare(`
       INSERT INTO payments
         (user_email, amount, currency, status, payment_intent_id, description, transaction_reference, plan)
@@ -872,7 +886,6 @@ async function handleCreatePayment(request, env) {
       reference,
       plan
     ).run();
-
     return json({
       success: true,
       payment: {
@@ -892,22 +905,20 @@ async function handleCreatePayment(request, env) {
     return json({ error: "Unable to create payment request." }, 500);
   }
 }
-
-
+__name(handleCreatePayment, "handleCreatePayment");
 function isAdminEmail(email) {
   return normalizeEmail(email) === "digitalie.sc@gmail.com";
 }
-
+__name(isAdminEmail, "isAdminEmail");
 async function requireAdmin(request, env) {
   const user = await getSessionUser(request, env);
   if (!user || !isAdminEmail(user.email)) return null;
   return user;
 }
-
+__name(requireAdmin, "requireAdmin");
 async function handleAdminPayments(request, env) {
   const admin = await requireAdmin(request, env);
   if (!admin) return json({ error: "Admin access required." }, 403);
-
   const result = await env.DB.prepare(`
     SELECT id, user_email, amount, currency, status, payment_intent_id,
            created_at, description, transaction_reference, plan
@@ -915,116 +926,95 @@ async function handleAdminPayments(request, env) {
     WHERE status = 'pending'
     ORDER BY id DESC
   `).all();
-
-  return json({ success:true, payments: result.results || [] });
+  return json({ success: true, payments: result.results || [] });
 }
-
+__name(handleAdminPayments, "handleAdminPayments");
 async function handleAdminPaymentHistory(request, env) {
   const admin = await requireAdmin(request, env);
   if (!admin) return json({ error: "Admin access required." }, 403);
-
   const result = await env.DB.prepare(`
     SELECT id, user_email, amount, currency, status, payment_intent_id,
-           created_at, description, transaction_reference, plan, approved_at
+           created_at, approved_at, description, transaction_reference, plan
     FROM payments
     WHERE status = 'paid'
-    ORDER BY id DESC
+    ORDER BY COALESCE(approved_at, created_at) DESC, id DESC
+    LIMIT 100
   `).all();
-
   return json({ success: true, payments: result.results || [] });
 }
-
+__name(handleAdminPaymentHistory, "handleAdminPaymentHistory");
 async function handleAdminApprovePayment(request, env) {
   const admin = await requireAdmin(request, env);
   if (!admin) return json({ error: "Admin access required." }, 403);
-
   try {
     const body = await request.json();
     const paymentId = Number(body.payment_id);
     const transactionReference = String(body.transaction_reference || "").trim();
-
     if (!Number.isInteger(paymentId) || paymentId < 1) {
       return json({ error: "Invalid payment." }, 400);
     }
-
     const payment = await env.DB.prepare(`
       SELECT id, user_email, amount, currency, status, transaction_reference, plan
       FROM payments WHERE id = ? LIMIT 1
     `).bind(paymentId).first();
-
     if (!payment) return json({ error: "Payment not found." }, 404);
     if (payment.status === "paid") return json({ error: "Payment is already approved." }, 409);
-
     const details = paymentPlanDetails(payment.plan);
     if (!details) return json({ error: "Invalid membership plan on payment." }, 400);
-
     const user = await env.DB.prepare(`
       SELECT id, email, name FROM users WHERE lower(email) = ? LIMIT 1
     `).bind(normalizeEmail(payment.user_email)).first();
-
     if (!user) return json({ error: "Student account not found." }, 404);
-
-    const started = new Date();
-    const expires = new Date(started.getTime() + 30 * 86400000);
-    const startedSql = started.toISOString().slice(0,19).replace("T"," ");
-    const expiresSql = expires.toISOString().slice(0,19).replace("T"," ");
-
+    const started = /* @__PURE__ */ new Date();
+    const expires = new Date(started.getTime() + 30 * 864e5);
+    const startedSql = started.toISOString().slice(0, 19).replace("T", " ");
+    const expiresSql = expires.toISOString().slice(0, 19).replace("T", " ");
     await env.DB.prepare(`
       UPDATE users
       SET plan = ?, plan_started_at = ?, plan_expires_at = ?
       WHERE id = ?
     `).bind(payment.plan, startedSql, expiresSql, user.id).run();
-
     await env.DB.prepare(`
       UPDATE payments
       SET status = 'paid',
-          transaction_reference = ?
+          transaction_reference = ?,
+          approved_at = datetime('now')
       WHERE id = ?
     `).bind(transactionReference || payment.transaction_reference, paymentId).run();
-
     return json({
-      success:true,
-      message:"Payment approved and 30-day membership activated.",
-      membership:{
+      success: true,
+      message: "Payment approved and 30-day membership activated.",
+      membership: {
         plan: details.name,
         started_at: startedSql,
         expires_at: expiresSql,
         student_email: user.email
       }
     });
-  } catch(error) {
+  } catch (error) {
     console.error("admin payment approval error", error);
-    return json({ error:"Unable to approve payment." }, 500);
+    return json({ error: "Unable to approve payment." }, 500);
   }
 }
-
+__name(handleAdminApprovePayment, "handleAdminApprovePayment");
 async function handleLessonProgress(request, env) {
   const user = await getSessionUser(request, env);
-
   if (!user) {
     return json(
       { error: "Not authenticated." },
       401
     );
   }
-
   try {
     const body = await request.json();
-
     const moduleSlug = String(body.module || "").trim();
     const lessonNumber = Number(body.lesson);
-
-    if (
-      !moduleSlug ||
-      !Number.isInteger(lessonNumber) ||
-      lessonNumber < 1
-    ) {
+    if (!moduleSlug || !Number.isInteger(lessonNumber) || lessonNumber < 1) {
       return json(
         { error: "Invalid lesson data." },
         400
       );
     }
-
     await env.DB.prepare(`
       INSERT INTO lesson_progress
         (user_id, module_slug, lesson_number, completed, completed_at)
@@ -1034,174 +1024,118 @@ async function handleLessonProgress(request, env) {
       DO UPDATE SET
         completed = 1,
         completed_at = datetime('now')
-    `)
-      .bind(
-        user.id,
-        moduleSlug,
-        lessonNumber
-      )
-      .run();
-
+    `).bind(
+      user.id,
+      moduleSlug,
+      lessonNumber
+    ).run();
     return json({
       success: true,
       message: "Lesson progress saved."
     });
-
   } catch (error) {
     console.error(
       "lesson progress error",
       error
     );
-
     return json(
       { error: "Unable to save lesson progress." },
       500
     );
   }
 }
-export default {
-  async fetch(
-    request,
-    env,
-    ctx
-  ) {
-    const url =
-      new URL(request.url);
-
+__name(handleLessonProgress, "handleLessonProgress");
+var worker_default = {
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
     try {
       await ensureMembershipColumns(env);
+      await ensurePaymentColumns(env);
+      await ensureActivityTables(env);
     } catch (error) {
       console.error("membership initialization error", error);
     }
-
-    if (
-      url.pathname.startsWith(
-        "/api/"
-      )
-    ) {
-      const method =
-        request.method.toUpperCase();
-
+    if (url.pathname.startsWith(
+      "/api/"
+    )) {
+      const method = request.method.toUpperCase();
       try {
-        if (
-          url.pathname ===
-            "/api/register" &&
-          method === "POST"
-        ) {
+        if (url.pathname === "/api/register" && method === "POST") {
           return await handleRegister(
             request,
             env
           );
         }
-
-        if (
-          url.pathname ===
-            "/api/login" &&
-          method === "POST"
-        ) {
+        if (url.pathname === "/api/login" && method === "POST") {
           return await handleLogin(
             request,
             env
           );
         }
-
-        if (
-          url.pathname ===
-            "/api/me" &&
-          method === "GET"
-        ) {
+        if (url.pathname === "/api/me" && method === "GET") {
           return await handleMe(
             request,
             env
           );
         }
-
-        if (
-          url.pathname ===
-            "/api/admin/payments" &&
-          method === "GET"
-        ) {
+        if (url.pathname === "/api/admin/payments" && method === "GET") {
           return await handleAdminPayments(request, env);
         }
-
-        if (
-          url.pathname ===
-            "/api/admin/payments/history" &&
-          method === "GET"
-        ) {
+        if (url.pathname === "/api/admin/payments/history" && method === "GET") {
           return await handleAdminPaymentHistory(request, env);
         }
-
-        if (
-          url.pathname ===
-            "/api/admin/approve-payment" &&
-          method === "POST"
-        ) {
+        if (url.pathname === "/api/admin/approve-payment" && method === "POST") {
           return await handleAdminApprovePayment(request, env);
         }
-
-        if (
-          url.pathname ===
-            "/api/create-payment" &&
-          method === "POST"
-        ) {
+        if (url.pathname === "/api/admin/stats" && method === "GET") {
+          return await handleAdminStats(request, env);
+        }
+        if (url.pathname === "/api/admin/students" && method === "GET") {
+          return await handleAdminStudents(request, env);
+        }
+        if (url.pathname === "/api/admin/results" && method === "GET") {
+          return await handleAdminResults(request, env);
+        }
+        if (url.pathname === "/api/exam-results" && method === "POST") {
+          return await handleSaveExamResult(request, env);
+        }
+        if (url.pathname === "/api/video-activity" && method === "POST") {
+          return await handleSaveVideoActivity(request, env);
+        }
+        if (url.pathname === "/api/create-payment" && method === "POST") {
           return await handleCreatePayment(
             request,
             env
           );
         }
-
-       if (
-  url.pathname ===
-  "/api/lesson-progress" &&
-  method === "GET"
-) {
-  return await handleLessonProgressGet(
-    request,
-    env
-  );
-}
-        if (
-          url.pathname ===
-            "/api/logout" &&
-          method === "POST"
-        ) {
+        if (url.pathname === "/api/lesson-progress" && method === "GET") {
+          return await handleLessonProgressGet(
+            request,
+            env
+          );
+        }
+        if (url.pathname === "/api/logout" && method === "POST") {
           return await handleLogout(
             request,
             env
           );
         }
-
-       if (
-  url.pathname ===
-  "/api/lesson-progress" &&
-  method === "POST"
-) {
-  return await handleLessonProgress(
-    request,
-    env
-  );
-}
-        if (
-          url.pathname ===
-            "/api/courses" &&
-          method === "GET"
-        ) {
+        if (url.pathname === "/api/lesson-progress" && method === "POST") {
+          return await handleLessonProgress(
+            request,
+            env
+          );
+        }
+        if (url.pathname === "/api/courses" && method === "GET") {
           return await handleCourses(
             request,
             env
           );
         }
-
-        const courseMatch =
-          url.pathname.match(
-            /^\/api\/courses\/(\d+)$/
-          );
-
-        if (
-          courseMatch &&
-          method === "GET"
-        ) {
+        const courseMatch = url.pathname.match(
+          /^\/api\/courses\/(\d+)$/
+        );
+        if (courseMatch && method === "GET") {
           return await handleCourse(
             request,
             env,
@@ -1210,11 +1144,9 @@ export default {
             )
           );
         }
-
         return json(
           {
-            error:
-              "API endpoint not found."
+            error: "API endpoint not found."
           },
           404
         );
@@ -1223,23 +1155,23 @@ export default {
           "API error",
           error
         );
-
         return json(
           {
-            error:
-           "Server error."
+            error: "Server error."
           },
           500
         );
       }
     }
-
     ctx.waitUntil(
       cleanupExpiredSessions(env)
     );
-
     return env.ASSETS.fetch(
       request
     );
   }
 };
+export {
+  worker_default as default
+};
+//# sourceMappingURL=worker.js.map
