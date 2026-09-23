@@ -999,7 +999,7 @@ if (membership) {
       </span>
     </div>
     <p class="muted" style="margin:8px 0 0;">
-      ${expires ? 'Access until: ' + new Date(expires).toLocaleDateString() : (plan === 'free' ? 'Free account â€” membership features are locked.' : 'Membership access is active.')}
+      ${expires ? 'Access until: ' + new Date(expires).toLocaleDateString() : (plan === 'free' ? 'Free account — membership features are locked.' : 'Membership access is active.')}
     </p>
     ${plan === 'free' || !active ? '<button class="primary" style="margin-top:12px;" onclick="openMembershipPlans()">Upgrade Membership</button>' : ''}
   `;
@@ -7203,7 +7203,7 @@ const examLibrary = [
 const videoLibrary = [
   {
     title:'ICT IGCSE Chapter 1 - Types and Components of Computer Systems - Part 1',
-    topic:'Module 1 â€¢ Chapter 1',
+    topic:'Module 1 • Chapter 1',
     icon:'&#128187;',
     description:'Computer systems, types of computers and their components.',
     url:'https://www.youtube.com/embed/rdoKWvws7xs',
@@ -7211,7 +7211,7 @@ const videoLibrary = [
   },
   {
     title:'ICT IGCSE Chapter 2 - Input and Output Devices - Part 1',
-    topic:'Module 2 â€¢ Chapter 2',
+    topic:'Module 2 • Chapter 2',
     icon:'&#9000;&#65039;',
     description:'Input and output devices and their uses.',
     url:'https://www.youtube.com/embed/ycL0uvWksuw',
@@ -7219,7 +7219,7 @@ const videoLibrary = [
   },
   {
     title:'ICT IGCSE Chapter 3 - Storage Devices and Media - Part 1',
-    topic:'Module 3 â€¢ Chapter 3',
+    topic:'Module 3 • Chapter 3',
     icon:'&#128190;',
     description:'Storage devices and media used to store digital data.',
     url:'https://www.youtube.com/embed/BxdE4kCibuM',
@@ -7227,7 +7227,7 @@ const videoLibrary = [
   },
   {
     title:'ICT IGCSE Chapter 4 - Networks and the Effects of Using Them - Part 1',
-    topic:'Module 4 â€¢ Chapter 4',
+    topic:'Module 4 • Chapter 4',
     icon:'&#127760;',
     description:'Networks and the effects of using computer networks.',
     url:'https://www.youtube.com/embed/8cgOqRk3PLQ',
@@ -7235,7 +7235,7 @@ const videoLibrary = [
   },
   {
     title:'ICT IGCSE Chapter 6 - ICT Applications - Part 1',
-    topic:'Module 6 â€¢ Chapter 6',
+    topic:'Module 6 • Chapter 6',
     icon:'&#128421;&#65039;',
     description:'ICT applications and how they are used in real-world situations.',
     url:'https://www.youtube.com/embed/gLvapZGL0Cg',
@@ -7243,7 +7243,7 @@ const videoLibrary = [
   },
   {
     title:'ICT IGCSE Chapter 7 - The Systems Life Cycle - Part 1',
-    topic:'Module 7 â€¢ Chapter 7',
+    topic:'Module 7 • Chapter 7',
     icon:'&#128202;',
     description:'The systems life cycle and stages of developing an ICT system.',
     url:'https://www.youtube.com/embed/1115YYF5lVY',
@@ -7251,7 +7251,7 @@ const videoLibrary = [
   },
   {
     title:'ICT IGCSE Chapter 8 - Safety and Security - Part 1',
-    topic:'Module 8 â€¢ Chapter 8',
+    topic:'Module 8 • Chapter 8',
     icon:'&#128737;&#65039;',
     description:'Safety, security threats and ways to protect ICT systems.',
     url:'https://www.youtube.com/embed/PzjjDYmvGUU',
@@ -7259,7 +7259,7 @@ const videoLibrary = [
   },
   {
     title:'ICT IGCSE Full Theory Paper 1 Walkthrough 0417/12 Feb/Mar 2022',
-    topic:'Exam Revision â€¢ Paper 1',
+    topic:'Exam Revision • Paper 1',
     icon:'&#128221;',
     description:'Full theory paper walkthrough for 0417/12 Feb/Mar 2022 revision.',
     url:'https://www.youtube.com/embed/ey0siaGyaJ8',
@@ -7502,7 +7502,7 @@ async function loadVideos(){
           <span class="badge">${video.topic}</span>
           <h3 style="margin:12px 0 7px;">${video.title}</h3>
           <p class="muted">${video.description}</p>
-          ${wasWatched ? '<div style="margin-top:10px;color:#166534;font-weight:800;font-size:13px;">âœ“ Watched</div>' : ''}
+          ${wasWatched ? '<div style="margin-top:10px;color:#166534;font-weight:800;font-size:13px;">✓ Watched</div>' : ''}
           ${ready
             ? `<button class="primary" style="width:100%;margin-top:10px;" onclick="openVideo(${index})">\u25B6 Watch Video</button>`
             : `<button class="outline" style="width:100%;margin-top:10px;" onclick="alert('This video is not connected yet. Add the YouTube link to videoLibrary in the HTML file.')">\uD83C\uDFA5 Video Coming Soon</button>`
@@ -7561,7 +7561,7 @@ document.addEventListener('DOMContentLoaded', function(){
 </script>
 <button id="aprannChatButton" type="button" aria-label="Open Aprann Tech Chat" title="Chat with Aprann Tech"><span class="chat-icon" aria-hidden="true"></span></button>
 <div id="aprannChatWindow" role="dialog" aria-label="Aprann Tech Chat" aria-hidden="true">
-<div class="aprann-chat-head"><div class="aprann-chat-brand"><div class="aprann-chat-avatar"><span class="laptop-icon" aria-hidden="true"></span></div><div><strong>Aprann Tech</strong><div class="aprann-chat-status">Automatic support â€¢ Online</div></div></div><button class="aprann-chat-close" id="aprannChatClose" type="button">Ã—</button></div>
+<div class="aprann-chat-head"><div class="aprann-chat-brand"><div class="aprann-chat-avatar"><span class="laptop-icon" aria-hidden="true"></span></div><div><strong>Aprann Tech</strong><div class="aprann-chat-status">Automatic support • Online</div></div></div><button class="aprann-chat-close" id="aprannChatClose" type="button">×</button></div>
 <div id="aprannChatMessages"></div>
 <div id="aprannChatQuick"><button class="aprann-quick" data-chat="courses">Courses</button><button class="aprann-quick" data-chat="membership">Membership</button><button class="aprann-quick" data-chat="exams">Exams</button><button class="aprann-quick" data-chat="videos">Videos</button><button class="aprann-quick" data-chat="contact">Contact</button></div>
 <form class="aprann-chat-input" id="aprannChatForm"><input id="aprannChatInput" type="text" autocomplete="off" placeholder="Type your question..."><button id="aprannChatSend" type="submit" aria-label="Send"><span class="send-icon" aria-hidden="true"></span></button></form></div>
@@ -7573,7 +7573,7 @@ function open(){W.classList.add('open');W.setAttribute('aria-hidden','false');if
 function answer(q){q=q.toLowerCase().trim();
 if(!q)return'Please type a question and I will help you.';
 if(/hello|hi\b|hey|good morning|good afternoon|good evening/.test(q))return'Hello! Welcome to Aprann Tech. How can I help you today?';
-if(/course|learn|s1|s2|s3|s4|s5|igcse/.test(q))return'Aprann Tech provides ICT learning and exam preparation for S1â€“S5, IGCSE ICT and National Exams.';
+if(/course|learn|s1|s2|s3|s4|s5|igcse/.test(q))return'Aprann Tech provides ICT learning and exam preparation for S1–S5, IGCSE ICT and National Exams.';
 if(/price|pricing|cost|fee|membership|basic|standard|premium|free/.test(q))return'You can view the Free, Basic, Standard and Premium membership options in the Pricing section. Standard and Premium unlock the full Video Library and Exam Centre.';
 if(/exam|paper|past paper|quiz|practice/.test(q))return'The Exam Centre includes Paper 1 Theory Practice, Paper 2 Word Processing Practical, and Paper 3 Spreadsheet & Database Practical.';
 if(/video|videos|lesson/.test(q))return'The Video Library contains IGCSE ICT lessons covering computer systems, input/output devices, storage, networks, ICT applications, systems life cycle, safety and security, and exam walkthroughs.';
