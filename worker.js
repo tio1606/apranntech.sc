@@ -727,6 +727,229 @@ async function handleCourses(request, env) {
 }
 __name(handleCourses, "handleCourses");
 
+
+function hasPremiumAccess(user) {
+  return Boolean(user && (isAdminEmail(user.email) || (membershipInfo(user).active && String(membershipInfo(user).plan).toLowerCase() === "premium")));
+}
+__name(hasPremiumAccess, "hasPremiumAccess");
+
+async function ensureResourceTables(env) {
+  await env.DB.prepare(`
+    CREATE TABLE IF NOT EXISTS resources (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      description TEXT DEFAULT '',
+      category TEXT DEFAULT 'General',
+      object_key TEXT NOT NULL UNIQUE,
+      original_name TEXT NOT NULL,
+      content_type TEXT DEFAULT 'application/octet-stream',
+      size_bytes INTEGER DEFAULT 0,
+      uploaded_by TEXT NOT NULL,
+      is_published INTEGER DEFAULT 1,
+      created_at TEXT DEFAULT (datetime('now'))
+    )
+  `).run();
+  await env.DB.prepare(`
+    CREATE TABLE IF NOT EXISTS resource_submissions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      original_name TEXT NOT NULL,
+      object_key TEXT NOT NULL UNIQUE,
+      content_type TEXT DEFAULT 'application/octet-stream',
+      size_bytes INTEGER DEFAULT 0,
+      status TEXT DEFAULT 'pending',
+      score TEXT DEFAULT '',
+      feedback TEXT DEFAULT '',
+      marked_object_key TEXT DEFAULT '',
+      marked_name TEXT DEFAULT '',
+      created_at TEXT DEFAULT (datetime('now')),
+      marked_at TEXT,
+      FOREIGN KEY(user_id) REFERENCES users(id)
+    )
+  `).run();
+}
+__name(ensureResourceTables, "ensureResourceTables");
+
+function resourceAdmin(user) {
+  return Boolean(user && isAdminEmail(user.email));
+}
+__name(resourceAdmin, "resourceAdmin");
+
+async function requirePremium(request, env) {
+  const user = await getSessionUser(request, env);
+  if (!user) return { user: null, response: json({ error: "Not authenticated." }, 401) };
+  if (!hasPremiumAccess(user)) return { user, response: json({ error: "Premium membership is required." }, 403) };
+  return { user, response: null };
+}
+__name(requirePremium, "requirePremium");
+
+async function handleResourceList(request, env) {
+  const access = await requirePremium(request, env);
+  if (access.response) return access.response;
+  const result = await env.DB.prepare(`
+    SELECT id, title, description, category, original_name, content_type, size_bytes, created_at
+    FROM resources
+    WHERE is_published = 1
+    ORDER BY created_at DESC, id DESC
+  `).all();
+  return json({ success: true, resources: result.results || [] });
+}
+__name(handleResourceList, "handleResourceList");
+
+async function handleResourceDownload(request, env, resourceId) {
+  const user = await getSessionUser(request, env);
+  if (!user) return json({ error: "Not authenticated." }, 401);
+  const resource = await env.DB.prepare("SELECT * FROM resources WHERE id = ? LIMIT 1").bind(resourceId).first();
+  if (!resource) return json({ error: "Resource not found." }, 404);
+  if (!resourceAdmin(user) && !hasPremiumAccess(user)) return json({ error: "Premium membership is required." }, 403);
+  const object = await env.RESOURCE_FILES.get(resource.object_key);
+  if (!object) return json({ error: "File not found." }, 404);
+  const headers = new Headers();
+  headers.set("Content-Type", resource.content_type || "application/octet-stream");
+  headers.set("Content-Disposition", `attachment; filename="${String(resource.original_name).replace(/["\\\\]/g, "_")}"`);
+  headers.set("Cache-Control", "private, no-store");
+  return new Response(object.body, { headers });
+}
+__name(handleResourceDownload, "handleResourceDownload");
+
+async function handleAdminResourceUpload(request, env) {
+  const admin = await requireAdmin(request, env);
+  if (!admin) return json({ error: "Admin access required." }, 403);
+  const form = await request.formData();
+  const file = form.get("file");
+  const title = String(form.get("title") || "").trim();
+  const description = String(form.get("description") || "").trim();
+  const category = String(form.get("category") || "General").trim();
+  if (!(file instanceof File) || !file.size) return json({ error: "Please select a file." }, 400);
+  if (!title) return json({ error: "Please enter a resource title." }, 400);
+  if (file.size > 25 * 1024 * 1024) return json({ error: "Maximum file size is 25 MB." }, 400);
+  const safeName = String(file.name || "resource").replace(/[^a-zA-Z0-9._-]/g, "_");
+  const key = `resources/${Date.now()}-${crypto.randomUUID()}-${safeName}`;
+  await env.RESOURCE_FILES.put(key, file.stream(), {
+    httpMetadata: { contentType: file.type || "application/octet-stream" }
+  });
+  await env.DB.prepare(`
+    INSERT INTO resources (title, description, category, object_key, original_name, content_type, size_bytes, uploaded_by)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(title, description, category, key, safeName, file.type || "application/octet-stream", file.size, admin.email).run();
+  return json({ success: true, message: "Resource uploaded." });
+}
+__name(handleAdminResourceUpload, "handleAdminResourceUpload");
+
+async function handleAdminResourceDelete(request, env, resourceId) {
+  const admin = await requireAdmin(request, env);
+  if (!admin) return json({ error: "Admin access required." }, 403);
+  const resource = await env.DB.prepare("SELECT object_key FROM resources WHERE id = ? LIMIT 1").bind(resourceId).first();
+  if (!resource) return json({ error: "Resource not found." }, 404);
+  await env.RESOURCE_FILES.delete(resource.object_key);
+  await env.DB.prepare("DELETE FROM resources WHERE id = ?").bind(resourceId).run();
+  return json({ success: true });
+}
+__name(handleAdminResourceDelete, "handleAdminResourceDelete");
+
+async function handleAdminSubmissionList(request, env) {
+  const admin = await requireAdmin(request, env);
+  if (!admin) return json({ error: "Admin access required." }, 403);
+  const result = await env.DB.prepare(`
+    SELECT s.id, s.original_name, s.content_type, s.size_bytes, s.status, s.score, s.feedback,
+           s.created_at, s.marked_at, s.marked_name, u.name AS student_name, u.email AS student_email
+    FROM resource_submissions s
+    JOIN users u ON u.id = s.user_id
+    ORDER BY CASE WHEN s.status = 'pending' THEN 0 ELSE 1 END, s.created_at DESC, s.id DESC
+  `).all();
+  return json({ success: true, submissions: result.results || [] });
+}
+__name(handleAdminSubmissionList, "handleAdminSubmissionList");
+
+async function handleStudentSubmissionUpload(request, env) {
+  const access = await requirePremium(request, env);
+  if (access.response) return access.response;
+  const form = await request.formData();
+  const file = form.get("file");
+  if (!(file instanceof File) || !file.size) return json({ error: "Please select a paper to upload." }, 400);
+  if (file.size > 25 * 1024 * 1024) return json({ error: "Maximum file size is 25 MB." }, 400);
+  const safeName = String(file.name || "paper").replace(/[^a-zA-Z0-9._-]/g, "_");
+  const key = `submissions/${access.user.id}/${Date.now()}-${crypto.randomUUID()}-${safeName}`;
+  await env.RESOURCE_FILES.put(key, file.stream(), {
+    httpMetadata: { contentType: file.type || "application/octet-stream" }
+  });
+  await env.DB.prepare(`
+    INSERT INTO resource_submissions (user_id, original_name, object_key, content_type, size_bytes)
+    VALUES (?, ?, ?, ?, ?)
+  `).bind(access.user.id, safeName, key, file.type || "application/octet-stream", file.size).run();
+  return json({ success: true, message: "Paper submitted for marking." });
+}
+__name(handleStudentSubmissionUpload, "handleStudentSubmissionUpload");
+
+async function handleStudentSubmissionList(request, env) {
+  const access = await requirePremium(request, env);
+  if (access.response) return access.response;
+  const result = await env.DB.prepare(`
+    SELECT id, original_name, content_type, size_bytes, status, score, feedback, created_at, marked_at, marked_name
+    FROM resource_submissions
+    WHERE user_id = ?
+    ORDER BY created_at DESC, id DESC
+  `).bind(access.user.id).all();
+  return json({ success: true, submissions: result.results || [] });
+}
+__name(handleStudentSubmissionList, "handleStudentSubmissionList");
+
+async function handleSubmissionDownload(request, env, submissionId, marked) {
+  const user = await getSessionUser(request, env);
+  if (!user) return json({ error: "Not authenticated." }, 401);
+  const row = await env.DB.prepare("SELECT s.*, u.email AS student_email FROM resource_submissions s JOIN users u ON u.id=s.user_id WHERE s.id=? LIMIT 1").bind(submissionId).first();
+  if (!row) return json({ error: "Submission not found." }, 404);
+  if (!resourceAdmin(user) && row.user_id !== user.id) return json({ error: "Access denied." }, 403);
+  const key = marked ? row.marked_object_key : row.object_key;
+  const name = marked ? row.marked_name : row.original_name;
+  if (!key) return json({ error: "Marked file is not available yet." }, 404);
+  const object = await env.RESOURCE_FILES.get(key);
+  if (!object) return json({ error: "File not found." }, 404);
+  const headers = new Headers();
+  headers.set("Content-Type", marked ? "application/octet-stream" : (row.content_type || "application/octet-stream"));
+  headers.set("Content-Disposition", `attachment; filename="${String(name).replace(/["\\\\]/g, "_")}"`);
+  headers.set("Cache-Control", "private, no-store");
+  return new Response(object.body, { headers });
+}
+__name(handleSubmissionDownload, "handleSubmissionDownload");
+
+async function handleAdminMarkSubmission(request, env, submissionId) {
+  const admin = await requireAdmin(request, env);
+  if (!admin) return json({ error: "Admin access required." }, 403);
+  const row = await env.DB.prepare("SELECT * FROM resource_submissions WHERE id=? LIMIT 1").bind(submissionId).first();
+  if (!row) return json({ error: "Submission not found." }, 404);
+  const form = await request.formData();
+  const score = String(form.get("score") || "").trim();
+  const feedback = String(form.get("feedback") || "").trim();
+  const file = form.get("marked_file");
+  let markedKey = row.marked_object_key || "";
+  let markedName = row.marked_name || "";
+  if (file instanceof File && file.size) {
+    if (file.size > 25 * 1024 * 1024) return json({ error: "Maximum marked-file size is 25 MB." }, 400);
+    const safeName = String(file.name || "marked-paper").replace(/[^a-zA-Z0-9._-]/g, "_");
+    markedKey = `marked/${row.user_id}/${Date.now()}-${crypto.randomUUID()}-${safeName}`;
+    markedName = safeName;
+    await env.RESOURCE_FILES.put(markedKey, file.stream(), {
+      httpMetadata: { contentType: file.type || "application/octet-stream" }
+    });
+  }
+  await env.DB.prepare(`
+    UPDATE resource_submissions
+    SET status='marked', score=?, feedback=?, marked_object_key=?, marked_name=?, marked_at=datetime('now')
+    WHERE id=?
+  `).bind(score, feedback, markedKey, markedName, submissionId).run();
+  return json({ success: true, message: "Paper marked successfully." });
+}
+__name(handleAdminMarkSubmission, "handleAdminMarkSubmission");
+
+async function handleAdminResourceList(request, env) {
+  const admin = await requireAdmin(request, env);
+  if (!admin) return json({ error: "Admin access required." }, 403);
+  const result = await env.DB.prepare("SELECT id,title,description,category,original_name,size_bytes,created_at FROM resources ORDER BY created_at DESC,id DESC").all();
+  return json({ success: true, resources: result.results || [] });
+}
+__name(handleAdminResourceList, "handleAdminResourceList");
+
 async function handleAIChat(request, env) {
   const user = await getSessionUser(request, env);
   let body;
@@ -1200,7 +1423,7 @@ var worker_default = {
     try {
       await ensureMembershipColumns(env);
       await ensurePaymentColumns(env);
-      await ensureActivityTables(env);
+      await ensureActivityTables(env);\n      await ensureResourceTables(env);
     } catch (error) {
       console.error("membership initialization error", error);
     }
@@ -1212,6 +1435,18 @@ var worker_default = {
         if (url.pathname === "/api/ai-chat" && method === "POST") {
           return await handleAIChat(request, env);
         }
+        if (url.pathname === "/api/resources" && method === "GET") return await handleResourceList(request, env);
+        if (url.pathname === "/api/admin/resources" && method === "GET") return await handleAdminResourceList(request, env);
+        if (url.pathname === "/api/admin/resources/upload" && method === "POST") return await handleAdminResourceUpload(request, env);
+        if (url.pathname === "/api/admin/submissions" && method === "GET") return await handleAdminSubmissionList(request, env);
+        if (url.pathname === "/api/submissions" && method === "GET") return await handleStudentSubmissionList(request, env);
+        if (url.pathname === "/api/submissions" && method === "POST") return await handleStudentSubmissionUpload(request, env);
+        const resourceDownload = url.pathname.match(/^\/api\/resources\/(\d+)\/download$/);
+        if (resourceDownload && method === "GET") return await handleResourceDownload(request, env, Number(resourceDownload[1]));
+        const submissionDownload = url.pathname.match(/^\/api\/submissions\/(\d+)\/(marked\/)?download$/);
+        if (submissionDownload && method === "GET") return await handleSubmissionDownload(request, env, Number(submissionDownload[1]), Boolean(submissionDownload[2]));
+        const markSubmission = url.pathname.match(/^\/api\/admin\/submissions\/(\d+)\/mark$/);
+        if (markSubmission && method === "POST") return await handleAdminMarkSubmission(request, env, Number(markSubmission[1]));
         if (url.pathname === "/api/register" && method === "POST") {
           return await handleRegister(
             request,
