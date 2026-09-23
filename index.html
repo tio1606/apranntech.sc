@@ -533,7 +533,7 @@ Student Login
 </section>
 
 <section id="app" class="app">
-<div class="app-grid"><aside class="side"><b style="font-size:18px">AT</b><button class="active" onclick="dashTab('home',this)"><span>Dashboard</span></button><button onclick="dashTab('course',this)"><span>My Course</span></button><button onclick="dashTab('activity',this)"><span>Activities</span></button><button onclick="dashTab('quiz',this)"><span>Quizzes</span></button><button onclick="dashTab('exam',this)"><span>Exam Centre</span></button><button onclick="dashTab('videos',this)"><span>Videos</span></button><button onclick="dashTab('progress',this)"><span>Progress</span></button><button id="adminPaymentsButton" class="hidden" onclick="dashTab('adminPayments',this);loadAdminPayments()"><span>Payments</span></button><button id="adminDashboardButton" class="hidden" onclick="dashTab('adminDashboard',this);loadAdminDashboard()"><span>Admin Dashboard</span></button></aside>
+<div class="app-grid"><aside class="side"><b style="font-size:18px">AT</b><button class="active" onclick="dashTab('home',this)"><span>Dashboard</span></button><button onclick="dashTab('course',this)"><span>My Course</span></button><button onclick="dashTab('activity',this)"><span>Activities</span></button><button onclick="dashTab('quiz',this)"><span>Quizzes</span></button><button onclick="dashTab('exam',this)"><span>Exam Centre</span></button><button onclick="dashTab('videos',this)"><span>Videos</span></button><button onclick="dashTab('progress',this)"><span>Progress</span></button><button onclick="dashTab('resources',this)"><span>Resources & Marking</span></button><button id="adminPaymentsButton" class="hidden" onclick="dashTab('adminPayments',this);loadAdminPayments()"><span>Payments</span></button><button id="adminDashboardButton" class="hidden" onclick="dashTab('adminDashboard',this);loadAdminDashboard()"><span>Admin Dashboard</span></button></aside>
 <div class="dash">
 <div id="dadminDashboard" class="dtab hidden">
   <div style="display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;">
@@ -641,6 +641,20 @@ Student Login
   </div>
 </div>
 
+
+<div id="dresources" class="dtab hidden">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;">
+    <div><h1 style="margin-bottom:6px;">Premium Resource & Marking Centre</h1><p class="muted" style="margin-top:0;">Download learning resources, submit papers for marking, and access your marked work.</p></div>
+    <span class="badge">PREMIUM</span>
+  </div>
+  <div class="module" style="margin-top:20px;"><h2 style="margin-top:0;">📚 Resource Library</h2><div id="premiumResourceList"><p class="muted">Loading resources...</p></div></div>
+  <div class="module" style="margin-top:20px;"><h2 style="margin-top:0;">📤 Submit a Paper for Marking</h2><p class="muted">Upload your completed paper. Your teacher/admin can download it, mark it and return the marked file with feedback.</p><form id="premiumSubmissionForm" style="display:grid;gap:12px;max-width:650px;"><input type="file" required style="padding:12px;border:1px solid #cbd5e1;border-radius:9px;background:white;"><button class="primary" type="submit">Submit Paper</button></form><div id="premiumSubmissionStatus" class="muted" style="margin-top:10px;"></div></div>
+  <div class="module" style="margin-top:20px;"><h2 style="margin-top:0;">📝 My Submissions & Marked Papers</h2><div id="premiumSubmissionList"><p class="muted">Loading submissions...</p></div></div>
+  <div id="adminResourcePanel" class="hidden">
+    <div class="module" style="margin-top:20px;border:2px solid #0077b6;"><h2 style="margin-top:0;">👨‍🏫 Teacher Resource Manager</h2><p class="muted">Upload resources that Premium students can download.</p><form id="adminResourceForm" style="display:grid;gap:12px;max-width:700px;"><input id="adminResourceTitle" type="text" placeholder="Resource title" required class="field"><input id="adminResourceCategory" type="text" placeholder="Category e.g. Past Papers, Revision Notes" class="field"><textarea id="adminResourceDescription" placeholder="Short description" rows="3" class="field"></textarea><input type="file" required style="padding:12px;border:1px solid #cbd5e1;border-radius:9px;background:white;"><button class="primary" type="submit">Upload Resource</button></form><div id="adminResourceStatus" class="muted" style="margin-top:10px;"></div><div id="adminResourceList" style="margin-top:18px;"><p class="muted">Loading teacher resources...</p></div></div>
+    <div class="module" style="margin-top:20px;border:2px solid #16a34a;"><h2 style="margin-top:0;">📝 Marking Queue</h2><p class="muted">Download student papers, mark them, add feedback and upload the marked copy.</p><div id="adminSubmissionList"><p class="muted">Loading marking queue...</p></div></div>
+  </div>
+</div>
  <div id="dprogress" class="dtab hidden">
 
   <h1>My Progress</h1>
@@ -1064,6 +1078,49 @@ async function registerStudent(){
     alert('Unable to connect to the server. Please try again.');
   }
 }
+
+async function requirePremiumResourceAccess(){
+  try{
+    const r=await fetch('/api/resources'); const d=await r.json().catch(()=>({}));
+    if(r.ok)return true;
+    if(r.status===403)alert('The Resource & Marking Centre is available to Premium members.');
+    else if(r.status===401)alert('Please log in first.');
+    else alert(d.error||'Unable to open the Resource & Marking Centre.');
+  }catch(e){alert('Unable to connect to the Resource & Marking Centre.');}
+  return false;
+}
+function escapeResourceHtml(v){return String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+function formatFileSize(b){b=Number(b||0);return b<1024?b+' B':b<1048576?(b/1024).toFixed(1)+' KB':(b/1048576).toFixed(1)+' MB';}
+async function loadResourceCentre(){
+  const rl=document.getElementById('premiumResourceList'),sl=document.getElementById('premiumSubmissionList');
+  try{
+    const rr=await fetch('/api/resources'), rd=await rr.json(); if(!rr.ok)throw new Error(rd.error||'Unable to load resources.');
+    const sr=await fetch('/api/submissions'), sd=await sr.json(); if(!sr.ok)throw new Error(sd.error||'Unable to load submissions.');
+    const items=rd.resources||[], subs=sd.submissions||[];
+    rl.innerHTML=items.length ? `<div class="module-grid">`+items.map(x=>`<div class="module"><span class="badge">`+escapeResourceHtml(x.category||'Resource')+`</span><h3>`+escapeResourceHtml(x.title)+`</h3><p class="muted">`+escapeResourceHtml(x.description||'')+`</p><small class="muted">`+escapeResourceHtml(x.original_name)+` · `+formatFileSize(x.size_bytes)+`</small><button class="primary" style="width:100%;margin-top:12px;" onclick="downloadResource(`+x.id+`)">Download</button></div>`).join('')+`</div>` : '<p class="muted">No resources have been published yet.</p>';
+    sl.innerHTML=subs.length ? `<div style="overflow:auto;"><table class="table"><thead><tr><th>Paper</th><th>Status</th><th>Score</th><th>Feedback</th><th>Files</th></tr></thead><tbody>`+subs.map(x=>`<tr><td>`+escapeResourceHtml(x.original_name)+`</td><td>`+escapeResourceHtml(x.status)+`</td><td>`+escapeResourceHtml(x.score||'-')+`</td><td>`+escapeResourceHtml(x.feedback||'')+`</td><td><button class="outline" onclick="downloadSubmission(`+x.id+`,false)">My Paper</button>`+(x.marked_name?` <button class="primary" onclick="downloadSubmission(`+x.id+`,true)">Marked Paper</button>`:'')+`</td></tr>`).join('')+`</tbody></table></div>` : '<p class="muted">You have not submitted a paper yet.</p>';
+    const admin=await isCurrentAdmin(), panel=document.getElementById('adminResourcePanel'); if(panel)panel.classList.toggle('hidden',!admin); if(admin)await loadAdminResourceCentre();
+  }catch(e){rl.innerHTML='<p class="muted">'+escapeResourceHtml(e.message)+'</p>';sl.innerHTML='<p class="muted">Unable to load submissions.</p>';}
+}
+function downloadResource(id){window.location.href='/api/resources/'+id+'/download';}
+function downloadSubmission(id,marked){window.location.href='/api/submissions/'+id+'/'+(marked?'marked/':'')+'download';}
+async function loadAdminResourceCentre(){
+  try{
+    const rr=await fetch('/api/admin/resources'),rd=await rr.json(),sr=await fetch('/api/admin/submissions'),sd=await sr.json();
+    const rl=document.getElementById('adminResourceList'),sl=document.getElementById('adminSubmissionList'),items=rd.resources||[],subs=sd.submissions||[];
+    rl.innerHTML=items.length?`<div style="overflow:auto;"><table class="table"><thead><tr><th>Resource</th><th>Category</th><th>File</th><th>Action</th></tr></thead><tbody>`+items.map(x=>`<tr><td>`+escapeResourceHtml(x.title)+`</td><td>`+escapeResourceHtml(x.category)+`</td><td>`+escapeResourceHtml(x.original_name)+`</td><td><button class="outline" onclick="downloadResource(`+x.id+`)">Download</button></td></tr>`).join('')+`</tbody></table></div>`:'<p class="muted">No resources uploaded yet.</p>';
+    sl.innerHTML=subs.length?`<div style="display:grid;gap:14px;">`+subs.map(x=>`<div class="module"><strong>`+escapeResourceHtml(x.student_name||'Student')+`</strong><div class="muted">`+escapeResourceHtml(x.student_email||'')+` · `+escapeResourceHtml(x.original_name)+`</div><button class="outline" onclick="downloadSubmission(`+x.id+`,false)">Download Paper</button><form onsubmit="return markSubmission(event,`+x.id+`)" style="display:grid;gap:9px;margin-top:12px;"><input name="score" class="field" placeholder="Score e.g. 72/100" value="`+escapeResourceHtml(x.score||'')+`"><textarea name="feedback" class="field" rows="3" placeholder="Teacher feedback">`+escapeResourceHtml(x.feedback||'')+`</textarea><input name="marked_file" type="file" style="padding:10px;border:1px solid #cbd5e1;border-radius:9px;background:white;"><button class="primary" type="submit">`+(x.status==='marked'?'Update Marking':'Mark & Save')+`</button></form></div>`).join('')+`</div>`:'<p class="muted">No student papers have been submitted.</p>';
+  }catch(e){document.getElementById('adminSubmissionList').innerHTML='<p class="muted">Unable to load marking queue.</p>';}
+}
+async function markSubmission(e,id){e.preventDefault();try{const r=await fetch('/api/admin/submissions/'+id+'/mark',{method:'POST',body:new FormData(e.target)}),d=await r.json();if(!r.ok)throw new Error(d.error||'Unable to mark paper.');alert('Marked paper saved successfully.');await loadResourceCentre();}catch(err){alert(err.message);}return false;}
+document.addEventListener('submit',async function(e){
+  if(e.target.id!=='premiumSubmissionForm'&&e.target.id!=='adminResourceForm')return;e.preventDefault();
+  const form=e.target,file=form.querySelector('input[type="file"]');if(!file.files.length){alert('Please select a file.');return;}
+  const fd=new FormData();fd.append('file',file.files[0]);
+  if(form.id==='adminResourceForm'){fd.append('title',document.getElementById('adminResourceTitle').value);fd.append('category',document.getElementById('adminResourceCategory').value);fd.append('description',document.getElementById('adminResourceDescription').value);}
+  const status=document.getElementById(form.id==='premiumSubmissionForm'?'premiumSubmissionStatus':'adminResourceStatus');if(status)status.textContent='Uploading...';
+  try{const r=await fetch(form.id==='premiumSubmissionForm'?'/api/submissions':'/api/admin/resources/upload',{method:'POST',body:fd}),d=await r.json();if(!r.ok)throw new Error(d.error||'Upload failed.');if(status)status.textContent=d.message||'Upload successful.';form.reset();await loadResourceCentre();}catch(err){if(status)status.textContent=err.message;}
+});
 async function dashTab(id,btn){
   document.querySelectorAll('.dtab').forEach(x => x.classList.add('hidden'));
 
@@ -1074,9 +1131,14 @@ async function dashTab(id,btn){
   }
 
   // Membership-protected areas.
-  if(id === 'exam' || id === 'videos'){
-    const allowed = await requireMembership(id);
-    if(!allowed) return;
+  if(id === 'exam' || id === 'videos' || id === 'resources'){
+    if(id === 'resources'){
+      const admin = await isCurrentAdmin();
+      if(!admin && !(await requirePremiumResourceAccess())) return;
+    } else {
+      const allowed = await requireMembership(id);
+      if(!allowed) return;
+    }
   }
 
   if(id === 'adminDashboard' && !(await isCurrentAdmin())){
@@ -1100,6 +1162,7 @@ async function dashTab(id,btn){
   if(id === 'videos'){
     loadVideos();
   }
+  if(id === 'resources') loadResourceCentre();
 }
 
 async function isCurrentAdmin(){
