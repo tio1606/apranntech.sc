@@ -390,6 +390,14 @@ footer::after{
 .membership-pill{display:inline-block;padding:6px 10px;border-radius:999px;background:#eaf8ff;color:#062b49;font-weight:800;font-size:12px}
 </style>
 </style>
+<style id="aprann-chat-style">
+#aprannChatButton{position:fixed;right:22px;bottom:22px;z-index:99990;width:62px;height:62px;border:0;border-radius:50%;background:linear-gradient(135deg,#087fc8,#00b9d8);color:#fff;box-shadow:0 8px 28px rgba(0,61,100,.28);cursor:pointer;font-size:28px}
+#aprannChatWindow{position:fixed;right:22px;bottom:96px;z-index:99991;width:min(380px,calc(100vw - 28px));height:min(560px,calc(100vh - 120px));background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 18px 60px rgba(0,35,65,.28);display:none;flex-direction:column;border:1px solid #dcecf5}
+#aprannChatWindow.open{display:flex}.aprann-chat-head{padding:16px 18px;background:linear-gradient(135deg,#073e5d,#087fc8);color:#fff;display:flex;align-items:center;justify-content:space-between}.aprann-chat-brand{display:flex;align-items:center;gap:11px}.aprann-chat-avatar{width:42px;height:42px;border-radius:50%;background:#fff;color:#087fc8;display:grid;place-items:center;font-size:22px}.aprann-chat-head strong{display:block;font-size:16px}.aprann-chat-status{font-size:11px;opacity:.9}.aprann-chat-close{border:0;background:rgba(255,255,255,.15);color:#fff;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:20px}
+#aprannChatMessages{flex:1;overflow-y:auto;padding:16px;background:#f5faff}.aprann-msg{display:flex;margin:0 0 12px}.aprann-msg.user{justify-content:flex-end}.aprann-bubble{max-width:84%;padding:11px 13px;border-radius:16px;font-size:14px;line-height:1.45;white-space:pre-line}.aprann-msg.bot .aprann-bubble{background:#fff;color:#17324a;border:1px solid #e0edf4;border-top-left-radius:5px}.aprann-msg.user .aprann-bubble{background:#087fc8;color:#fff;border-top-right-radius:5px}
+#aprannChatQuick{display:flex;gap:7px;overflow-x:auto;padding:10px 12px 4px;background:#fff}.aprann-quick{flex:0 0 auto;border:1px solid #b9dced;background:#f2faff;color:#075a8d;border-radius:18px;padding:7px 10px;font-size:12px;cursor:pointer}.aprann-chat-input{display:flex;gap:8px;padding:10px 12px;border-top:1px solid #e3edf2;background:#fff}#aprannChatInput{flex:1;min-width:0;border:1px solid #cfe0e8;border-radius:20px;padding:10px 13px;outline:none;font:inherit;font-size:14px}#aprannChatSend{width:42px;height:42px;border:0;border-radius:50%;background:#087fc8;color:#fff;cursor:pointer;font-size:17px}
+@media(max-width:560px){#aprannChatButton{right:14px;bottom:14px}#aprannChatWindow{right:10px;bottom:84px;width:calc(100vw - 20px);height:calc(100vh - 105px)}}
+</style>
 </head>
 <body>
 <header>
@@ -7525,5 +7533,32 @@ document.addEventListener('DOMContentLoaded', function(){
     });
   }
 });
+</script>
+<button id="aprannChatButton" type="button" aria-label="Open Aprann Tech Chat" title="Chat with Aprann Tech">ðŸ’¬</button>
+<div id="aprannChatWindow" role="dialog" aria-label="Aprann Tech Chat" aria-hidden="true">
+<div class="aprann-chat-head"><div class="aprann-chat-brand"><div class="aprann-chat-avatar">ðŸ’»</div><div><strong>Aprann Tech</strong><div class="aprann-chat-status">Automatic support â€¢ Online</div></div></div><button class="aprann-chat-close" id="aprannChatClose" type="button">Ã—</button></div>
+<div id="aprannChatMessages"></div>
+<div id="aprannChatQuick"><button class="aprann-quick" data-chat="courses">Courses</button><button class="aprann-quick" data-chat="membership">Membership</button><button class="aprann-quick" data-chat="exams">Exams</button><button class="aprann-quick" data-chat="videos">Videos</button><button class="aprann-quick" data-chat="contact">Contact</button></div>
+<form class="aprann-chat-input" id="aprannChatForm"><input id="aprannChatInput" type="text" autocomplete="off" placeholder="Type your question..."><button id="aprannChatSend" type="submit">âž¤</button></form></div>
+<script>
+(function(){
+const B=document.getElementById('aprannChatButton'),W=document.getElementById('aprannChatWindow'),C=document.getElementById('aprannChatClose'),M=document.getElementById('aprannChatMessages'),F=document.getElementById('aprannChatForm'),I=document.getElementById('aprannChatInput');
+function msg(t,w){const r=document.createElement('div'),b=document.createElement('div');r.className='aprann-msg '+w;b.className='aprann-bubble';b.textContent=t;r.appendChild(b);M.appendChild(r);M.scrollTop=M.scrollHeight}
+function open(){W.classList.add('open');W.setAttribute('aria-hidden','false');if(!M.children.length)msg('Hello! ðŸ‘‹ Welcome to Aprann Tech. I can help with courses, membership, exams, videos and contact information. What would you like to know?','bot');setTimeout(()=>I.focus(),80)}
+function answer(q){q=q.toLowerCase().trim();
+if(!q)return'Please type a question and I will help you.';
+if(/hello|hi\b|hey|good morning|good afternoon|good evening/.test(q))return'Hello! ðŸ‘‹ Welcome to Aprann Tech. How can I help you today?';
+if(/course|learn|s1|s2|s3|s4|s5|igcse/.test(q))return'Aprann Tech provides ICT learning and exam preparation for S1â€“S5, IGCSE ICT and National Exams.';
+if(/price|pricing|cost|fee|membership|basic|standard|premium|free/.test(q))return'You can view the Free, Basic, Standard and Premium membership options in the Pricing section. Standard and Premium unlock the full Video Library and Exam Centre.';
+if(/exam|paper|past paper|quiz|practice/.test(q))return'The Exam Centre includes Paper 1 Theory Practice, Paper 2 Word Processing Practical, and Paper 3 Spreadsheet & Database Practical.';
+if(/video|videos|lesson/.test(q))return'The Video Library contains IGCSE ICT lessons covering computer systems, input/output devices, storage, networks, ICT applications, systems life cycle, safety and security, and exam walkthroughs.';
+if(/register|registration|sign up|student login|login|account/.test(q))return'Use Student Login to access your account. New students can use the registration option on the login screen.';
+if(/pay|payment|eboo|mcb|whatsapp/.test(q))return'Open the Pricing section for membership payment instructions. For payment confirmation assistance, contact Aprann Tech through WhatsApp or email.';
+if(/contact|email|phone|facebook|instagram/.test(q))return'Contact Aprann Tech at contact@apranntech.net or +248 2661186. You can also use the Facebook and Instagram links in the Contact section.';
+return'I can help with Aprann Tech courses, membership, exams, video lessons, registration, payments and contact information. Try asking â€œWhat courses do you offer?â€ or â€œHow much is membership?â€';}
+function send(t){t=(t||I.value).trim();if(!t)return;msg(t,'user');I.value='';setTimeout(()=>msg(answer(t),'bot'),250)}
+B.onclick=open;C.onclick=()=>{W.classList.remove('open');W.setAttribute('aria-hidden','true')};F.onsubmit=e=>{e.preventDefault();send()};
+document.querySelectorAll('.aprann-quick').forEach(x=>x.onclick=()=>{const k=x.dataset.chat;send({courses:'What courses do you offer?',membership:'What membership plans are available?',exams:'What exams are available?',videos:'What video lessons are available?',contact:'How can I contact Aprann Tech?'}[k])});
+})();
 </script>
 </body></html>
