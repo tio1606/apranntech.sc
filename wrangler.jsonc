@@ -1,8 +1,11 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "appranntech-sc",
+  "name": "apranntech-sc",
   "main": "worker.js",
   "compatibility_date": "2026-09-14",
+  "secrets": {
+    "required": ["OPENAI_API_KEY"]
+  },
   "assets": {
     "directory": ".",
     "binding": "ASSETS"
@@ -10,7 +13,7 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "appranntech-db",
+      "database_name": "apranntech-db",
       "database_id": "5f46bd0a-da83-482b-a913-44265b34e908"
     }
   ]
