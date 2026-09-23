@@ -7581,7 +7581,34 @@ if(/register|registration|sign up|student login|login|account/.test(q))return'Us
 if(/pay|payment|eboo|mcb|whatsapp/.test(q))return'Open the Pricing section for membership payment instructions. For payment confirmation assistance, contact Aprann Tech through WhatsApp or email.';
 if(/contact|email|phone|facebook|instagram/.test(q))return'Contact Aprann Tech at contact@apranntech.net or +248 2661186. You can also use the Facebook and Instagram links in the Contact section.';
 return'I can help with Aprann Tech courses, membership, exams, video lessons, registration, payments and contact information. Try asking: What courses do you offer? or How much is membership?';}
-function send(t){t=(t||I.value).trim();if(!t)return;msg(t,'user');I.value='';setTimeout(()=>msg(answer(t),'bot'),250)}
+let chatHistory=[];
+async function send(t){
+  t=(t||I.value).trim();
+  if(!t)return;
+  msg(t,'user');
+  I.value='';
+  const previous=chatHistory.slice(-8);
+  chatHistory.push({role:'user',content:t});
+  try{
+    const r=await fetch('/api/ai-chat',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({message:t,history:previous})
+    });
+    const d=await r.json();
+    if(r.ok && d.success && d.answer){
+      msg(d.answer,'bot');
+      chatHistory.push({role:'assistant',content:d.answer});
+      return;
+    }
+    msg(answer(t),'bot');
+    chatHistory.push({role:'assistant',content:answer(t)});
+  }catch(e){
+    console.error('Aprann Tech AI chat error:',e);
+    msg(answer(t),'bot');
+    chatHistory.push({role:'assistant',content:answer(t)});
+  }
+}
 B.onclick=open;C.onclick=()=>{W.classList.remove('open');W.setAttribute('aria-hidden','true')};F.onsubmit=e=>{e.preventDefault();send()};
 document.querySelectorAll('.aprann-quick').forEach(x=>x.onclick=()=>{const k=x.dataset.chat;send({courses:'What courses do you offer?',membership:'What membership plans are available?',exams:'What exams are available?',videos:'What video lessons are available?',contact:'How can I contact Aprann Tech?'}[k])});
 })();
