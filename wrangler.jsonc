@@ -7,6 +7,12 @@
     "directory": ".",
     "binding": "ASSETS"
   },
+  "r2_buckets": [
+    {
+      "binding": "RESOURCE_FILES",
+      "bucket_name": "apranntech-resources"
+    }
+  ],
   "d1_databases": [
     {
       "binding": "DB",
