@@ -1423,7 +1423,8 @@ var worker_default = {
     try {
       await ensureMembershipColumns(env);
       await ensurePaymentColumns(env);
-      await ensureActivityTables(env);\n      await ensureResourceTables(env);
+      await ensureActivityTables(env);
+      await ensureResourceTables(env);
     } catch (error) {
       console.error("membership initialization error", error);
     }
