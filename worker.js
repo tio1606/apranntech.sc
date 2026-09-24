@@ -913,32 +913,146 @@ async function handleSubmissionDownload(request, env, submissionId, marked) {
 }
 __name(handleSubmissionDownload, "handleSubmissionDownload");
 
+
+function bytesToBase64(bytes) {
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
+}
+__name(bytesToBase64, "bytesToBase64");
+
+async function sendMarkedPaperEmail(env, student, row, score, feedback, markedFileBytes) {
+  if (!env.RESEND_API_KEY) {
+    return { sent: false, reason: "RESEND_API_KEY is not configured." };
+  }
+
+  const recipient = String(student?.email || "").trim();
+  if (!recipient) {
+    return { sent: false, reason: "Student email address is missing." };
+  }
+
+  const studentName = String(student?.name || "Student").trim() || "Student";
+  const paperName = String(row.original_name || "your paper");
+  const safeScore = String(score || "Not provided");
+  const safeFeedback = String(feedback || "Your teacher has completed the marking.");
+
+  const attachments = [];
+  if (markedFileBytes && markedFileBytes.length && row.marked_name) {
+    attachments.push({
+      filename: String(row.marked_name),
+      content: bytesToBase64(markedFileBytes),
+      content_type: "application/octet-stream"
+    });
+  }
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;max-width:640px;margin:auto;color:#102a43">
+      <h2 style="color:#0b6ea8">Aprann Tech ICT Academy</h2>
+      <p>Hello ${studentName},</p>
+      <p>Your submitted paper <strong>${paperName}</strong> has been marked by your teacher.</p>
+      <div style="background:#f1f7fb;padding:16px;border-radius:10px">
+        <p style="margin:0 0 8px"><strong>Score:</strong> ${safeScore}</p>
+        <p style="margin:0"><strong>Teacher feedback:</strong><br>${safeFeedback.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>")}</p>
+      </div>
+      <p>Your marked paper is attached to this email.</p>
+      <p>You can also log in to your Aprann Tech account to view and download it from <strong>Resources &amp; Marking</strong>.</p>
+      <p>Regards,<br><strong>Aprann Tech ICT Academy</strong><br>Seychelles</p>
+    </div>
+  `;
+
+  const from = env.RESEND_FROM_EMAIL || "Aprann Tech <contact@apranntech.net>";
+  const payload = {
+    from,
+    to: [recipient],
+    subject: "Your Aprann Tech paper has been marked",
+    html,
+    headers: {
+      "X-Entity-Ref-ID": `marked-paper-${row.id}`
+    }
+  };
+  if (attachments.length) payload.attachments = attachments;
+
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${env.RESEND_API_KEY}`,
+        "Idempotency-Key": `apranntech-marked-paper-${row.id}-${row.marked_at || Date.now()}`
+      },
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      console.error("Resend marked-paper email error", response.status, data);
+      return { sent: false, reason: "Email provider rejected the message." };
+    }
+    return { sent: true, id: data.id || null };
+  } catch (error) {
+    console.error("Marked-paper email request error", error);
+    return { sent: false, reason: "Unable to reach the email provider." };
+  }
+}
+__name(sendMarkedPaperEmail, "sendMarkedPaperEmail");
+
 async function handleAdminMarkSubmission(request, env, submissionId) {
   const admin = await requireAdmin(request, env);
   if (!admin) return json({ error: "Admin access required." }, 403);
   const row = await env.DB.prepare("SELECT * FROM resource_submissions WHERE id=? LIMIT 1").bind(submissionId).first();
   if (!row) return json({ error: "Submission not found." }, 404);
+
+  const student = await env.DB.prepare("SELECT id,name,email FROM users WHERE id=? LIMIT 1").bind(row.user_id).first();
+  if (!student) return json({ error: "Student account not found." }, 404);
+
   const form = await request.formData();
   const score = String(form.get("score") || "").trim();
   const feedback = String(form.get("feedback") || "").trim();
   const file = form.get("marked_file");
   let markedKey = row.marked_object_key || "";
   let markedName = row.marked_name || "";
+  let markedFileBytes = null;
+
   if (file instanceof File && file.size) {
     if (file.size > 25 * 1024 * 1024) return json({ error: "Maximum marked-file size is 25 MB." }, 400);
     const safeName = String(file.name || "marked-paper").replace(/[^a-zA-Z0-9._-]/g, "_");
     markedKey = `marked/${row.user_id}/${Date.now()}-${crypto.randomUUID()}-${safeName}`;
     markedName = safeName;
-    await env.RESOURCE_FILES.put(markedKey, file.stream(), {
+    markedFileBytes = new Uint8Array(await file.arrayBuffer());
+    await env.RESOURCE_FILES.put(markedKey, markedFileBytes, {
       httpMetadata: { contentType: file.type || "application/octet-stream" }
     });
+  } else if (markedKey) {
+    const existing = await env.RESOURCE_FILES.get(markedKey);
+    if (existing) markedFileBytes = new Uint8Array(await existing.arrayBuffer());
   }
+
+  const markedAt = new Date().toISOString();
   await env.DB.prepare(`
     UPDATE resource_submissions
-    SET status='marked', score=?, feedback=?, marked_object_key=?, marked_name=?, marked_at=datetime('now')
+    SET status='marked', score=?, feedback=?, marked_object_key=?, marked_name=?, marked_at=?
     WHERE id=?
-  `).bind(score, feedback, markedKey, markedName, submissionId).run();
-  return json({ success: true, message: "Paper marked successfully." });
+  `).bind(score, feedback, markedKey, markedName, markedAt.replace("T", " ").slice(0, 19)).run();
+
+  const emailResult = await sendMarkedPaperEmail(
+    env,
+    student,
+    { ...row, marked_name: markedName, marked_at: markedAt },
+    score,
+    feedback,
+    markedFileBytes
+  );
+
+  return json({
+    success: true,
+    message: "Paper marked successfully.",
+    email_sent: emailResult.sent,
+    email_message: emailResult.sent
+      ? "Notification email sent to the student."
+      : "Paper was saved, but the notification email was not sent yet."
+  });
 }
 __name(handleAdminMarkSubmission, "handleAdminMarkSubmission");
 
