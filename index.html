@@ -588,18 +588,50 @@ Student Login
   </div>
 </div>
 <div id="dhome" class="dtab">
-  <h1 id="studentWelcome">Welcome back, Student &#x1F44B;</h1>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;">
+    <div>
+      <h1 id="studentWelcome" style="margin-bottom:6px;">Welcome back, Student &#x1F44B;</h1>
+      <p class="muted" style="margin-top:0;">Your Aprann Tech learning dashboard</p>
+    </div>
+    <button class="outline" onclick="loadStudentDashboard()">Refresh Dashboard</button>
+  </div>
 
   <div id="membershipPlan" class="module" style="margin:18px 0;padding:18px;border-left:5px solid #0ea5e9;">
     <h3 style="margin:0 0 8px;">Membership Plan</h3>
     <p style="margin:0;" class="muted">Loading your membership...</p>
   </div>
 
-  <p class="muted">Continue your IGCSE ICT preparation.</p>
   <div id="dashboardLearningStats" class="module-grid" style="margin-top:18px;">
+    <div class="module"><span class="badge">COURSE PROGRESS</span><h3 id="dashboardCoursePercent" style="font-size:28px;margin:12px 0 4px;">0%</h3><p id="dashboardCourseText" class="muted" style="margin:0;">Loading lessons...</p></div>
     <div class="module"><span class="badge">EXAMS</span><h3 id="dashboardExamCount" style="font-size:28px;margin:12px 0 4px;">0</h3><p class="muted" style="margin:0;">Completed</p></div>
-    <div class="module"><span class="badge">AVERAGE</span><h3 id="dashboardExamAverage" style="font-size:28px;margin:12px 0 4px;">0%</h3><p class="muted" style="margin:0;">Theory score</p></div>
+    <div class="module"><span class="badge">THEORY AVERAGE</span><h3 id="dashboardExamAverage" style="font-size:28px;margin:12px 0 4px;">0%</h3><p class="muted" style="margin:0;">Average score</p></div>
     <div class="module"><span class="badge">VIDEOS</span><h3 id="dashboardVideoCount" style="font-size:28px;margin:12px 0 4px;">0</h3><p class="muted" style="margin:0;">Watched</p></div>
+  </div>
+
+  <div class="module-grid" style="margin-top:18px;">
+    <div class="module" style="border-left:5px solid #16a34a;">
+      <span class="badge">CONTINUE LEARNING</span>
+      <h2 id="dashboardNextTitle" style="margin:12px 0 6px;">Ready to learn?</h2>
+      <p id="dashboardNextText" class="muted" style="margin:0 0 14px;">Open your course and continue your ICT preparation.</p>
+      <button class="primary" onclick="dashTab('course',document.querySelector('.side button:nth-child(3)'))">Open My Course</button>
+    </div>
+    <div class="module" style="border-left:5px solid #0284c7;">
+      <span class="badge">LATEST FEEDBACK</span>
+      <h2 id="dashboardFeedbackTitle" style="margin:12px 0 6px;">No marked paper yet</h2>
+      <p id="dashboardFeedbackText" class="muted" style="margin:0 0 14px;">Teacher feedback will appear here after your paper is marked.</p>
+      <button class="outline" onclick="dashTab('resources',document.querySelector('.side button:nth-child(9)'))">Open Resources & Marking</button>
+    </div>
+  </div>
+
+  <div class="module" style="margin-top:18px;">
+    <h2 style="margin:0 0 6px;">Quick Actions</h2>
+    <p class="muted" style="margin:0;">Jump straight to the area you need.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;">
+      <button class="outline" onclick="dashTab('course',document.querySelector('.side button:nth-child(3)'))">My Course</button>
+      <button class="outline" onclick="dashTab('quiz',document.querySelector('.side button:nth-child(5)'))">Take a Quiz</button>
+      <button class="outline" onclick="dashTab('exam',document.querySelector('.side button:nth-child(6)'))">Exam Centre</button>
+      <button class="outline" onclick="dashTab('videos',document.querySelector('.side button:nth-child(7)'))">Video Library</button>
+    </div>
   </div>
 </div>
 <div id="dcourse" class="dtab hidden"><h1>My Course</h1><div class="module-grid"><div class="module"><h3>&#x1F5A5;&#xFE0F; Computer Systems</h3><p class="muted">82% complete</p><button class="outline" onclick="openModuleLesson('computer-systems')">Open</button></div><div class="module"><h3>&#x2328;&#xFE0F; Input & Output</h3><p class="muted">70% complete</p><button class="outline" onclick="openModuleLesson('input-output',1)">Open</button></div><div class="module"><h3>&#x1F310; Networks</h3><p class="muted">55% complete</p><button class="outline" onclick="openModuleLesson('networks',1)">Open</button></div><div class="module"><h3>&#x1F4CA; Data Handling</h3><p class="muted">58% complete</p><button class="outline" onclick="openModuleLesson('data-handling',1)">Open</button></div><div class="module"><h3>&#x1F5C3;&#xFE0F; Databases</h3><p class="muted">45% complete</p><button class="outline" onclick="openModuleLesson('databases',1)">Open</button></div><div class="module"><h3>&#x1F510; ICT & Society</h3><p class="muted">61% complete</p><button class="outline" onclick="openModuleLesson('ict-society',1)">Open</button></div></div></div>
@@ -1024,6 +1056,7 @@ if (membership) {
 }
 
 try{ const identity=await getStudentIdentity(); await renderExamAndVideoSummary(identity.email); }catch(e){ console.warn('Could not load learning stats.',e); }
+try{ await loadStudentDashboard(); }catch(e){ console.warn('Could not load dashboard insights.',e); }
 
 window.scrollTo(0,0);
   }catch(error){
@@ -1517,6 +1550,54 @@ async function renderExamAndVideoSummary(email){
   }
 }
 
+async function loadStudentDashboard(){
+  try{
+    const response=await fetch('/api/lesson-progress');
+    const data=await response.json().catch(()=>({}));
+    const progress=response.ok?(data.progress||[]):[];
+    const modules={
+      'computer-systems':{name:'Computer Systems',total:4},
+      'input-output':{name:'Input & Output',total:5},
+      'networks':{name:'Networks',total:5},
+      'data-handling':{name:'Data Handling',total:8},
+      'databases':{name:'Databases',total:5},
+      'ict-society':{name:'ICT & Society',total:5}
+    };
+    const total=Object.values(modules).reduce((sum,m)=>sum+m.total,0);
+    const completed=progress.filter(x=>x.completed===1||x.completed===true).length;
+    const percent=total?Math.round((completed/total)*100):0;
+    const pct=document.getElementById('dashboardCoursePercent');
+    const txt=document.getElementById('dashboardCourseText');
+    if(pct)pct.textContent=percent+'%';
+    if(txt)txt.textContent=completed+' of '+total+' lessons completed';
+
+    const nextTitle=document.getElementById('dashboardNextTitle');
+    const nextText=document.getElementById('dashboardNextText');
+    if(completed>0){
+      const latest=progress.filter(x=>x.completed===1||x.completed===true).sort((a,b)=>String(b.completed_at||'').localeCompare(String(a.completed_at||'')))[0];
+      const info=latest&&modules[latest.module_slug];
+      if(nextTitle)nextTitle.textContent='Continue '+(info?info.name:'your course');
+      if(nextText)nextText.textContent='Your latest lesson progress is saved. Open My Course to continue.';
+    }else{
+      if(nextTitle)nextTitle.textContent='Start your ICT journey';
+      if(nextText)nextText.textContent='Begin with My Course and work through your IGCSE ICT lessons.';
+    }
+
+    try{
+      const sr=await fetch('/api/submissions');
+      const sd=await sr.json().catch(()=>({}));
+      if(sr.ok){
+        const marked=(sd.submissions||[]).filter(x=>x.status==='marked').sort((a,b)=>String(b.marked_at||'').localeCompare(String(a.marked_at||'')))[0];
+        const ft=document.getElementById('dashboardFeedbackTitle');
+        const fx=document.getElementById('dashboardFeedbackText');
+        if(marked){
+          if(ft)ft.textContent=marked.score?('Score: '+marked.score):'Paper marked';
+          if(fx)fx.textContent=marked.feedback||'Your teacher has marked a submitted paper. Open Resources & Marking to view it.';
+        }
+      }
+    }catch(e){ console.warn('Latest marking summary unavailable.',e); }
+  }catch(e){ console.warn('Student dashboard data unavailable.',e); }
+}
 async function loadProgress() {
   const container = document.getElementById('realProgress');
   try{ const identity=await getStudentIdentity(); await renderExamAndVideoSummary(identity.email); }catch(e){ console.warn('Activity progress summary unavailable.',e); }
