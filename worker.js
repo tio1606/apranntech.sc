@@ -1011,7 +1011,8 @@ async function sendMarkedPaperEmail(env, student, row, score, feedback, markedFi
 }
 __name(sendMarkedPaperEmail, "sendMarkedPaperEmail");
 
-async function handleAdminMarkSubmission(request, env, submissionId) {
+async function handleAdminMarkSubmission(request, env, submissionId, ctx) {
+
   const admin = await requireAdmin(request, env);
   if (!admin) return json({ error: "Admin access required." }, 403);
   const row = await env.DB.prepare("SELECT * FROM resource_submissions WHERE id=? LIMIT 1").bind(submissionId).first();
@@ -1049,22 +1050,35 @@ async function handleAdminMarkSubmission(request, env, submissionId) {
     WHERE id=?
   `).bind(score, feedback, markedKey, markedName, markedAt.replace("T", " ").slice(0, 19)).run();
 
-  const emailResult = await sendMarkedPaperEmail(
-    env,
-    student,
-    { ...row, marked_name: markedName, marked_at: markedAt },
-    score,
-    feedback,
-    markedFileBytes
-  );
+  const emailPayload = {
+    ...row,
+    marked_name: markedName,
+    marked_at: markedAt
+  };
+
+  // Do not make the marking operation depend on the external email service.
+  // Cloudflare can continue the email request in the background after the
+  // marking response has already been returned to the teacher.
+  if (ctx && typeof ctx.waitUntil === "function") {
+    ctx.waitUntil(
+      sendMarkedPaperEmail(
+        env,
+        student,
+        emailPayload,
+        score,
+        feedback,
+        markedFileBytes
+      ).catch((error) => {
+        console.error("Background marked-paper email error", error);
+      })
+    );
+  }
 
   return json({
     success: true,
     message: "Paper marked successfully.",
-    email_sent: emailResult.sent,
-    email_message: emailResult.sent
-      ? "Notification email sent to the student."
-      : "Paper was saved, but the notification email was not sent yet."
+    email_queued: Boolean(ctx && typeof ctx.waitUntil === "function"),
+    email_message: "The paper has been saved. The student notification email is being processed."
   });
 }
 __name(handleAdminMarkSubmission, "handleAdminMarkSubmission");
@@ -1574,7 +1588,7 @@ var worker_default = {
         const submissionDownload = url.pathname.match(/^\/api\/submissions\/(\d+)\/(marked\/)?download$/);
         if (submissionDownload && method === "GET") return await handleSubmissionDownload(request, env, Number(submissionDownload[1]), Boolean(submissionDownload[2]));
         const markSubmission = url.pathname.match(/^\/api\/admin\/submissions\/(\d+)\/mark$/);
-        if (markSubmission && method === "POST") return await handleAdminMarkSubmission(request, env, Number(markSubmission[1]));
+        if (markSubmission && method === "POST") return await handleAdminMarkSubmission(request, env, Number(markSubmission[1]), ctx);
         if (url.pathname === "/api/register" && method === "POST") {
           return await handleRegister(
             request,
