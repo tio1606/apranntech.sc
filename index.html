@@ -1210,7 +1210,7 @@ document.addEventListener('submit',async function(e){
 });
 async function openStudentCourse(){
   try{
-    await dashTab('course',document.querySelector('.side button[onclick*="dashTab(\\'course\\'"]'));
+    await dashTab('course',document.querySelector('.side button[onclick*="dashTab(\'course\'"]'));
     const course=document.getElementById('dcourse');
     if(course) course.scrollIntoView({behavior:'smooth',block:'start'});
   }catch(error){
