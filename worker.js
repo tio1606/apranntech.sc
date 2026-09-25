@@ -925,57 +925,64 @@ function bytesToBase64(bytes) {
 __name(bytesToBase64, "bytesToBase64");
 
 async function sendMarkedPaperEmail(env, student, row, score, feedback, markedFileBytes) {
-  if (!env.RESEND_API_KEY) {
-    return { sent: false, reason: "RESEND_API_KEY is not configured." };
-  }
-
-  const recipient = String(student?.email || "").trim();
-  if (!recipient) {
-    return { sent: false, reason: "Student email address is missing." };
-  }
-
-  const studentName = String(student?.name || "Student").trim() || "Student";
-  const paperName = String(row.original_name || "your paper");
-  const safeScore = String(score || "Not provided");
-  const safeFeedback = String(feedback || "Your teacher has completed the marking.");
-
-  const attachments = [];
-  if (markedFileBytes && markedFileBytes.length && row.marked_name) {
-    attachments.push({
-      filename: String(row.marked_name),
-      content: bytesToBase64(markedFileBytes),
-      content_type: "application/octet-stream"
-    });
-  }
-
-  const html = `
-    <div style="font-family:Arial,sans-serif;max-width:640px;margin:auto;color:#102a43">
-      <h2 style="color:#0b6ea8">Aprann Tech ICT Academy</h2>
-      <p>Hello ${studentName},</p>
-      <p>Your submitted paper <strong>${paperName}</strong> has been marked by your teacher.</p>
-      <div style="background:#f1f7fb;padding:16px;border-radius:10px">
-        <p style="margin:0 0 8px"><strong>Score:</strong> ${safeScore}</p>
-        <p style="margin:0"><strong>Teacher feedback:</strong><br>${safeFeedback.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>")}</p>
-      </div>
-      <p>Your marked paper is attached to this email.</p>
-      <p>You can also log in to your Aprann Tech account to view and download it from <strong>Resources &amp; Marking</strong>.</p>
-      <p>Regards,<br><strong>Aprann Tech ICT Academy</strong><br>Seychelles</p>
-    </div>
-  `;
-
-  const from = env.RESEND_FROM_EMAIL || "Aprann Tech <contact@apranntech.net>";
-  const payload = {
-    from,
-    to: [recipient],
-    subject: "Your Aprann Tech paper has been marked",
-    html,
-    headers: {
-      "X-Entity-Ref-ID": `marked-paper-${row.id}`
-    }
-  };
-  if (attachments.length) payload.attachments = attachments;
-
   try {
+    if (!env.RESEND_API_KEY) {
+      return { sent: false, reason: "RESEND_API_KEY is not configured." };
+    }
+
+    const recipient = String(student?.email || "").trim();
+    if (!recipient) {
+      return { sent: false, reason: "Student email address is missing." };
+    }
+
+    const studentName = String(student?.name || "Student").trim() || "Student";
+    const paperName = String(row.original_name || "your paper");
+    const safeScore = String(score || "Not provided");
+    const safeFeedback = String(feedback || "Your teacher has completed the marking.");
+
+    const htmlEscape = (value) => String(value || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+
+    const attachments = [];
+    if (markedFileBytes && markedFileBytes.length && row.marked_name) {
+      attachments.push({
+        filename: String(row.marked_name),
+        content: bytesToBase64(markedFileBytes),
+        content_type: "application/octet-stream"
+      });
+    }
+
+    const html = `
+      <div style="font-family:Arial,sans-serif;max-width:640px;margin:auto;color:#102a43">
+        <h2 style="color:#0b6ea8">Aprann Tech ICT Academy</h2>
+        <p>Hello ${htmlEscape(studentName)},</p>
+        <p>Your submitted paper <strong>${htmlEscape(paperName)}</strong> has been marked by your teacher.</p>
+        <div style="background:#f1f7fb;padding:16px;border-radius:10px">
+          <p style="margin:0 0 8px"><strong>Score:</strong> ${htmlEscape(safeScore)}</p>
+          <p style="margin:0"><strong>Teacher feedback:</strong><br>${htmlEscape(safeFeedback).replace(/\n/g, "<br>")}</p>
+        </div>
+        <p>Your marked paper is attached to this email.</p>
+        <p>You can also log in to your Aprann Tech account to view and download it from <strong>Resources &amp; Marking</strong>.</p>
+        <p>Regards,<br><strong>Aprann Tech ICT Academy</strong><br>Seychelles</p>
+      </div>
+    `;
+
+    const from = env.RESEND_FROM_EMAIL || "Aprann Tech <contact@apranntech.net>";
+    const payload = {
+      from,
+      to: [recipient],
+      subject: "Your Aprann Tech paper has been marked",
+      html,
+      headers: {
+        "X-Entity-Ref-ID": `marked-paper-${row.id}`
+      }
+    };
+    if (attachments.length) payload.attachments = attachments;
+
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -988,12 +995,18 @@ async function sendMarkedPaperEmail(env, student, row, score, feedback, markedFi
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
       console.error("Resend marked-paper email error", response.status, data);
-      return { sent: false, reason: "Email provider rejected the message." };
+      return {
+        sent: false,
+        reason: data?.message || data?.error?.message || `Resend returned HTTP ${response.status}.`
+      };
     }
     return { sent: true, id: data.id || null };
   } catch (error) {
-    console.error("Marked-paper email request error", error);
-    return { sent: false, reason: "Unable to reach the email provider." };
+    console.error("Marked-paper email preparation/request error", error);
+    return {
+      sent: false,
+      reason: error instanceof Error ? error.message : "Unable to prepare or send the email."
+    };
   }
 }
 __name(sendMarkedPaperEmail, "sendMarkedPaperEmail");
