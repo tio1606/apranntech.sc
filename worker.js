@@ -1012,74 +1012,121 @@ async function sendMarkedPaperEmail(env, student, row, score, feedback, markedFi
 __name(sendMarkedPaperEmail, "sendMarkedPaperEmail");
 
 async function handleAdminMarkSubmission(request, env, submissionId, ctx) {
-
   const admin = await requireAdmin(request, env);
   if (!admin) return json({ error: "Admin access required." }, 403);
-  const row = await env.DB.prepare("SELECT * FROM resource_submissions WHERE id=? LIMIT 1").bind(submissionId).first();
-  if (!row) return json({ error: "Submission not found." }, 404);
 
-  const student = await env.DB.prepare("SELECT id,name,email FROM users WHERE id=? LIMIT 1").bind(row.user_id).first();
-  if (!student) return json({ error: "Student account not found." }, 404);
+  try {
+    const row = await env.DB.prepare(
+      "SELECT * FROM resource_submissions WHERE id=? LIMIT 1"
+    ).bind(submissionId).first();
 
-  const form = await request.formData();
-  const score = String(form.get("score") || "").trim();
-  const feedback = String(form.get("feedback") || "").trim();
-  const file = form.get("marked_file");
-  let markedKey = row.marked_object_key || "";
-  let markedName = row.marked_name || "";
-  let markedFileBytes = null;
+    if (!row) return json({ error: "Submission not found." }, 404);
 
-  if (file instanceof File && file.size) {
-    if (file.size > 25 * 1024 * 1024) return json({ error: "Maximum marked-file size is 25 MB." }, 400);
-    const safeName = String(file.name || "marked-paper").replace(/[^a-zA-Z0-9._-]/g, "_");
-    markedKey = `marked/${row.user_id}/${Date.now()}-${crypto.randomUUID()}-${safeName}`;
-    markedName = safeName;
-    markedFileBytes = new Uint8Array(await file.arrayBuffer());
-    await env.RESOURCE_FILES.put(markedKey, markedFileBytes, {
-      httpMetadata: { contentType: file.type || "application/octet-stream" }
+    const student = await env.DB.prepare(
+      "SELECT id,name,email FROM users WHERE id=? LIMIT 1"
+    ).bind(row.user_id).first();
+
+    if (!student) return json({ error: "Student account not found." }, 404);
+
+    const form = await request.formData();
+    const score = String(form.get("score") || "").trim();
+    const feedback = String(form.get("feedback") || "").trim();
+    const file = form.get("marked_file");
+
+    let markedKey = row.marked_object_key || "";
+    let markedName = row.marked_name || "";
+    let markedFileBytes = null;
+
+    if (file instanceof File && file.size) {
+      if (file.size > 25 * 1024 * 1024) {
+        return json({ error: "Maximum marked-file size is 25 MB." }, 400);
+      }
+
+      const safeName = String(file.name || "marked-paper")
+        .replace(/[^a-zA-Z0-9._-]/g, "_");
+
+      markedKey = `marked/${row.user_id}/${Date.now()}-${crypto.randomUUID()}-${safeName}`;
+      markedName = safeName;
+      markedFileBytes = new Uint8Array(await file.arrayBuffer());
+
+      if (!env.RESOURCE_FILES) {
+        throw new Error("RESOURCE_FILES R2 binding is not available.");
+      }
+
+      await env.RESOURCE_FILES.put(markedKey, markedFileBytes, {
+        httpMetadata: {
+          contentType: file.type || "application/octet-stream"
+        }
+      });
+    } else if (markedKey) {
+      if (!env.RESOURCE_FILES) {
+        throw new Error("RESOURCE_FILES R2 binding is not available.");
+      }
+      const existing = await env.RESOURCE_FILES.get(markedKey);
+      if (existing) {
+        markedFileBytes = new Uint8Array(await existing.arrayBuffer());
+      }
+    }
+
+    const markedAt = new Date().toISOString();
+
+    await env.DB.prepare(`
+      UPDATE resource_submissions
+      SET status='marked',
+          score=?,
+          feedback=?,
+          marked_object_key=?,
+          marked_name=?,
+          marked_at=?
+      WHERE id=?
+    `).bind(
+      score,
+      feedback,
+      markedKey,
+      markedName,
+      markedAt.replace("T", " ").slice(0, 19)
+    ).run();
+
+    const emailPayload = {
+      ...row,
+      marked_name: markedName,
+      marked_at: markedAt
+    };
+
+    if (ctx && typeof ctx.waitUntil === "function" && env.RESEND_API_KEY) {
+      ctx.waitUntil(
+        sendMarkedPaperEmail(
+          env,
+          student,
+          emailPayload,
+          score,
+          feedback,
+          markedFileBytes
+        ).catch((error) => {
+          console.error("Background marked-paper email error", error);
+        })
+      );
+    }
+
+    return json({
+      success: true,
+      message: "Paper marked successfully.",
+      email_queued: Boolean(
+        ctx &&
+        typeof ctx.waitUntil === "function" &&
+        env.RESEND_API_KEY
+      ),
+      email_message: env.RESEND_API_KEY
+        ? "The paper has been saved. The student notification email is being processed."
+        : "The paper has been saved. Email notification is not configured yet."
     });
-  } else if (markedKey) {
-    const existing = await env.RESOURCE_FILES.get(markedKey);
-    if (existing) markedFileBytes = new Uint8Array(await existing.arrayBuffer());
+  } catch (error) {
+    console.error("admin mark submission error", error);
+    return json({
+      error: "Unable to save the marked paper.",
+      detail: error instanceof Error ? error.message : String(error || "Unknown error")
+    }, 500);
   }
-
-  const markedAt = new Date().toISOString();
-  await env.DB.prepare(`
-    UPDATE resource_submissions
-    SET status='marked', score=?, feedback=?, marked_object_key=?, marked_name=?, marked_at=?
-    WHERE id=?
-  `).bind(score, feedback, markedKey, markedName, markedAt.replace("T", " ").slice(0, 19)).run();
-
-  const emailPayload = {
-    ...row,
-    marked_name: markedName,
-    marked_at: markedAt
-  };
-
-  // Do not make the marking operation depend on the external email service.
-  // Cloudflare can continue the email request in the background after the
-  // marking response has already been returned to the teacher.
-  if (ctx && typeof ctx.waitUntil === "function") {
-    ctx.waitUntil(
-      sendMarkedPaperEmail(
-        env,
-        student,
-        emailPayload,
-        score,
-        feedback,
-        markedFileBytes
-      ).catch((error) => {
-        console.error("Background marked-paper email error", error);
-      })
-    );
-  }
-
-  return json({
-    success: true,
-    message: "Paper marked successfully.",
-    email_queued: Boolean(ctx && typeof ctx.waitUntil === "function"),
-    email_message: "The paper has been saved. The student notification email is being processed."
-  });
 }
 __name(handleAdminMarkSubmission, "handleAdminMarkSubmission");
 
