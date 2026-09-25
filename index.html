@@ -435,6 +435,14 @@ footer::after{
 .dashboard-bar i{display:block;height:100%;background:linear-gradient(90deg,#0284c7,#00b8d9);border-radius:999px;transition:width .4s ease}
 .dashboard-module-meta{display:flex;justify-content:space-between;gap:10px;margin-top:8px;font-size:13px;color:var(--muted)}
 .dashboard-summary-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+.dashboard-score-trend{border:1px solid #dbe3ea;border-radius:14px;padding:18px;background:linear-gradient(135deg,#f8fcff,#fff)}
+.dashboard-trend-head{display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap}
+.dashboard-trend-bars{display:flex;align-items:flex-end;gap:12px;height:150px;margin-top:18px;padding:12px 6px 0;border-bottom:1px solid #dbe3ea}
+.dashboard-trend-item{flex:1;min-width:42px;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:7px}
+.dashboard-trend-bar{width:100%;max-width:54px;min-height:8px;border-radius:8px 8px 3px 3px;background:linear-gradient(180deg,#0284c7,#0ea5e9);transition:height .35s ease}
+.dashboard-trend-score{font-size:12px;font-weight:800;color:#082f49}
+.dashboard-trend-date{font-size:10px;color:#64748b;white-space:nowrap}
+@media(max-width:560px){.dashboard-trend-bars{gap:7px}.dashboard-trend-item{min-width:34px}.dashboard-trend-bar{max-width:42px}}
 .dashboard-mini-stat{background:#f8fbfd;border:1px solid var(--line);border-radius:12px;padding:13px}
 .dashboard-mini-stat strong{display:block;font-size:22px;color:var(--navy);margin-bottom:3px}
 .dashboard-mini-stat span{font-size:12px;color:var(--muted)}
@@ -655,10 +663,22 @@ Student Login
     <div class="dashboard-summary-strip" style="margin-top:0;">
       <div class="dashboard-mini-stat"><strong id="dashboardHighestScore">—</strong><span>Highest theory score</span></div>
       <div class="dashboard-mini-stat"><strong id="dashboardLatestScore">—</strong><span>Latest theory score</span></div>
-      <div class="dashboard-mini-stat"><strong id="dashboardRecentVideos">0</strong><span>Videos recorded</span></div>
+      <div class="dashboard-mini-stat"><strong id="dashboardRecentVideos">0</strong><span>Videos watched</span></div>
     </div>
     <div id="dashboardRecentExams" style="margin-top:16px;">
       <p class="muted">No exam attempts yet.</p>
+    </div>
+    <div id="dashboardScoreTrend" class="dashboard-score-trend" style="margin-top:20px;">
+      <div class="dashboard-trend-head">
+        <div>
+          <h3 style="margin:0 0 4px;">Score Trend</h3>
+          <p class="muted" style="margin:0;">Your recent theory results at a glance.</p>
+        </div>
+        <span class="badge" id="dashboardTrendLabel">No results yet</span>
+      </div>
+      <div id="dashboardTrendBars" class="dashboard-trend-bars">
+        <p class="muted">Complete a theory exam to start your performance trend.</p>
+      </div>
     </div>
   </div>
 
@@ -1633,6 +1653,25 @@ async function loadStudentDashboard(){
       if(highEl)highEl.textContent=highest===null?'—':highest+'%';
       if(latestEl)latestEl.textContent=latest?(Number(latest.percentage)||0)+'%':'—';
       if(videoRecentEl)videoRecentEl.textContent=watched;
+
+      const trendBars=document.getElementById('dashboardTrendBars');
+      const trendLabel=document.getElementById('dashboardTrendLabel');
+      if(trendBars){
+        const recentTheory=theory.slice(0,6).reverse();
+        if(!recentTheory.length){
+          trendBars.innerHTML='<p class="muted">Complete a theory exam to start your performance trend.</p>';
+          if(trendLabel)trendLabel.textContent='No results yet';
+        }else{
+          const maxPct=Math.max(...recentTheory.map(x=>Number(x.percentage)||0),100);
+          trendBars.innerHTML=recentTheory.map(x=>{
+            const pct=Math.max(0,Math.min(100,Number(x.percentage)||0));
+            const h=Math.max(8,Math.round((pct/maxPct)*105));
+            const date=x.submittedAt?new Date(x.submittedAt).toLocaleDateString(undefined,{day:'2-digit',month:'short'}):'—';
+            return '<div class="dashboard-trend-item"><div class="dashboard-trend-score">'+pct+'%</div><div class="dashboard-trend-bar" style="height:'+h+'px" title="'+pct+'%"></div><div class="dashboard-trend-date">'+date+'</div></div>';
+          }).join('');
+          if(trendLabel)trendLabel.textContent=recentTheory.length+' recent '+(recentTheory.length===1?'result':'results');
+        }
+      }
 
       const recentEl=document.getElementById('dashboardRecentExams');
       if(recentEl){
