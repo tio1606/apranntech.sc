@@ -1461,7 +1461,9 @@ function openMembershipPlans(){
       return;
     }
 
-    const modules = document.querySelectorAll('#dhome .module');
+    // Only update the six course cards. Never target dashboard modules,
+    // otherwise lesson titles/descriptions can overwrite dashboard content.
+    const modules = document.querySelectorAll('#dcourse .module');
 
     data.lessons.forEach((lesson, index) => {
       if(!modules[index]) return;
