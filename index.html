@@ -1444,110 +1444,37 @@ function openMembershipPlans(){
   showPricing();
 }
   async function loadMyCourse(){
-  try{
-    const response = await fetch('/api/courses/1');
+  // Keep the six course cards mapped to their own ICT modules.
+  // The API returns individual lessons in one list; using the first six
+  // returned lessons here caused every module card to open the wrong lesson.
+  // Each card therefore keeps its module-specific lesson launcher.
+  const cards = [
+    ['computer-systems', 1],
+    ['input-output', 1],
+    ['networks', 1],
+    ['data-handling', 1],
+    ['databases', 1],
+    ['ict-society', 1]
+  ];
 
-    if(!response.ok){
-      console.error('Could not load course:', response.status);
-      return;
-    }
+  const modules = document.querySelectorAll('#dcourse .module');
 
-    const data = await response.json();
+  modules.forEach((moduleCard, index) => {
+    const button = moduleCard.querySelector('button');
+    if(!button || !cards[index]) return;
 
-    console.log('Aprann Tech course data:', data);
-
-    if(!data.course || !Array.isArray(data.lessons)){
-      console.error('Course data is incomplete.');
-      return;
-    }
-
-    // Only update the six course cards. Never target dashboard modules,
-    // otherwise lesson titles/descriptions can overwrite dashboard content.
-    const modules = document.querySelectorAll('#dcourse .module');
-
-    data.lessons.forEach((lesson, index) => {
-      if(!modules[index]) return;
-
-      const title = modules[index].querySelector('h3');
-      const description = modules[index].querySelector('.muted');
-      const button = modules[index].querySelector('button');
-
-      if(title){
-        title.textContent = lesson.title;
-      }
-
-      if(description){
-        if(lesson.locked){
-          description.textContent = 'Premium lesson \u2022 Locked';
-        }else{
-          description.textContent = 'Available \u2022 Ready to learn';
-        }
-      }
-
-      if(button){
-        if(lesson.locked){
-          button.textContent = '\uD83D\uDD12 Locked';
-          button.disabled = true;
-          button.style.opacity = '0.6';
-          button.style.cursor = 'not-allowed';
-        }else{
-          button.textContent = 'Open';
-          button.disabled = false;
-          button.style.opacity = '1';
-          button.style.cursor = 'pointer';
-
-          button.onclick = function(){
-            openLesson(lesson);
-          };
-        }
-      }
-    });
-
-  }catch(error){
-    console.error('Course loading error:', error);
-  }
+    const [moduleSlug, lessonNumber] = cards[index];
+    button.disabled = false;
+    button.textContent = 'Open';
+    button.style.opacity = '1';
+    button.style.cursor = 'pointer';
+    button.onclick = function(){
+      openModuleLesson(moduleSlug, lessonNumber);
+    };
+  });
 }
 
-function openLesson(lesson){
-  // Open the lesson returned by the course API. The previous course loader
-  // assigned openLesson(lesson), but this function was missing, so the
-  // buttons appeared active without doing anything.
-  if(!lesson || lesson.locked){
-    alert('This lesson is locked. Please check your membership.');
-    return;
-  }
 
-  const old=document.getElementById('lessonWindow');
-  if(old) old.remove();
-
-  const win=document.createElement('div');
-  win.id='lessonWindow';
-  win.style.cssText='position:fixed;inset:0;background:rgba(3,24,38,.72);display:flex;justify-content:center;align-items:center;padding:20px;z-index:12000;';
-
-  const content=String(lesson.content||'<p class="muted">This lesson does not have content yet.</p>');
-  const video=String(lesson.video_url||'').trim();
-  const videoHtml=video ? '<div style="margin:20px 0;"><h3>Video</h3><div style="position:relative;padding-top:56.25%;border-radius:12px;overflow:hidden;background:#0b2d44;"><iframe src="'+escapeResourceHtml(video)+'" style="position:absolute;inset:0;width:100%;height:100%;border:0;" allowfullscreen></iframe></div></div>' : '';
-
-  // The six dashboard course cards map to the six progress modules.
-  const moduleSlugs=['computer-systems','input-output','networks','data-handling','databases','ict-society'];
-  const moduleSlug=moduleSlugs[Math.max(0,Math.min(moduleSlugs.length-1,Number(lesson.sort_order||1)-1))];
-  const lessonNumber=1;
-
-  win.innerHTML='<div style="background:white;width:min(920px,96vw);max-height:90vh;overflow:auto;border-radius:20px;padding:28px;box-shadow:0 25px 70px rgba(0,0,0,.35);">'+
-    '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:15px;margin-bottom:18px;">'+
-      '<div><span class="badge">APRANN TECH LESSON</span><h2 style="margin:10px 0 0;color:#082f49;">'+escapeResourceHtml(lesson.title||'Lesson')+'</h2></div>'+
-      '<button onclick="document.getElementById(\'lessonWindow\').remove()" style="border:0;background:#eef2f5;border-radius:10px;width:42px;height:42px;font-size:24px;cursor:pointer;">×</button>'+
-    '</div>'+
-    '<div style="line-height:1.7;color:#263b4d;">'+content+'</div>'+
-    videoHtml+
-    '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:24px;padding-top:18px;border-top:1px solid #dbe3ea;">'+
-      '<button class="outline" onclick="document.getElementById(\'lessonWindow\').remove()">← Back to Course</button>'+
-      '<button class="primary" onclick="completeLesson(\''+moduleSlug+'\','+lessonNumber+');document.getElementById(\'lessonWindow\').remove();">✓ Mark Lesson Complete</button>'+
-    '</div>'+
-  '</div>';
-
-  document.body.appendChild(win);
-}
 function getStudentProgressKey(){
   return 'aprannTechProgress_v1';
 }
