@@ -644,6 +644,24 @@ Student Login
     </div>
   </div>
 
+  <div class="module dashboard-performance-panel">
+    <div class="dashboard-progress-header">
+      <div>
+        <h2>Performance Overview</h2>
+        <p class="muted" style="margin:0;">Review your recent exams and learning activity.</p>
+      </div>
+      <span class="badge">YOUR RESULTS</span>
+    </div>
+    <div class="dashboard-summary-strip" style="margin-top:0;">
+      <div class="dashboard-mini-stat"><strong id="dashboardHighestScore">—</strong><span>Highest theory score</span></div>
+      <div class="dashboard-mini-stat"><strong id="dashboardLatestScore">—</strong><span>Latest theory score</span></div>
+      <div class="dashboard-mini-stat"><strong id="dashboardRecentVideos">0</strong><span>Videos recorded</span></div>
+    </div>
+    <div id="dashboardRecentExams" style="margin-top:16px;">
+      <p class="muted">No exam attempts yet.</p>
+    </div>
+  </div>
+
   <div class="module-grid" style="margin-top:18px;">
     <div class="module" style="border-left:5px solid #16a34a;">
       <span class="badge">CONTINUE LEARNING</span>
@@ -1597,10 +1615,39 @@ async function renderExamAndVideoSummary(email){
 
 async function loadStudentDashboard(){
   try{
-    // Keep the existing local activity summary in sync with the dashboard.
     try{
       const identity=await getStudentIdentity();
       if(identity&&identity.email) await renderExamAndVideoSummary(identity.email);
+
+      const store=getLocalStudentProgress();
+      const student=store[(identity&&identity.email)||'student'] || {exams:[],watchedVideos:{}};
+      const exams=Array.isArray(student.exams)?student.exams:[];
+      const theory=exams.filter(x=>x.type==='theory');
+      const watched=Object.keys(student.watchedVideos||{}).length;
+
+      const highest=theory.length?Math.max(...theory.map(x=>Number(x.percentage)||0)):null;
+      const latest=theory.length?theory[0]:null;
+      const highEl=document.getElementById('dashboardHighestScore');
+      const latestEl=document.getElementById('dashboardLatestScore');
+      const videoRecentEl=document.getElementById('dashboardRecentVideos');
+      if(highEl)highEl.textContent=highest===null?'—':highest+'%';
+      if(latestEl)latestEl.textContent=latest?(Number(latest.percentage)||0)+'%':'—';
+      if(videoRecentEl)videoRecentEl.textContent=watched;
+
+      const recentEl=document.getElementById('dashboardRecentExams');
+      if(recentEl){
+        if(!exams.length){
+          recentEl.innerHTML='<p class="muted">No exam attempts yet. Complete an exam to build your performance history.</p>';
+        }else{
+          recentEl.innerHTML='<div style="overflow:auto;"><table class="table"><thead><tr><th>Exam</th><th>Type</th><th>Score</th><th>Percentage</th><th>Date</th></tr></thead><tbody>'+
+            exams.slice(0,5).map(x=>{
+              const date=x.submittedAt?new Date(x.submittedAt).toLocaleDateString():'—';
+              const pct=Number(x.percentage)||0;
+              return '<tr><td>'+escapeResourceHtml(x.examTitle||'ICT Exam')+'</td><td>'+escapeResourceHtml(x.type==='theory'?'Theory':'Practical')+'</td><td>'+escapeResourceHtml((x.score??'—')+'/'+(x.total??'—'))+'</td><td><strong>'+pct+'%</strong></td><td>'+date+'</td></tr>';
+            }).join('')+
+          '</tbody></table></div>';
+        }
+      }
     }catch(e){ console.warn('Activity dashboard summary unavailable.',e); }
 
     const response=await fetch('/api/lesson-progress');
