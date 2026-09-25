@@ -1084,7 +1084,8 @@ async function handleAdminMarkSubmission(request, env, submissionId, ctx) {
       feedback,
       markedKey,
       markedName,
-      markedAt.replace("T", " ").slice(0, 19)
+      markedAt.replace("T", " ").slice(0, 19),
+      submissionId
     ).run();
 
     const emailPayload = {
