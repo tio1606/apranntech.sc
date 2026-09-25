@@ -423,6 +423,24 @@ footer::after{
 #aprannChatQuick{display:flex;gap:7px;overflow-x:auto;padding:10px 12px 4px;background:#fff}.aprann-quick{flex:0 0 auto;border:1px solid #b9dced;background:#f2faff;color:#075a8d;border-radius:18px;padding:7px 10px;font-size:12px;cursor:pointer}.aprann-chat-input{display:flex;gap:8px;padding:10px 12px;border-top:1px solid #e3edf2;background:#fff}#aprannChatInput{flex:1;min-width:0;border:1px solid #cfe0e8;border-radius:20px;padding:10px 13px;outline:none;font:inherit;font-size:14px}#aprannChatSend{width:42px;height:42px;border:0;border-radius:50%;background:#087fc8;color:#fff;cursor:pointer;font-size:17px}
 @media(max-width:560px){#aprannChatButton{right:14px;bottom:14px}#aprannChatWindow{right:10px;bottom:84px;width:calc(100vw - 20px);height:calc(100vh - 105px)}}
 </style>
+<style id="aprann-dashboard-upgrade">
+.dashboard-progress-panel{margin-top:18px}
+.dashboard-progress-header{display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;margin-bottom:16px}
+.dashboard-progress-header h2{margin:0 0 5px}
+.dashboard-progress-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.dashboard-module-progress{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px}
+.dashboard-module-top{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:8px}
+.dashboard-module-top strong{color:var(--navy)}
+.dashboard-bar{height:10px;background:#e5e7eb;border-radius:999px;overflow:hidden}
+.dashboard-bar i{display:block;height:100%;background:linear-gradient(90deg,#0284c7,#00b8d9);border-radius:999px;transition:width .4s ease}
+.dashboard-module-meta{display:flex;justify-content:space-between;gap:10px;margin-top:8px;font-size:13px;color:var(--muted)}
+.dashboard-summary-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+.dashboard-mini-stat{background:#f8fbfd;border:1px solid var(--line);border-radius:12px;padding:13px}
+.dashboard-mini-stat strong{display:block;font-size:22px;color:var(--navy);margin-bottom:3px}
+.dashboard-mini-stat span{font-size:12px;color:var(--muted)}
+@media(max-width:800px){.dashboard-progress-grid{grid-template-columns:1fr}.dashboard-summary-strip{grid-template-columns:1fr 1fr}}
+@media(max-width:500px){.dashboard-summary-strip{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
 <header>
@@ -603,9 +621,27 @@ Student Login
 
   <div id="dashboardLearningStats" class="module-grid" style="margin-top:18px;">
     <div class="module"><span class="badge">COURSE PROGRESS</span><h3 id="dashboardCoursePercent" style="font-size:28px;margin:12px 0 4px;">0%</h3><p id="dashboardCourseText" class="muted" style="margin:0;">Loading lessons...</p></div>
-    <div class="module"><span class="badge">EXAMS</span><h3 id="dashboardExamCount" style="font-size:28px;margin:12px 0 4px;">0</h3><p class="muted" style="margin:0;">Completed</p></div>
-    <div class="module"><span class="badge">THEORY AVERAGE</span><h3 id="dashboardExamAverage" style="font-size:28px;margin:12px 0 4px;">0%</h3><p class="muted" style="margin:0;">Average score</p></div>
-    <div class="module"><span class="badge">VIDEOS</span><h3 id="dashboardVideoCount" style="font-size:28px;margin:12px 0 4px;">0</h3><p class="muted" style="margin:0;">Watched</p></div>
+    <div class="module"><span class="badge">EXAM ATTEMPTS</span><h3 id="dashboardExamCount" style="font-size:28px;margin:12px 0 4px;">0</h3><p class="muted" style="margin:0;">Completed exams</p></div>
+    <div class="module"><span class="badge">THEORY AVERAGE</span><h3 id="dashboardExamAverage" style="font-size:28px;margin:12px 0 4px;">0%</h3><p class="muted" style="margin:0;">Average theory score</p></div>
+    <div class="module"><span class="badge">VIDEOS WATCHED</span><h3 id="dashboardVideoCount" style="font-size:28px;margin:12px 0 4px;">0</h3><p class="muted" style="margin:0;">Recorded learning activity</p></div>
+  </div>
+
+  <div class="module dashboard-progress-panel">
+    <div class="dashboard-progress-header">
+      <div>
+        <h2>Learning Progress by Module</h2>
+        <p class="muted" style="margin:0;">See exactly where you are in each ICT module.</p>
+      </div>
+      <span class="badge" id="dashboardProgressSummary">0 of 32 lessons</span>
+    </div>
+    <div id="dashboardModuleProgress" class="dashboard-progress-grid">
+      <p class="muted">Loading module progress...</p>
+    </div>
+    <div class="dashboard-summary-strip">
+      <div class="dashboard-mini-stat"><strong id="dashboardCompletedLessons">0</strong><span>Lessons completed</span></div>
+      <div class="dashboard-mini-stat"><strong id="dashboardRemainingLessons">32</strong><span>Lessons remaining</span></div>
+      <div class="dashboard-mini-stat"><strong id="dashboardMarkedCount">0</strong><span>Marked papers</span></div>
+    </div>
   </div>
 
   <div class="module-grid" style="margin-top:18px;">
@@ -616,7 +652,7 @@ Student Login
       <button class="primary" onclick="dashTab('course',document.querySelector('.side button:nth-child(3)'))">Open My Course</button>
     </div>
     <div class="module" style="border-left:5px solid #0284c7;">
-      <span class="badge">LATEST FEEDBACK</span>
+      <span class="badge">LATEST TEACHER FEEDBACK</span>
       <h2 id="dashboardFeedbackTitle" style="margin:12px 0 6px;">No marked paper yet</h2>
       <p id="dashboardFeedbackText" class="muted" style="margin:0 0 14px;">Teacher feedback will appear here after your paper is marked.</p>
       <button class="outline" onclick="dashTab('resources',document.querySelector('.side button:nth-child(9)'))">Open Resources & Marking</button>
@@ -1552,6 +1588,12 @@ async function renderExamAndVideoSummary(email){
 
 async function loadStudentDashboard(){
   try{
+    // Keep the existing local activity summary in sync with the dashboard.
+    try{
+      const identity=await getStudentIdentity();
+      if(identity&&identity.email) await renderExamAndVideoSummary(identity.email);
+    }catch(e){ console.warn('Activity dashboard summary unavailable.',e); }
+
     const response=await fetch('/api/lesson-progress');
     const data=await response.json().catch(()=>({}));
     const progress=response.ok?(data.progress||[]):[];
@@ -1563,13 +1605,35 @@ async function loadStudentDashboard(){
       'databases':{name:'Databases',total:5},
       'ict-society':{name:'ICT & Society',total:5}
     };
+
     const total=Object.values(modules).reduce((sum,m)=>sum+m.total,0);
     const completed=progress.filter(x=>x.completed===1||x.completed===true).length;
     const percent=total?Math.round((completed/total)*100):0;
+
     const pct=document.getElementById('dashboardCoursePercent');
     const txt=document.getElementById('dashboardCourseText');
     if(pct)pct.textContent=percent+'%';
     if(txt)txt.textContent=completed+' of '+total+' lessons completed';
+
+    const summary=document.getElementById('dashboardProgressSummary');
+    const completedEl=document.getElementById('dashboardCompletedLessons');
+    const remainingEl=document.getElementById('dashboardRemainingLessons');
+    if(summary)summary.textContent=completed+' of '+total+' lessons';
+    if(completedEl)completedEl.textContent=completed;
+    if(remainingEl)remainingEl.textContent=Math.max(total-completed,0);
+
+    const moduleProgress=document.getElementById('dashboardModuleProgress');
+    if(moduleProgress){
+      moduleProgress.innerHTML=Object.entries(modules).map(([slug,module])=>{
+        const done=progress.filter(x=>x.module_slug===slug&&(x.completed===1||x.completed===true)).length;
+        const p=module.total?Math.round((done/module.total)*100):0;
+        return '<div class="dashboard-module-progress">'+
+          '<div class="dashboard-module-top"><strong>'+module.name+'</strong><strong>'+p+'%</strong></div>'+
+          '<div class="dashboard-bar"><i style="width:'+p+'%"></i></div>'+
+          '<div class="dashboard-module-meta"><span>'+done+' of '+module.total+' lessons</span><span>'+(p===100?'Complete':p===0?'Not started':'In progress')+'</span></div>'+
+        '</div>';
+      }).join('');
+    }
 
     const nextTitle=document.getElementById('dashboardNextTitle');
     const nextText=document.getElementById('dashboardNextText');
@@ -1587,11 +1651,15 @@ async function loadStudentDashboard(){
       const sr=await fetch('/api/submissions');
       const sd=await sr.json().catch(()=>({}));
       if(sr.ok){
-        const marked=(sd.submissions||[]).filter(x=>x.status==='marked').sort((a,b)=>String(b.marked_at||'').localeCompare(String(a.marked_at||'')))[0];
+        const submissions=Array.isArray(sd.submissions)?sd.submissions:[];
+        const markedList=submissions.filter(x=>x.status==='marked').sort((a,b)=>String(b.marked_at||'').localeCompare(String(a.marked_at||'')));
+        const marked=markedList[0];
+        const countEl=document.getElementById('dashboardMarkedCount');
+        if(countEl)countEl.textContent=markedList.length;
         const ft=document.getElementById('dashboardFeedbackTitle');
         const fx=document.getElementById('dashboardFeedbackText');
         if(marked){
-          if(ft)ft.textContent=marked.score?('Score: '+marked.score):'Paper marked';
+          if(ft)ft.textContent=marked.score!==null&&marked.score!==undefined&&String(marked.score).trim()!==''?('Score: '+marked.score):'Paper marked';
           if(fx)fx.textContent=marked.feedback||'Your teacher has marked a submitted paper. Open Resources & Marking to view it.';
         }
       }
