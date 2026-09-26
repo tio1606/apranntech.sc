@@ -6302,7 +6302,7 @@ footer:after{
 
           ${
             nextLesson
-            ? `<button onclick="openModuleLesson('${module}',${nextLesson})"
+            ? `<button onclick="completeAndNextLesson('${module}',${lesson},${nextLesson})"
                 style="padding:12px 20px;background:#0788cc;color:white;border:none;border-radius:8px;cursor:pointer;">
                 Next Lesson →
               </button>`
@@ -7378,7 +7378,35 @@ function checkTuckShopFormulas() {
     </div>
   `;
 }
- async function completeLesson(module, lesson) {
+ async async function completeAndNextLesson(module, lesson, nextLesson) {
+  try {
+    const response = await fetch('/api/lesson-progress', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ module, lesson })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      alert(data.error || 'Unable to save lesson progress.');
+      return;
+    }
+
+    await loadProgress();
+    try { await loadStudentDashboard(); } catch (e) {
+      console.warn('Dashboard refresh after lesson completion failed.', e);
+    }
+
+    openModuleLesson(module, nextLesson);
+  } catch (error) {
+    console.error('Next lesson progress error:', error);
+    alert('Unable to save your progress. Please try again.');
+  }
+}
+
+
+function completeLesson(module, lesson) {
   try {
     const response = await fetch('/api/lesson-progress', {
       method: 'POST',
