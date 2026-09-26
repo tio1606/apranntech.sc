@@ -173,7 +173,235 @@ section{padding:58px 0}.section-title{text-align:center;margin-bottom:30px}.sect
   border-top:7px solid transparent;border-bottom:7px solid transparent;
   border-left:12px solid #fff;transform:translateX(2px);
 }
+/* =========================================================
+   APRANN TECH - PROFESSIONAL STUDENT DASHBOARD
+   Visual upgrade only - existing functions preserved
+   ========================================================= */
 
+#dhome {
+  max-width: 1250px;
+  margin: 0 auto;
+  padding-bottom: 40px;
+}
+
+/* Dashboard welcome header */
+#dhome > div:first-child {
+  background: linear-gradient(135deg, #082f49 0%, #0369a1 55%, #0284c7 100%);
+  color: white;
+  border-radius: 20px;
+  padding: 28px 30px;
+  margin-bottom: 20px;
+  box-shadow: 0 10px 30px rgba(8, 47, 73, 0.15);
+}
+
+#dhome > div:first-child h1 {
+  color: white;
+  font-size: 30px;
+  font-weight: 800;
+  margin: 0 0 6px;
+}
+
+#dhome > div:first-child p {
+  color: rgba(255,255,255,.85);
+}
+
+#dhome > div:first-child .outline {
+  border-color: rgba(255,255,255,.65);
+  color: white;
+  background: rgba(255,255,255,.08);
+}
+
+#dhome > div:first-child .outline:hover {
+  background: white;
+  color: #082f49;
+}
+
+/* Membership card */
+#membershipPlan {
+  background: linear-gradient(135deg, #ffffff, #f0f9ff);
+  border: 1px solid #bae6fd !important;
+  border-left: 6px solid #0284c7 !important;
+  border-radius: 16px;
+  padding: 22px !important;
+  box-shadow: 0 6px 20px rgba(2,132,199,.08);
+}
+
+#membershipPlan h3 {
+  color: #082f49;
+  font-size: 20px;
+}
+
+/* Dashboard statistics */
+#dashboardLearningStats {
+  gap: 16px !important;
+}
+
+#dashboardLearningStats > .module {
+  border: 1px solid #e0f2fe;
+  border-radius: 16px;
+  background: white;
+  padding: 20px !important;
+  min-height: 120px;
+  box-shadow: 0 5px 18px rgba(15,23,42,.06);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+
+#dashboardLearningStats > .module:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(15,23,42,.10);
+}
+
+#dashboardLearningStats h3 {
+  color: #082f49;
+  font-weight: 800;
+}
+
+/* Progress panel */
+.dashboard-progress-panel,
+.dashboard-performance-panel {
+  background: white;
+  border: 1px solid #dbeafe;
+  border-radius: 18px;
+  padding: 24px !important;
+  margin-top: 20px;
+  box-shadow: 0 6px 22px rgba(15,23,42,.06);
+}
+
+.dashboard-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.dashboard-progress-header h2 {
+  color: #082f49;
+  font-size: 23px;
+}
+
+/* Progress summary badge */
+#dashboardProgressSummary,
+#dashboardTrendLabel {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+  font-weight: 700;
+}
+
+/* Performance mini-stat cards */
+.dashboard-performance-panel .dashboard-summary-strip {
+  gap: 14px !important;
+}
+
+.dashboard-mini-stat,
+.dashboard-summary-strip .dashboard-mini-stat {
+  background: linear-gradient(135deg, #f8fafc, #eff6ff);
+  border: 1px solid #dbeafe;
+  border-radius: 14px;
+  padding: 16px !important;
+  min-height: 75px;
+}
+
+.dashboard-mini-stat strong {
+  display: block;
+  color: #0284c7;
+  font-size: 25px;
+  font-weight: 800;
+  margin-bottom: 3px;
+}
+
+/* Score trend */
+.dashboard-score-trend {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 18px;
+}
+
+/* Continue Learning + Feedback */
+#dhome > .module-grid {
+  gap: 18px;
+}
+
+#dhome > .module-grid > .module {
+  border-radius: 16px !important;
+  background: white;
+  box-shadow: 0 5px 18px rgba(15,23,42,.06);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+
+#dhome > .module-grid > .module:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(15,23,42,.10);
+}
+
+#dashboardNextTitle,
+#dashboardFeedbackTitle {
+  color: #082f49;
+  font-weight: 800;
+}
+
+/* Quick Actions */
+#dhome > .module[style*="margin-top:18px"] {
+  border-radius: 18px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 6px 20px rgba(15,23,42,.05);
+}
+
+#dhome > .module[style*="margin-top:18px"] h2 {
+  color: #082f49;
+}
+
+/* Buttons inside dashboard */
+#dhome button {
+  border-radius: 10px;
+  font-weight: 700;
+  transition: all .2s ease;
+}
+
+#dhome button:hover {
+  transform: translateY(-1px);
+}
+
+/* Better mobile dashboard */
+@media (max-width: 800px) {
+  #dhome {
+    padding: 10px;
+  }
+
+  #dhome > div:first-child {
+    padding: 22px;
+    border-radius: 16px;
+  }
+
+  #dhome > div:first-child h1 {
+    font-size: 24px;
+  }
+
+  .dashboard-progress-panel,
+  .dashboard-performance-panel {
+    padding: 18px !important;
+  }
+
+  .dashboard-progress-header {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 500px) {
+  #dhome > div:first-child {
+    padding: 20px;
+  }
+
+  #dhome > div:first-child h1 {
+    font-size: 21px;
+  }
+
+  .dashboard-mini-stat {
+    padding: 13px !important;
+  }
+}
 </style>
 
 <style id="aprann-visual-refresh">
@@ -661,8 +889,8 @@ Student Login
       <span class="badge">YOUR RESULTS</span>
     </div>
     <div class="dashboard-summary-strip" style="margin-top:0;">
-      <div class="dashboard-mini-stat"><strong id="dashboardHighestScore">â€”</strong><span>Highest theory score</span></div>
-      <div class="dashboard-mini-stat"><strong id="dashboardLatestScore">â€”</strong><span>Latest theory score</span></div>
+      <div class="dashboard-mini-stat"><strong id="dashboardHighestScore">—”</strong><span>Highest theory score</span></div>
+      <div class="dashboard-mini-stat"><strong id="dashboardLatestScore">—”</strong><span>Latest theory score</span></div>
       <div class="dashboard-mini-stat"><strong id="dashboardRecentVideos">0</strong><span>Videos watched</span></div>
     </div>
     <div id="dashboardRecentExams" style="margin-top:16px;">
