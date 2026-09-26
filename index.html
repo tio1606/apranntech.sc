@@ -6287,23 +6287,31 @@ footer:after{
 
 </style>
 
-      <div style="display:flex;justify-content:space-between;margin-top:25px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:25px;">
 
         <button onclick="document.getElementById('lessonWindow').remove()"
           style="padding:12px 20px;border:1px solid #ccc;background:white;border-radius:8px;cursor:pointer;">
-          \u2190 Back
+          ← Back
         </button>
 
-        ${
-          nextLesson
-          ? `<button onclick="openModuleLesson('${module}',${nextLesson})"
-              style="padding:12px 20px;background:#0788cc;color:white;border:none;border-radius:8px;cursor:pointer;">
-              Next Lesson \u2192
-            </button>`
-          : `<button onclick="completeLesson('${module}',${lesson})" style="padding:12px 20px;background:#16a34a;color:white;border:none;border-radius:8px;cursor:pointer;">
-              Module Complete \u2713
-            </button>`
-        }
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button id="lessonCompleteBtn" onclick="completeLesson('${module}',${lesson})"
+            style="padding:12px 20px;background:#16a34a;color:white;border:none;border-radius:8px;cursor:pointer;">
+            ✓ Mark Lesson Complete
+          </button>
+
+          ${
+            nextLesson
+            ? `<button onclick="openModuleLesson('${module}',${nextLesson})"
+                style="padding:12px 20px;background:#0788cc;color:white;border:none;border-radius:8px;cursor:pointer;">
+                Next Lesson →
+              </button>`
+            : `<button onclick="completeLesson('${module}',${lesson});setTimeout(()=>document.getElementById('lessonWindow')?.remove(),250)"
+                style="padding:12px 20px;background:#0f766e;color:white;border:none;border-radius:8px;cursor:pointer;">
+                Module Complete ✓
+              </button>`
+          }
+        </div>
 
       </div>
 
@@ -7391,6 +7399,10 @@ function checkTuckShopFormulas() {
     }
 
     await loadProgress();
+
+    const btn=document.getElementById('lessonCompleteBtn');
+    if(btn){ btn.textContent='✓ Lesson Completed'; btn.disabled=true; btn.style.opacity='0.75'; btn.style.cursor='default'; }
+    try{ await loadStudentDashboard(); }catch(e){ console.warn('Dashboard refresh after lesson completion failed.',e); }
 
     alert('Lesson completed successfully! \u2713');
 
