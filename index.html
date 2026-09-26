@@ -985,8 +985,8 @@ Student Login
   <div class="module" style="margin-top:20px;"><h2 style="margin-top:0;">&#128228; Submit a Paper for Marking</h2><p class="muted">Upload your completed paper. Your teacher/admin can download it, mark it and return the marked file with feedback.</p><form id="premiumSubmissionForm" style="display:grid;gap:12px;max-width:650px;"><input type="file" required style="padding:12px;border:1px solid #cbd5e1;border-radius:9px;background:white;"><button class="primary" type="submit">Submit Paper</button></form><div id="premiumSubmissionStatus" class="muted" style="margin-top:10px;"></div></div>
   <div class="module" style="margin-top:20px;"><h2 style="margin-top:0;">&#128221; My Submissions & Marked Papers</h2><div id="premiumSubmissionList"><p class="muted">Loading submissions...</p></div></div>
   <div id="adminResourcePanel" class="hidden">
-    <div class="module" style="margin-top:20px;border:2px solid #0077b6;"><h2 style="margin-top:0;">Ã°Å¸â€˜Â¨Ã¢â‚¬ÂÃ°Å¸ÂÂ« Teacher Resource Manager</h2><p class="muted">Upload resources that Premium students can download.</p><form id="adminResourceForm" style="display:grid;gap:12px;max-width:700px;"><input id="adminResourceTitle" type="text" placeholder="Resource title" required class="field"><input id="adminResourceCategory" type="text" placeholder="Category e.g. Past Papers, Revision Notes" class="field"><textarea id="adminResourceDescription" placeholder="Short description" rows="3" class="field"></textarea><input type="file" required style="padding:12px;border:1px solid #cbd5e1;border-radius:9px;background:white;"><button class="primary" type="submit">Upload Resource</button></form><div id="adminResourceStatus" class="muted" style="margin-top:10px;"></div><div id="adminResourceList" style="margin-top:18px;"><p class="muted">Loading teacher resources...</p></div></div>
-    <div class="module" style="margin-top:20px;border:2px solid #16a34a;"><h2 style="margin-top:0;">Ã°Å¸â€œÂ Marking Queue</h2><p class="muted">Download student papers, mark them, add feedback and upload the marked copy.</p><div id="adminSubmissionList"><p class="muted">Loading marking queue...</p></div></div>
+    <div class="module" style="margin-top:20px;border:2px solid #0077b6;"><h2 style="margin-top:0;">&#128104;&#8205;&#127979; Teacher Resource Manager</h2><p class="muted">Upload resources that Premium students can download.</p><form id="adminResourceForm" style="display:grid;gap:12px;max-width:700px;"><input id="adminResourceTitle" type="text" placeholder="Resource title" required class="field"><input id="adminResourceCategory" type="text" placeholder="Category e.g. Past Papers, Revision Notes" class="field"><textarea id="adminResourceDescription" placeholder="Short description" rows="3" class="field"></textarea><input type="file" required style="padding:12px;border:1px solid #cbd5e1;border-radius:9px;background:white;"><button class="primary" type="submit">Upload Resource</button></form><div id="adminResourceStatus" class="muted" style="margin-top:10px;"></div><div id="adminResourceList" style="margin-top:18px;"><p class="muted">Loading teacher resources...</p></div></div>
+    <div class="module" style="margin-top:20px;border:2px solid #16a34a;"><h2 style="margin-top:0;">&#128221; Marking Queue</h2><p class="muted">Download student papers, mark them, add feedback and upload the marked copy.</p><div id="adminSubmissionList"><p class="muted">Loading marking queue...</p></div></div>
   </div>
 </div>
  <div id="dprogress" class="dtab hidden">
@@ -1347,7 +1347,7 @@ if (membership) {
       </span>
     </div>
     <p class="muted" style="margin:8px 0 0;">
-      ${expires ? 'Access until: ' + new Date(expires).toLocaleDateString() : (plan === 'free' ? 'Free account Ã¢â‚¬â€ membership features are locked.' : 'Membership access is active.')}
+      ${expires ? 'Access until: ' + new Date(expires).toLocaleDateString() : (plan === 'free' ? 'Free account â€” membership features are locked.' : 'Membership access is active.')}
     </p>
     ${plan === 'free' || !active ? '<button class="primary" style="margin-top:12px;" onclick="openMembershipPlans()">Upgrade Membership</button>' : ''}
   `;
@@ -1847,8 +1847,8 @@ async function loadStudentDashboard(){
       const highEl=document.getElementById('dashboardHighestScore');
       const latestEl=document.getElementById('dashboardLatestScore');
       const videoRecentEl=document.getElementById('dashboardRecentVideos');
-      if(highEl)highEl.textContent=highest===null?'Ã¢â‚¬â€':highest+'%';
-      if(latestEl)latestEl.textContent=latest?(Number(latest.percentage)||0)+'%':'Ã¢â‚¬â€';
+      if(highEl)highEl.textContent=highest===null?'â€”':highest+'%';
+      if(latestEl)latestEl.textContent=latest?(Number(latest.percentage)||0)+'%':'â€”';
       if(videoRecentEl)videoRecentEl.textContent=watched;
 
       const trendBars=document.getElementById('dashboardTrendBars');
@@ -1863,7 +1863,7 @@ async function loadStudentDashboard(){
           trendBars.innerHTML=recentTheory.map(x=>{
             const pct=Math.max(0,Math.min(100,Number(x.percentage)||0));
             const h=Math.max(8,Math.round((pct/maxPct)*105));
-            const date=x.submittedAt?new Date(x.submittedAt).toLocaleDateString(undefined,{day:'2-digit',month:'short'}):'Ã¢â‚¬â€';
+            const date=x.submittedAt?new Date(x.submittedAt).toLocaleDateString(undefined,{day:'2-digit',month:'short'}):'â€”';
             return '<div class="dashboard-trend-item"><div class="dashboard-trend-score">'+pct+'%</div><div class="dashboard-trend-bar" style="height:'+h+'px" title="'+pct+'%"></div><div class="dashboard-trend-date">'+date+'</div></div>';
           }).join('');
           if(trendLabel)trendLabel.textContent=recentTheory.length+' recent '+(recentTheory.length===1?'result':'results');
@@ -1877,9 +1877,9 @@ async function loadStudentDashboard(){
         }else{
           recentEl.innerHTML='<div style="overflow:auto;"><table class="table"><thead><tr><th>Exam</th><th>Type</th><th>Score</th><th>Percentage</th><th>Date</th></tr></thead><tbody>'+
             exams.slice(0,5).map(x=>{
-              const date=x.submittedAt?new Date(x.submittedAt).toLocaleDateString():'Ã¢â‚¬â€';
+              const date=x.submittedAt?new Date(x.submittedAt).toLocaleDateString():'â€”';
               const pct=Number(x.percentage)||0;
-              return '<tr><td>'+escapeResourceHtml(x.examTitle||'ICT Exam')+'</td><td>'+escapeResourceHtml(x.type==='theory'?'Theory':'Practical')+'</td><td>'+escapeResourceHtml((x.score??'Ã¢â‚¬â€')+'/'+(x.total??'Ã¢â‚¬â€'))+'</td><td><strong>'+pct+'%</strong></td><td>'+date+'</td></tr>';
+              return '<tr><td>'+escapeResourceHtml(x.examTitle||'ICT Exam')+'</td><td>'+escapeResourceHtml(x.type==='theory'?'Theory':'Practical')+'</td><td>'+escapeResourceHtml((x.score??'â€”')+'/'+(x.total??'â€”'))+'</td><td><strong>'+pct+'%</strong></td><td>'+date+'</td></tr>';
             }).join('')+
           '</tbody></table></div>';
         }
@@ -8117,7 +8117,7 @@ function open(){W.classList.add('open');W.setAttribute('aria-hidden','false');if
 function answer(q){q=q.toLowerCase().trim();
 if(!q)return'Please type a question and I will help you.';
 if(/hello|hi\b|hey|good morning|good afternoon|good evening/.test(q))return'Hello! Welcome to Aprann Tech. How can I help you today?';
-if(/course|learn|s1|s2|s3|s4|s5|igcse/.test(q))return'Aprann Tech provides ICT learning and exam preparation for S1Ã¢â‚¬â€œS5, IGCSE ICT and National Exams.';
+if(/course|learn|s1|s2|s3|s4|s5|igcse/.test(q))return'Aprann Tech provides ICT learning and exam preparation for S1â€“S5, IGCSE ICT and National Exams.';
 if(/price|pricing|cost|fee|membership|basic|standard|premium|free/.test(q))return'You can view the Free, Basic, Standard and Premium membership options in the Pricing section. Standard and Premium unlock the full Video Library and Exam Centre.';
 if(/exam|paper|past paper|quiz|practice/.test(q))return'The Exam Centre includes Paper 1 Theory Practice, Paper 2 Word Processing Practical, and Paper 3 Spreadsheet & Database Practical.';
 if(/video|videos|lesson/.test(q))return'The Video Library contains IGCSE ICT lessons covering computer systems, input/output devices, storage, networks, ICT applications, systems life cycle, safety and security, and exam walkthroughs.';
