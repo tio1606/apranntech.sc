@@ -6291,24 +6291,24 @@ footer:after{
 
         <button onclick="document.getElementById('lessonWindow').remove()"
           style="padding:12px 20px;border:1px solid #ccc;background:white;border-radius:8px;cursor:pointer;">
-          â† Back
+          &#x2190; Back
         </button>
 
         <div style="display:flex;gap:10px;flex-wrap:wrap;">
           <button id="lessonCompleteBtn" onclick="completeLesson('${module}',${lesson})"
             style="padding:12px 20px;background:#16a34a;color:white;border:none;border-radius:8px;cursor:pointer;">
-            âœ“ Mark Lesson Complete
+            &#x2713; Mark Lesson Complete
           </button>
 
           ${
             nextLesson
             ? `<button onclick="completeAndNextLesson('${module}',${lesson},${nextLesson})"
                 style="padding:12px 20px;background:#0788cc;color:white;border:none;border-radius:8px;cursor:pointer;">
-                Next Lesson â†’
+                Next Lesson &#x2192;
               </button>`
             : `<button onclick="completeLesson('${module}',${lesson});setTimeout(()=>document.getElementById('lessonWindow')?.remove(),250)"
                 style="padding:12px 20px;background:#0f766e;color:white;border:none;border-radius:8px;cursor:pointer;">
-                Module Complete âœ“
+                Module Complete &#x2713;
               </button>`
           }
         </div>
@@ -7429,7 +7429,7 @@ async function completeLesson(module, lesson) {
     await loadProgress();
 
     const btn=document.getElementById('lessonCompleteBtn');
-    if(btn){ btn.textContent='âœ“ Lesson Completed'; btn.disabled=true; btn.style.opacity='0.75'; btn.style.cursor='default'; }
+    if(btn){ btn.textContent='&#x2713; Lesson Completed'; btn.disabled=true; btn.style.opacity='0.75'; btn.style.cursor='default'; }
     try{ await loadStudentDashboard(); }catch(e){ console.warn('Dashboard refresh after lesson completion failed.',e); }
 
     alert('Lesson completed successfully! \u2713');
@@ -7818,7 +7818,7 @@ async function loadVideos(){
           <span class="badge">${video.topic}</span>
           <h3 style="margin:12px 0 7px;">${video.title}</h3>
           <p class="muted">${video.description}</p>
-          ${wasWatched ? '<div style="margin-top:10px;color:#166534;font-weight:800;font-size:13px;">âœ“ Watched</div>' : ''}
+          ${wasWatched ? '<div style="margin-top:10px;color:#166534;font-weight:800;font-size:13px;">&#x2713; Watched</div>' : ''}
           ${ready
             ? `<button class="primary" style="width:100%;margin-top:10px;" onclick="openVideo(${index})">\u25B6 Watch Video</button>`
             : `<button class="outline" style="width:100%;margin-top:10px;" onclick="alert('This video is not connected yet. Add the YouTube link to videoLibrary in the HTML file.')">\uD83C\uDFA5 Video Coming Soon</button>`
