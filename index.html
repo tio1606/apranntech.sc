@@ -776,7 +776,7 @@ footer::after{
 <label>Password</label>
 <input class="field" id="pass" type="password" placeholder="Password">
 
-<button id="loginSubmit" class="primary" type="button" style="width:100%">Log In</button>
+<button id="loginSubmit" class="primary" type="button" style="width:100%" onclick="enterApp()">Log In</button>
 
 <p class="muted" style="text-align:center;margin-top:18px">
 New student?
@@ -1023,8 +1023,8 @@ Student Login
   <div class="module" style="margin-top:20px;"><h2 style="margin-top:0;">&#128228; Submit a Paper for Marking</h2><p class="muted">Upload your completed paper. Your teacher/admin can download it, mark it and return the marked file with feedback.</p><form id="premiumSubmissionForm" style="display:grid;gap:12px;max-width:650px;"><input type="file" required style="padding:12px;border:1px solid #cbd5e1;border-radius:9px;background:white;"><button class="primary" type="submit">Submit Paper</button></form><div id="premiumSubmissionStatus" class="muted" style="margin-top:10px;"></div></div>
   <div class="module" style="margin-top:20px;"><h2 style="margin-top:0;">&#128221; My Submissions & Marked Papers</h2><div id="premiumSubmissionList"><p class="muted">Loading submissions...</p></div></div>
   <div id="adminResourcePanel" class="hidden">
-    <div class="module" style="margin-top:20px;border:2px solid #0077b6;"><h2 style="margin-top:0;">ðŸ‘¨â€ðŸ« Teacher Resource Manager</h2><p class="muted">Upload resources that Premium students can download.</p><form id="adminResourceForm" style="display:grid;gap:12px;max-width:700px;"><input id="adminResourceTitle" type="text" placeholder="Resource title" required class="field"><input id="adminResourceCategory" type="text" placeholder="Category e.g. Past Papers, Revision Notes" class="field"><textarea id="adminResourceDescription" placeholder="Short description" rows="3" class="field"></textarea><input type="file" required style="padding:12px;border:1px solid #cbd5e1;border-radius:9px;background:white;"><button class="primary" type="submit">Upload Resource</button></form><div id="adminResourceStatus" class="muted" style="margin-top:10px;"></div><div id="adminResourceList" style="margin-top:18px;"><p class="muted">Loading teacher resources...</p></div></div>
-    <div class="module" style="margin-top:20px;border:2px solid #16a34a;"><h2 style="margin-top:0;">ðŸ“ Marking Queue</h2><p class="muted">Download student papers, mark them, add feedback and upload the marked copy.</p><div id="adminSubmissionList"><p class="muted">Loading marking queue...</p></div></div>
+    <div class="module" style="margin-top:20px;border:2px solid #0077b6;"><h2 style="margin-top:0;">&#128104;&#8205;&#127979; Teacher Resource Manager</h2><p class="muted">Upload resources that Premium students can download.</p><form id="adminResourceForm" style="display:grid;gap:12px;max-width:700px;"><input id="adminResourceTitle" type="text" placeholder="Resource title" required class="field"><input id="adminResourceCategory" type="text" placeholder="Category e.g. Past Papers, Revision Notes" class="field"><textarea id="adminResourceDescription" placeholder="Short description" rows="3" class="field"></textarea><input type="file" required style="padding:12px;border:1px solid #cbd5e1;border-radius:9px;background:white;"><button class="primary" type="submit">Upload Resource</button></form><div id="adminResourceStatus" class="muted" style="margin-top:10px;"></div><div id="adminResourceList" style="margin-top:18px;"><p class="muted">Loading teacher resources...</p></div></div>
+    <div class="module" style="margin-top:20px;border:2px solid #16a34a;"><h2 style="margin-top:0;">&#128221; Marking Queue</h2><p class="muted">Download student papers, mark them, add feedback and upload the marked copy.</p><div id="adminSubmissionList"><p class="muted">Loading marking queue...</p></div></div>
   </div>
 </div>
  <div id="dprogress" class="dtab hidden">
@@ -1901,7 +1901,7 @@ async function loadStudentDashboard(){
           trendBars.innerHTML=recentTheory.map(x=>{
             const pct=Math.max(0,Math.min(100,Number(x.percentage)||0));
             const h=Math.max(8,Math.round((pct/maxPct)*105));
-            const date=x.submittedAt?new Date(x.submittedAt).toLocaleDateString(undefined,{day:'2-digit',month:'short'}):'â€”';
+            const date=x.submittedAt?new Date(x.submittedAt).toLocaleDateString(undefined,{day:'2-digit',month:'short'}):'—';
             return '<div class="dashboard-trend-item"><div class="dashboard-trend-score">'+pct+'%</div><div class="dashboard-trend-bar" style="height:'+h+'px" title="'+pct+'%"></div><div class="dashboard-trend-date">'+date+'</div></div>';
           }).join('');
           if(trendLabel)trendLabel.textContent=recentTheory.length+' recent '+(recentTheory.length===1?'result':'results');
@@ -1915,9 +1915,9 @@ async function loadStudentDashboard(){
         }else{
           recentEl.innerHTML='<div style="overflow:auto;"><table class="table"><thead><tr><th>Exam</th><th>Type</th><th>Score</th><th>Percentage</th><th>Date</th></tr></thead><tbody>'+
             exams.slice(0,5).map(x=>{
-              const date=x.submittedAt?new Date(x.submittedAt).toLocaleDateString():'â€”';
+              const date=x.submittedAt?new Date(x.submittedAt).toLocaleDateString():'—';
               const pct=Number(x.percentage)||0;
-              return '<tr><td>'+escapeResourceHtml(x.examTitle||'ICT Exam')+'</td><td>'+escapeResourceHtml(x.type==='theory'?'Theory':'Practical')+'</td><td>'+escapeResourceHtml((x.score??'â€”')+'/'+(x.total??'â€”'))+'</td><td><strong>'+pct+'%</strong></td><td>'+date+'</td></tr>';
+              return '<tr><td>'+escapeResourceHtml(x.examTitle||'ICT Exam')+'</td><td>'+escapeResourceHtml(x.type==='theory'?'Theory':'Practical')+'</td><td>'+escapeResourceHtml((x.score??'—')+'/'+(x.total??'—'))+'</td><td><strong>'+pct+'%</strong></td><td>'+date+'</td></tr>';
             }).join('')+
           '</tbody></table></div>';
         }
@@ -2019,7 +2019,7 @@ let dashboardNextLesson = null;
 async function openNextDashboardLesson(){
   try{
     if(dashboardNextLesson){
-      await dashTab('course',document.querySelector('.side button[onclick*="dashTab(\\'course\\'"]'));
+      await dashTab('course',document.querySelector('.side button[onclick*="dashTab(\'course\'"]'));
       openModuleLesson(dashboardNextLesson.module_slug,dashboardNextLesson.lesson_number);
       return;
     }
