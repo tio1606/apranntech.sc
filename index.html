@@ -342,6 +342,43 @@ section{padding:58px 0}.section-title{text-align:center;margin-bottom:30px}.sect
   font-weight: 800;
 }
 
+.dashboard-next-meta {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:10px;
+}
+
+.dashboard-next-chip {
+  display:inline-flex;
+  align-items:center;
+  padding:6px 10px;
+  border-radius:999px;
+  background:#ecfdf5;
+  color:#047857;
+  border:1px solid #bbf7d0;
+  font-size:12px;
+  font-weight:800;
+}
+
+.dashboard-next-card {
+  position:relative;
+  overflow:hidden;
+}
+
+.dashboard-next-card::after {
+  content:"";
+  position:absolute;
+  right:-35px;
+  top:-35px;
+  width:110px;
+  height:110px;
+  border-radius:50%;
+  background:rgba(22,163,74,.08);
+  pointer-events:none;
+}
+
 /* Quick Actions */
 #dhome > .module[style*="margin-top:18px"] {
   border-radius: 18px;
@@ -797,7 +834,8 @@ Student Login
   <div id="adminBackendNotice" class="module" style="margin-top:18px;background:#fff8e6;border-left:5px solid #f2c94c;">
     <strong>Admin data</strong><p class="muted" style="margin-bottom:0;">Loading secure admin data...</p>
   </div>
-  <div id="adminStatsGrid" class="module-grid" style="margin-top:18px;">    <div class="module"><span class="badge">STUDENTS</span><h3 id="adminStudentCount" style="font-size:30px;margin:12px 0 4px;">0</h3><p class="muted">Registered students</p></div>
+  <div id="adminStatsGrid" class="module-grid" style="margin-top:18px;">
+    <div class="module"><span class="badge">STUDENTS</span><h3 id="adminStudentCount" style="font-size:30px;margin:12px 0 4px;">0</h3><p class="muted">Registered students</p></div>
     <div class="module"><span class="badge">ACTIVE</span><h3 id="adminActiveCount" style="font-size:30px;margin:12px 0 4px;">0</h3><p class="muted">Active memberships</p></div>
     <div class="module"><span class="badge">EXAMS</span><h3 id="adminExamCount" style="font-size:30px;margin:12px 0 4px;">0</h3><p class="muted">Recorded exam attempts</p></div>
     <div class="module"><span class="badge">VIDEOS</span><h3 id="adminVideoCount" style="font-size:30px;margin:12px 0 4px;">0</h3><p class="muted">Video activity records</p></div>
@@ -910,11 +948,12 @@ Student Login
   </div>
 
   <div class="module-grid" style="margin-top:18px;">
-    <div class="module" style="border-left:5px solid #16a34a;">
+    <div class="module dashboard-next-card" style="border-left:5px solid #16a34a;">
       <span class="badge">CONTINUE LEARNING</span>
       <h2 id="dashboardNextTitle" style="margin:12px 0 6px;">Ready to learn?</h2>
-      <p id="dashboardNextText" class="muted" style="margin:0 0 14px;">Open your course and continue your ICT preparation.</p>
-      <button class="primary" onclick="openStudentCourse()">Open My Course</button>
+      <p id="dashboardNextText" class="muted" style="margin:0;">Your next lesson will appear here automatically.</p>
+      <div class="dashboard-next-meta"><span id="dashboardNextChip" class="dashboard-next-chip">Next lesson</span></div>
+      <button id="dashboardNextButton" class="primary" style="margin-top:14px;" onclick="openNextDashboardLesson()">Continue Lesson</button>
     </div>
     <div class="module" style="border-left:5px solid #0284c7;">
       <span class="badge">LATEST TEACHER FEEDBACK</span>
@@ -984,8 +1023,8 @@ Student Login
   <div class="module" style="margin-top:20px;"><h2 style="margin-top:0;">&#128228; Submit a Paper for Marking</h2><p class="muted">Upload your completed paper. Your teacher/admin can download it, mark it and return the marked file with feedback.</p><form id="premiumSubmissionForm" style="display:grid;gap:12px;max-width:650px;"><input type="file" required style="padding:12px;border:1px solid #cbd5e1;border-radius:9px;background:white;"><button class="primary" type="submit">Submit Paper</button></form><div id="premiumSubmissionStatus" class="muted" style="margin-top:10px;"></div></div>
   <div class="module" style="margin-top:20px;"><h2 style="margin-top:0;">&#128221; My Submissions & Marked Papers</h2><div id="premiumSubmissionList"><p class="muted">Loading submissions...</p></div></div>
   <div id="adminResourcePanel" class="hidden">
-    <div class="module" style="margin-top:20px;border:2px solid #0077b6;"><h2 style="margin-top:0;">&#128104;&#8205;&#127979; Teacher Resource Manager</h2><p class="muted">Upload resources that Premium students can download.</p><form id="adminResourceForm" style="display:grid;gap:12px;max-width:700px;"><input id="adminResourceTitle" type="text" placeholder="Resource title" required class="field"><input id="adminResourceCategory" type="text" placeholder="Category e.g. Past Papers, Revision Notes" class="field"><textarea id="adminResourceDescription" placeholder="Short description" rows="3" class="field"></textarea><input type="file" required style="padding:12px;border:1px solid #cbd5e1;border-radius:9px;background:white;"><button class="primary" type="submit">Upload Resource</button></form><div id="adminResourceStatus" class="muted" style="margin-top:10px;"></div><div id="adminResourceList" style="margin-top:18px;"><p class="muted">Loading teacher resources...</p></div></div>
-    <div class="module" style="margin-top:20px;border:2px solid #16a34a;"><h2 style="margin-top:0;">&#128221; Marking Queue</h2><p class="muted">Download student papers, mark them, add feedback and upload the marked copy.</p><div id="adminSubmissionList"><p class="muted">Loading marking queue...</p></div></div>
+    <div class="module" style="margin-top:20px;border:2px solid #0077b6;"><h2 style="margin-top:0;">ðŸ‘¨â€ðŸ« Teacher Resource Manager</h2><p class="muted">Upload resources that Premium students can download.</p><form id="adminResourceForm" style="display:grid;gap:12px;max-width:700px;"><input id="adminResourceTitle" type="text" placeholder="Resource title" required class="field"><input id="adminResourceCategory" type="text" placeholder="Category e.g. Past Papers, Revision Notes" class="field"><textarea id="adminResourceDescription" placeholder="Short description" rows="3" class="field"></textarea><input type="file" required style="padding:12px;border:1px solid #cbd5e1;border-radius:9px;background:white;"><button class="primary" type="submit">Upload Resource</button></form><div id="adminResourceStatus" class="muted" style="margin-top:10px;"></div><div id="adminResourceList" style="margin-top:18px;"><p class="muted">Loading teacher resources...</p></div></div>
+    <div class="module" style="margin-top:20px;border:2px solid #16a34a;"><h2 style="margin-top:0;">ðŸ“ Marking Queue</h2><p class="muted">Download student papers, mark them, add feedback and upload the marked copy.</p><div id="adminSubmissionList"><p class="muted">Loading marking queue...</p></div></div>
   </div>
 </div>
  <div id="dprogress" class="dtab hidden">
@@ -1596,7 +1635,8 @@ async function getCurrentMembership(){
       user:data.user
     };
   }catch(error){
-    console.error('Membership check failed:',error);    return {plan:'free', authenticated:false, user:null};
+    console.error('Membership check failed:',error);
+    return {plan:'free', authenticated:false, user:null};
   }
 }
 
@@ -1861,7 +1901,7 @@ async function loadStudentDashboard(){
           trendBars.innerHTML=recentTheory.map(x=>{
             const pct=Math.max(0,Math.min(100,Number(x.percentage)||0));
             const h=Math.max(8,Math.round((pct/maxPct)*105));
-            const date=x.submittedAt?new Date(x.submittedAt).toLocaleDateString(undefined,{day:'2-digit',month:'short'}):'—';
+            const date=x.submittedAt?new Date(x.submittedAt).toLocaleDateString(undefined,{day:'2-digit',month:'short'}):'â€”';
             return '<div class="dashboard-trend-item"><div class="dashboard-trend-score">'+pct+'%</div><div class="dashboard-trend-bar" style="height:'+h+'px" title="'+pct+'%"></div><div class="dashboard-trend-date">'+date+'</div></div>';
           }).join('');
           if(trendLabel)trendLabel.textContent=recentTheory.length+' recent '+(recentTheory.length===1?'result':'results');
@@ -1875,9 +1915,9 @@ async function loadStudentDashboard(){
         }else{
           recentEl.innerHTML='<div style="overflow:auto;"><table class="table"><thead><tr><th>Exam</th><th>Type</th><th>Score</th><th>Percentage</th><th>Date</th></tr></thead><tbody>'+
             exams.slice(0,5).map(x=>{
-              const date=x.submittedAt?new Date(x.submittedAt).toLocaleDateString():'—';
+              const date=x.submittedAt?new Date(x.submittedAt).toLocaleDateString():'â€”';
               const pct=Number(x.percentage)||0;
-              return '<tr><td>'+escapeResourceHtml(x.examTitle||'ICT Exam')+'</td><td>'+escapeResourceHtml(x.type==='theory'?'Theory':'Practical')+'</td><td>'+escapeResourceHtml((x.score??'—')+'/'+(x.total??'—'))+'</td><td><strong>'+pct+'%</strong></td><td>'+date+'</td></tr>';
+              return '<tr><td>'+escapeResourceHtml(x.examTitle||'ICT Exam')+'</td><td>'+escapeResourceHtml(x.type==='theory'?'Theory':'Practical')+'</td><td>'+escapeResourceHtml((x.score??'â€”')+'/'+(x.total??'â€”'))+'</td><td><strong>'+pct+'%</strong></td><td>'+date+'</td></tr>';
             }).join('')+
           '</tbody></table></div>';
         }
@@ -1927,14 +1967,32 @@ async function loadStudentDashboard(){
 
     const nextTitle=document.getElementById('dashboardNextTitle');
     const nextText=document.getElementById('dashboardNextText');
-    if(completed>0){
-      const latest=progress.filter(x=>x.completed===1||x.completed===true).sort((a,b)=>String(b.completed_at||'').localeCompare(String(a.completed_at||'')))[0];
-      const info=latest&&modules[latest.module_slug];
-      if(nextTitle)nextTitle.textContent='Continue '+(info?info.name:'your course');
-      if(nextText)nextText.textContent='Your latest lesson progress is saved. Open My Course to continue.';
+    const nextChip=document.getElementById('dashboardNextChip');
+    const nextButton=document.getElementById('dashboardNextButton');
+    dashboardNextLesson=null;
+
+    // Find the first unfinished lesson in the normal learning sequence.
+    for(const [slug,module] of Object.entries(modules)){
+      const doneNumbers=new Set(progress.filter(x=>x.module_slug===slug&&(x.completed===1||x.completed===true)).map(x=>Number(x.lesson_number)||0));
+      for(let lessonNo=1; lessonNo<=module.total; lessonNo++){
+        if(!doneNumbers.has(lessonNo)){
+          dashboardNextLesson={module_slug:slug,lesson_number:lessonNo,module_name:module.name};
+          break;
+        }
+      }
+      if(dashboardNextLesson) break;
+    }
+
+    if(dashboardNextLesson){
+      if(nextTitle)nextTitle.textContent='Continue '+dashboardNextLesson.module_name;
+      if(nextText)nextText.textContent='Your next lesson is ready. Pick up where your learning path currently stands.';
+      if(nextChip)nextChip.textContent='Lesson '+dashboardNextLesson.lesson_number+' • Next';
+      if(nextButton)nextButton.textContent='Open Lesson '+dashboardNextLesson.lesson_number;
     }else{
-      if(nextTitle)nextTitle.textContent='Start your ICT journey';
-      if(nextText)nextText.textContent='Begin with My Course and work through your IGCSE ICT lessons.';
+      if(nextTitle)nextTitle.textContent='Course complete';
+      if(nextText)nextText.textContent='You have completed all lessons currently available in the dashboard.';
+      if(nextChip)nextChip.textContent='All lessons complete';
+      if(nextButton)nextButton.textContent='Review My Course';
     }
 
     try{
@@ -1956,6 +2014,21 @@ async function loadStudentDashboard(){
     }catch(e){ console.warn('Latest marking summary unavailable.',e); }
   }catch(e){ console.warn('Student dashboard data unavailable.',e); }
 }
+let dashboardNextLesson = null;
+
+async function openNextDashboardLesson(){
+  try{
+    if(dashboardNextLesson){
+      await dashTab('course',document.querySelector('.side button[onclick*="dashTab(\\'course\\'"]'));
+      openModuleLesson(dashboardNextLesson.module_slug,dashboardNextLesson.lesson_number);
+      return;
+    }
+    await openStudentCourse();
+  }catch(error){
+    console.error('Unable to open next lesson:',error);
+  }
+}
+
 async function loadProgress() {
   const container = document.getElementById('realProgress');
   try{ const identity=await getStudentIdentity(); await renderExamAndVideoSummary(identity.email); }catch(e){ console.warn('Activity progress summary unavailable.',e); }
@@ -2395,7 +2468,8 @@ async function loadProgress() {
           <p>
             Registers are very small, very fast storage locations inside the
             CPU. They temporarily hold data and instructions currently being
-            processed.          </p>
+            processed.
+          </p>
 
           <h3>\uD83D\uDCBE RAM</h3>
 
@@ -3194,7 +3268,8 @@ async function loadProgress() {
         <button
           onclick="alert('Not quite. The main purpose is managing data.')"
           style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
-          C. It is only used to play videos        </button>
+          C. It is only used to play videos
+        </button>
 
   </div>
     `
@@ -3993,7 +4068,8 @@ async function loadProgress() {
 
       <p>
         <strong>OR</strong> is used when at least one of the conditions
-        must be true.      </p>
+        must be true.
+      </p>
 
       <p>
         Example:
@@ -4792,6 +4868,7 @@ async function loadProgress() {
         <li>Distinguish between text, numeric and date data.</li>
         <li>Choose suitable data types for different situations.</li>
       </ul>
+
       <h3>\uD83D\uDD24 Text Data</h3>
       <p>Text data consists mainly of letters, words or symbols.</p>
       <p>Examples: <strong>Student Name, Address, School Name</strong></p>
@@ -5591,7 +5668,8 @@ async function loadProgress() {
 
                     <h3>\u26A0\uFE0F Disadvantages of ICT</h3>
 
-                    <ul>                        <li>Cybersecurity risks.</li>
+                    <ul>
+                        <li>Cybersecurity risks.</li>
                         <li>Loss of privacy.</li>
                         <li>Some jobs may be automated.</li>
                         <li>People can become too dependent on technology.</li>
@@ -6390,7 +6468,8 @@ footer:before{
   content:"";
   position:absolute;
   left:0;right:0;top:0;height:5px;
-  background:linear-gradient(90deg,#003f88 0 25%,#00a9d6 25% 50%,#2f9e44 50% 70%,#f2c94c 70% 85%,#d83a3a 85% 100%);}
+  background:linear-gradient(90deg,#003f88 0 25%,#00a9d6 25% 50%,#2f9e44 50% 70%,#f2c94c 70% 85%,#d83a3a 85% 100%);
+}
 footer:after{
   content:"SEYCHELLES \u2022 DIGITAL LEARNING \u2022 ICT";
   position:absolute;
@@ -7189,7 +7268,8 @@ function startDataActivity(){
 
       </div>
 
-      <div style="  background:#f7f9fb;
+      <div style="
+  background:#f7f9fb;
   padding:20px;
   border:1px solid #d9e2ec;
   border-radius:10px;
@@ -7988,7 +8068,8 @@ function renderPracticalExam(win, exam){
   }
 
   window.__finishPracticalExam = ()=>{
-    if(timer) clearInterval(timer);    win.innerHTML = `
+    if(timer) clearInterval(timer);
+    win.innerHTML = `
       <div style="background:white;width:min(650px,94vw);border-radius:20px;padding:38px;text-align:center;box-shadow:0 25px 70px rgba(0,0,0,.3);">
         <div style="font-size:52px;">\u2705</div>
         <h2 style="color:#102a43;">Practical Task Completed</h2>
