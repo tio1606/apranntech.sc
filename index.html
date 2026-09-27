@@ -1503,8 +1503,15 @@ async function openStudentCourse(){
     console.error('Unable to open My Course:',error);
   }
 }
-async function dashTab(id,btn){
+async async function dashTab(id,btn){
   document.querySelectorAll('.dtab').forEach(x => x.classList.add('hidden'));
+
+  if(id === 'profile' && typeof openProfile === 'function'){
+    await openProfile();
+    document.querySelectorAll('.side button').forEach(x => x.classList.remove('active'));
+    if(btn) btn.classList.add('active');
+    return;
+  }
 
   const target = document.getElementById('d' + id);
   if(!target){
