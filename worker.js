@@ -1781,7 +1781,19 @@ var worker_default = {
   dashCandidates.forEach(function(el){if((el.textContent||'').trim()==='Dashboard'&&el.children.length===0)el.setAttribute('data-at-dashboard','1')});
   return true;
 }
-function atProfileInit(){\n  window.aprannTechOpenProfile=atProfileLoad;\n  atProfileSetup();\n  if(!window.__atProfileObserver){\n    window.__atProfileObserver=new MutationObserver(function(){ atProfileSetup(); });\n    if(document.body)window.__atProfileObserver.observe(document.body,{childList:true,subtree:true});\n  }\n}\nif(document.readyState==='loading')document.addEventListener('DOMContentLoaded',atProfileInit);else atProfileInit();\n})();" + "</script>", { html: true });
+function atProfileInit(){
+  window.aprannTechOpenProfile=atProfileLoad;
+  var run=function(){
+    if(atProfileSetup())return true;
+    return false;
+  };
+  run();
+  if(!window.__atProfileObserver){
+    window.__atProfileObserver=new MutationObserver(function(){run()});
+    if(document.body)window.__atProfileObserver.observe(document.body,{childList:true,subtree:true});
+  }
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',atProfileInit);else atProfileInit();\n})();" + "</script>", { html: true });
           }
         })
                 .transform(assetResponse);
