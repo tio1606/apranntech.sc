@@ -7099,6 +7099,55 @@ footer:after{
   document.body.appendChild(win);
 
 }
+
+  function getQuizHistoryKey(){
+    let identity = 'guest';
+    try{
+      if(typeof getStudentIdentity === 'function'){
+        identity = getStudentIdentity() || 'guest';
+      }else{
+        identity = localStorage.getItem('apranntech_student_email') || 'guest';
+      }
+    }catch(e){}
+    return 'apranntech_quiz_history_' + String(identity).toLowerCase();
+  }
+
+  function getQuizHistory(){
+    try{
+      const raw = localStorage.getItem(getQuizHistoryKey());
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    }catch(e){
+      return [];
+    }
+  }
+
+  function saveQuizAttempt(score,total,percentage){
+    const history = getQuizHistory();
+    history.unshift({
+      quiz:'Data Handling Quick Quiz',
+      score,
+      total,
+      percentage,
+      completedAt:new Date().toISOString()
+    });
+    localStorage.setItem(getQuizHistoryKey(), JSON.stringify(history.slice(0,20)));
+    return history;
+  }
+
+  function renderQuizHistorySummary(targetId){
+    const target = document.getElementById(targetId);
+    if(!target) return;
+    const history = getQuizHistory();
+    if(!history.length){
+      target.textContent = 'No previous attempts yet';
+      return;
+    }
+    const best = Math.max(...history.map(x => Number(x.percentage) || 0));
+    const latest = Number(history[0].percentage) || 0;
+    target.textContent = `Attempts: ${history.length} â€¢ Best: ${best}% â€¢ Latest: ${latest}%`;
+  }
+
   function startQuiz(){
 
   const old = document.getElementById("quizWindow");
@@ -7260,6 +7309,7 @@ footer:after{
             ">
               Data Handling Quick Quiz
             </h2>
+            <div id="quizHistorySummary" style="margin-top:7px;color:#64748b;font-size:13px;"></div>
           </div>
 
           <button
@@ -7359,7 +7409,9 @@ footer:after{
       (score / questions.length) * 100
     );
 
-    let message = "";
+    
+    saveQuizAttempt(score, questions.length, percentage);
+let message = "";
 
     if(percentage >= 80){
       message = "Excellent work! You have a strong understanding of Data Handling.";
@@ -7417,6 +7469,23 @@ footer:after{
           ${message}
         </p>
 
+        <div style="
+          margin:20px auto 0;
+          padding:12px 16px;
+          background:#f8fafc;
+          border:1px solid #dbe5ef;
+          border-radius:10px;
+          color:#334e68;
+          font-size:14px;
+          max-width:420px;
+        ">
+          ${(() => {
+            const history = getQuizHistory();
+            const best = history.length ? Math.max(...history.map(x => Number(x.percentage) || 0)) : percentage;
+            return `Attempts: ${history.length} â€¢ Best score: ${best}%`;
+          })()}
+        </div>
+
         <div style="margin-top:25px;">
 
           <button
@@ -7456,6 +7525,7 @@ footer:after{
 
   document.body.appendChild(win);
 
+  renderQuizHistorySummary('quizHistorySummary');
   showQuestion();
 }
 function startDataActivity(){
