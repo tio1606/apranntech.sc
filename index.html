@@ -7061,6 +7061,10 @@ footer:after{
 
 </style>
 
+      <div style="margin-top:18px;padding:10px 14px;background:#eff8ff;border:1px solid #cfe8f8;border-radius:10px;color:#075985;font-size:14px;">
+        <strong>Next step:</strong> Complete this lesson to save your progress, then continue automatically to the next lesson.
+      </div>
+
       <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:25px;">
 
         <button onclick="document.getElementById('lessonWindow').remove()"
@@ -7078,11 +7082,11 @@ footer:after{
             nextLesson
             ? `<button onclick="completeAndNextLesson('${module}',${lesson},${nextLesson})"
                 style="padding:12px 20px;background:#0788cc;color:white;border:none;border-radius:8px;cursor:pointer;">
-                Next Lesson &#x2192;
+                &#x2713; Complete &amp; Continue &#x2192;
               </button>`
             : `<button onclick="completeLesson('${module}',${lesson});setTimeout(()=>document.getElementById('lessonWindow')?.remove(),250)"
                 style="padding:12px 20px;background:#0f766e;color:white;border:none;border-radius:8px;cursor:pointer;">
-                Module Complete &#x2713;
+                &#x2713; Complete Module
               </button>`
           }
         </div>
@@ -8205,7 +8209,12 @@ async function completeLesson(module, lesson) {
     try{ await updateCourseLessonNavigation(); }catch(e){ console.warn('Course navigation refresh failed.', e); }
 
     const btn=document.getElementById('lessonCompleteBtn');
-    if(btn){ btn.textContent='&#x2713; Lesson Completed'; btn.disabled=true; btn.style.opacity='0.75'; btn.style.cursor='default'; }
+    if(btn){
+      btn.textContent='âœ“ Lesson Completed';
+      btn.disabled=true;
+      btn.style.opacity='0.75';
+      btn.style.cursor='default';
+    }
     try{ await loadStudentDashboard(); }catch(e){ console.warn('Dashboard refresh after lesson completion failed.',e); }
 
     alert('Lesson completed successfully! \u2713');
