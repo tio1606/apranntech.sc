@@ -1673,8 +1673,21 @@ function escapeProfileHtml(value){
 async function dashTab(id,btn){
   document.querySelectorAll('.dtab').forEach(x => x.classList.add('hidden'));
 
-  if(id === 'profile' && typeof openProfile === 'function'){
-    await openProfile();
+  if(id === 'profile'){
+    const profileTarget = document.getElementById('dprofile');
+
+    if(!profileTarget){
+      console.error('Profile tab not found.');
+      return;
+    }
+
+    // Show the profile panel before loading its account data.
+    profileTarget.classList.remove('hidden');
+
+    if(typeof openProfile === 'function'){
+      await openProfile();
+    }
+
     document.querySelectorAll('.side button').forEach(x => x.classList.remove('active'));
     if(btn) btn.classList.add('active');
     return;
