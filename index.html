@@ -858,7 +858,8 @@ This login will only open the Admin Dashboard if the account is assigned <strong
 <input class="field" id="adminEmail" type="email" autocomplete="username" placeholder="admin@email.com">
 <label>Password</label>
 <input class="field" id="adminPass" type="password" autocomplete="current-password" placeholder="Password">
-<button id="adminLoginSubmit" class="primary" type="button" style="width:100%" onclick="enterAdminApp()">Admin Log In</button>
+<button id="adminLoginSubmit" class="primary" type="button" style="width:100%">Admin Log In</button>
+<p id="adminLoginStatus" class="muted" style="min-height:20px;margin:12px 0 0;text-align:center;"></p>
 <button type="button" onclick="showStudentLogin()" style="width:100%;margin-top:10px;padding:12px;border:1px solid #ddd;border-radius:10px;background:white;font-weight:700;cursor:pointer">
 Student Login
 </button>
@@ -1422,6 +1423,7 @@ async function approvePayment(paymentId){
 function hideAll(){
   document.getElementById('public').style.display='none';
   document.getElementById('loginArea').style.display='none';
+  document.getElementById('adminLoginArea').style.display='none';
   document.getElementById('registerArea').style.display='none';
   document.getElementById('app').style.display='none';
 }
@@ -1554,36 +1556,65 @@ function showAdminLogin(){
 function login(){showStudentLogin()}
 
 async function enterAdminApp(){
-  const email=document.getElementById('adminEmail').value.trim();
-  const password=document.getElementById('adminPass').value;
+  const emailEl=document.getElementById('adminEmail');
+  const passwordEl=document.getElementById('adminPass');
+  const statusEl=document.getElementById('adminLoginStatus');
+  const button=document.getElementById('adminLoginSubmit');
+  const email=(emailEl?.value||'').trim();
+  const password=passwordEl?.value||'';
+
+  const setStatus=(message,isError=false)=>{
+    if(statusEl){
+      statusEl.textContent=message;
+      statusEl.style.color=isError?'#b91c1c':'#166534';
+    }
+  };
 
   if(!email||!password){
-    alert('Please enter the administrator email and password.');
+    setStatus('Please enter the administrator email and password.',true);
     return;
   }
 
   try{
+    if(button) button.disabled=true;
+    setStatus('Signing in...');
+
     const response=await fetch('/api/login',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{'Content-Type':'application/json','Accept':'application/json'},
+      credentials:'same-origin',
       body:JSON.stringify({email,password})
     });
-    const data=await response.json();
+
+    const raw=await response.text();
+    let data={};
+    try{ data=raw?JSON.parse(raw):{}; }catch(parseError){
+      console.error('Admin login returned non-JSON:',raw);
+      setStatus('The login service returned an unexpected response. Please make sure the latest Aprann Tech Worker is deployed.',true);
+      return;
+    }
 
     if(!response.ok){
-      alert(data.error||'Admin login failed. Please check your credentials.');
+      setStatus(data.error||'Admin login failed. Please check the administrator email and password.',true);
       return;
     }
 
-    const meResponse=await fetch('/api/me');
-    const meData=await meResponse.json();
+    const meResponse=await fetch('/api/me',{credentials:'same-origin',headers:{'Accept':'application/json'}});
+    const meRaw=await meResponse.text();
+    let meData={};
+    try{ meData=meRaw?JSON.parse(meRaw):{}; }catch(parseError){
+      console.error('Admin /api/me returned non-JSON:',meRaw);
+      setStatus('Login succeeded, but the account information could not be read. Please deploy the latest Worker.',true);
+      return;
+    }
+
     const role=String(meData.user?.role||meData.user?.user_role||'').toLowerCase();
-
     if(!meData.authenticated || role!=='admin'){
-      alert('This account is not authorised for Administrator access. Please use an account with role = admin.');
+      setStatus('This account is not authorised for Administrator access. The account must have role = admin.',true);
       return;
     }
 
+    setStatus('Administrator verified. Opening dashboard...');
     hideAll();
     document.getElementById('app').style.display='block';
     await loadMyCourse();
@@ -1600,7 +1631,9 @@ async function enterAdminApp(){
     await loadAdminDashboard();
   }catch(err){
     console.error('Admin login:',err);
-    alert('Unable to connect to the Aprann Tech login service. Please try again.');
+    setStatus('Unable to connect to the Aprann Tech login service. Please try again.',true);
+  }finally{
+    if(button) button.disabled=false;
   }
 }
 
@@ -9045,6 +9078,10 @@ document.addEventListener('DOMContentLoaded', function(){
   const loginButton = document.getElementById('loginSubmit');
   if (loginButton) {
     loginButton.addEventListener('click', enterApp);
+  }
+  const adminLoginButton=document.getElementById('adminLoginSubmit');
+  if(adminLoginButton){
+    adminLoginButton.addEventListener('click', enterAdminApp);
   }
   const adminEmail=document.getElementById('adminEmail');
   const adminPass=document.getElementById('adminPass');
