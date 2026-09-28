@@ -8368,7 +8368,7 @@ const examLibrary = [
     type: 'practical',
     icon: '\uD83D\uDCCA',
     duration: 60,
-    description: 'Guided practical task covering spreadsheet formulas, charts and database concepts.',
+    description: 'Guided spreadsheet and database practical covering data entry, formulas, charts, sorting/filtering and database concepts.',
     tasks: [
       'Create a spreadsheet for a small school tuck shop.',
       'Enter product, quantity, selling price and cost price data.',
@@ -8713,6 +8713,10 @@ function renderPracticalExam(win, exam){
 
         <div style="background:#eff8ff;border-left:5px solid #0788cc;padding:16px;border-radius:10px;margin-bottom:20px;">
           <strong>Practical paper</strong>
+          ${exam.id === 'paper3' ? `
+            <div style="margin:10px 0 4px;padding:10px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:9px;color:#166534;font-size:14px;font-weight:800;">
+              Spreadsheet &amp; Database Practical
+            </div>` : ''}
           <p style="margin:7px 0 0;color:#52606d;">
             Complete the work in the relevant application on your computer. Tick each task after you have completed and checked it.
             The platform records your submission, but it does not automatically grade the actual Word/Excel/database file.
