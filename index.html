@@ -1110,6 +1110,18 @@ Student Login
     </div>
     <span class="badge">IGCSE ICT</span>
   </div>
+  <div id="examSummary" class="module" style="margin-top:20px;background:#f8fbfe;">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+      <div>
+        <h3 style="margin:0;">Your Exam Performance</h3>
+        <p class="muted" style="margin:5px 0 0;">Your completed exam attempts are recorded here.</p>
+      </div>
+      <span id="examSummaryBadge" class="badge">0 attempts</span>
+    </div>
+    <div id="examSummaryStats" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:15px;"></div>
+    <div id="examHistoryList" style="margin-top:15px;"></div>
+  </div>
+
   <div id="examCards" class="module-grid" style="margin-top:20px;"></div>
   <div class="module" style="margin-top:20px;background:#eef7fc;">
     <h3 style="margin-top:0;">&#x1F4CC; Exam Centre note</h3>
@@ -2140,6 +2152,7 @@ async function saveExamResult(exam, score, total, percentage, autoSubmitted){
   store[key].exams=store[key].exams.slice(0,50);
   saveLocalStudentProgress(store);
   renderExamAndVideoSummary(identity.email);
+  try{ await loadExamCentre(); }catch(e){ console.warn('Exam Centre refresh failed.',e); }
 
   try{
     const response=await fetch('/api/exam-results',{
@@ -8438,26 +8451,101 @@ const videoLibrary = [
   }
 ]
 
-function loadExamCentre(){
+async function loadExamCentre(){
   const grid = document.getElementById('examCards');
   if(!grid) return;
 
-  grid.innerHTML = examLibrary.map(exam => `
-    <div class="module" style="position:relative;">
-      <div style="font-size:34px;margin-bottom:8px;">${exam.icon}</div>
-      <span class="badge">${exam.type === 'theory' ? 'Theory' : 'Practical'}</span>
-      <h3 style="margin:12px 0 7px;">${exam.title}</h3>
-      <p class="muted">${exam.description}</p>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:15px;font-size:13px;color:#64748b;">
-        <span>\u23F1\uFE0F ${exam.duration} minutes</span>
-        <span>\u2022</span>
-        <span>${exam.type === 'theory' ? exam.questions.length + ' questions' : exam.tasks.length + ' tasks'}</span>
-      </div>
-      <button class="primary" style="margin-top:16px;width:100%;" onclick="startExam('${exam.id}')">
-        Start ${exam.type === 'theory' ? 'Exam' : 'Practical'}
-      </button>
-    </div>
-  `).join('');
+  const identity = await getStudentIdentity();
+  const store = getLocalStudentProgress();
+  const student = store[identity.email] || {exams:[]};
+  const attempts = Array.isArray(student.exams) ? student.exams : [];
+
+  const theoryAttempts = attempts.filter(x => x.type === 'theory');
+  const best = theoryAttempts.length
+    ? Math.max(...theoryAttempts.map(x => Number(x.percentage) || 0))
+    : 0;
+  const average = theoryAttempts.length
+    ? Math.round(theoryAttempts.reduce((sum,x)=>sum+(Number(x.percentage)||0),0) / theoryAttempts.length)
+    : 0;
+  const latest = theoryAttempts.length ? Number(theoryAttempts[0].percentage) || 0 : 0;
+
+  const badge = document.getElementById('examSummaryBadge');
+  if(badge) badge.textContent = `${attempts.length} attempt${attempts.length===1?'':'s'}`;
+
+  const stats = document.getElementById('examSummaryStats');
+  if(stats){
+    const stat = (label,value) => `
+      <div style="padding:14px;background:white;border:1px solid #dbe5ef;border-radius:10px;">
+        <div style="font-size:12px;color:#64748b;font-weight:800;text-transform:uppercase;">${label}</div>
+        <div style="font-size:25px;font-weight:900;color:#102a43;margin-top:5px;">${value}</div>
+      </div>`;
+    stats.innerHTML =
+      stat('Best theory score', best + '%') +
+      stat('Theory average', average + '%') +
+      stat('Latest theory score', latest + '%');
+  }
+
+  const history = document.getElementById('examHistoryList');
+  if(history){
+    if(!attempts.length){
+      history.innerHTML = '<p class="muted" style="margin:0;">No completed exams yet. Start a theory exam below to build your exam history.</p>';
+    }else{
+      history.innerHTML = `
+        <details>
+          <summary style="cursor:pointer;font-weight:800;color:#0369a1;padding:5px 0;">
+            View recent exam attempts
+          </summary>
+          <div style="overflow:auto;margin-top:10px;">
+            <table class="table">
+              <thead><tr><th>Exam</th><th>Type</th><th>Score</th><th>Result</th><th>Date</th></tr></thead>
+              <tbody>
+                ${attempts.slice(0,10).map(x=>{
+                  const pct = Number(x.percentage)||0;
+                  const date = x.submittedAt ? new Date(x.submittedAt).toLocaleDateString() : 'â€”';
+                  return `<tr>
+                    <td>${x.examTitle || 'ICT Exam'}</td>
+                    <td>${x.type==='theory'?'Theory':'Practical'}</td>
+                    <td>${x.score ?? 'â€”'}/${x.total ?? 'â€”'}</td>
+                    <td><strong>${pct}%</strong></td>
+                    <td>${date}</td>
+                  </tr>`;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </details>`;
+    }
+  }
+
+  grid.innerHTML = examLibrary.map(exam => {
+    const examAttempts = attempts.filter(x => x.examId === exam.id);
+    const examBest = examAttempts.length
+      ? Math.max(...examAttempts.map(x => Number(x.percentage)||0))
+      : null;
+
+    return `
+      <div class="module" style="position:relative;">
+        <div style="font-size:34px;margin-bottom:8px;">${exam.icon}</div>
+        <span class="badge">${exam.type === 'theory' ? 'Theory' : 'Practical'}</span>
+        <h3 style="margin:12px 0 7px;">${exam.title}</h3>
+        <p class="muted">${exam.description}</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:15px;font-size:13px;color:#64748b;">
+          <span>â±ï¸ ${exam.duration} minutes</span>
+          <span>â€¢</span>
+          <span>${exam.type === 'theory' ? exam.questions.length + ' questions' : exam.tasks.length + ' tasks'}</span>
+        </div>
+        ${examAttempts.length ? `
+          <div style="margin-top:12px;padding:9px 11px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:9px;color:#166534;font-size:13px;font-weight:800;">
+            ${examAttempts.length} attempt${examAttempts.length===1?'':'s'} â€¢ Best ${examBest}%
+          </div>` : `
+          <div style="margin-top:12px;color:#64748b;font-size:13px;">
+            Not attempted yet
+          </div>`}
+        <button class="primary" style="margin-top:16px;width:100%;" onclick="startExam('${exam.id}')">
+          ${examAttempts.length ? 'Try Again' : `Start ${exam.type === 'theory' ? 'Exam' : 'Practical'}`}
+        </button>
+      </div>`;
+  }).join('');
 }
 
 function startExam(examId){
