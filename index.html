@@ -720,6 +720,45 @@ footer::after{
 }
 </style>
 </style>
+
+<style id="aprann-responsive-fix">
+html, body { max-width:100%; overflow-x:hidden; }
+#dhome { width:100%; max-width:1250px; box-sizing:border-box; margin-left:auto; margin-right:auto; }
+#membershipPlan { width:100%; max-width:100%; box-sizing:border-box; overflow:hidden; }
+#dashboardLearningStats { width:100%; max-width:100%; box-sizing:border-box; }
+#dashboardLearningStats > .module { min-width:0; box-sizing:border-box; }
+
+@media (max-width:1100px) {
+  #dhome { padding-left:16px; padding-right:16px; }
+  #membershipPlan > div:first-child { align-items:flex-start !important; }
+}
+
+@media (max-width:760px) {
+  #dhome { padding:12px; }
+  #dhome > div:first-child { padding:22px 20px !important; }
+  #dhome > div:first-child h1 { font-size:24px !important; }
+  #membershipPlan { padding:18px !important; }
+  #membershipPlan > div:first-child {
+    display:flex !important; flex-direction:column !important; align-items:flex-start !important;
+  }
+  #membershipPlan > div:nth-child(2) {
+    display:flex !important; flex-direction:column !important; align-items:stretch !important;
+  }
+  #membershipPlan > div:nth-child(2) > div {
+    width:100% !important; box-sizing:border-box !important;
+  }
+  #dashboardLearningStats { grid-template-columns:1fr !important; }
+  #dashboardLearningStats > .module { width:100%; }
+}
+
+@media (max-width:480px) {
+  #dhome { padding:8px; }
+  #dhome > div:first-child { border-radius:14px !important; padding:18px 16px !important; }
+  #dhome > div:first-child h1 { font-size:21px !important; }
+  #membershipPlan { border-radius:14px !important; }
+}
+</style>
+
 </head>
 <body>
 <header>
