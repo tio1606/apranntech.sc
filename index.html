@@ -1553,11 +1553,14 @@ try{
   const meData = await meResponse.json();
 
   if(welcome && meData.authenticated && meData.user){
+    const userRole=String(meData.user.role||meData.user.user_role||'').toLowerCase();
+    const isAdmin = userRole === 'admin';
+
     const adminButton=document.getElementById('adminPaymentsButton');
-    if(adminButton && (meData.user.email||'').toLowerCase()==='digitalie.sc@gmail.com') adminButton.classList.remove('hidden');
     const adminDashButton=document.getElementById('adminDashboardButton');
-    const isAdmin = String(meData.user.role||meData.user.user_role||'').toLowerCase()==='admin' || (meData.user.email||'').toLowerCase()==='digitalie.sc@gmail.com';
-    if(adminDashButton && isAdmin) adminDashButton.classList.remove('hidden');
+
+    if(adminButton) adminButton.classList.toggle('hidden', !isAdmin);
+    if(adminDashButton) adminDashButton.classList.toggle('hidden', !isAdmin);
 
     welcome.textContent = `Welcome back, ${meData.user.name || 'Student'} \uD83D\uDC4B`;
  const membership = document.getElementById('membershipPlan');
@@ -1960,7 +1963,7 @@ async function isCurrentAdmin(){
     const d=await r.json();
     if(!r.ok || !d.authenticated || !d.user) return false;
     const role=String(d.user.role||d.user.user_role||'').toLowerCase();
-    return role==='admin' || (d.user.email||'').toLowerCase()==='digitalie.sc@gmail.com';
+    return role === 'admin';
   }catch(e){ return false; }
 }
 
