@@ -2281,8 +2281,8 @@ async function updateCourseTabProgress(){
 
       if(text){
         text.textContent = done === total
-          ? `${done} of ${total} lessons completed â€¢ Complete`
-          : `${done} of ${total} lessons completed â€¢ ${percent}%`;
+          ? `${done} of ${total} lessons completed \u2022 Complete`
+          : `${done} of ${total} lessons completed \u2022 ${percent}%`;
       }
 
       if(bar){
