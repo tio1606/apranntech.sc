@@ -7145,7 +7145,7 @@ footer:after{
     }
     const best = Math.max(...history.map(x => Number(x.percentage) || 0));
     const latest = Number(history[0].percentage) || 0;
-    target.textContent = `Attempts: ${history.length} &#8226; Best: ${best}% â€¢ Latest: ${latest}%`;
+    target.textContent = `Attempts: ${history.length} &#8226; Best: ${best}% &#8226; Latest: ${latest}%`;
   }
 
   function startQuiz(){
@@ -7482,7 +7482,7 @@ let message = "";
           ${(() => {
             const history = getQuizHistory();
             const best = history.length ? Math.max(...history.map(x => Number(x.percentage) || 0)) : percentage;
-            return `Attempts: ${history.length} â€¢ Best score: ${best}%`;
+            return `Attempts: ${history.length} &#8226; Best score: ${best}%`;
           })()}
         </div>
 
