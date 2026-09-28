@@ -759,6 +759,15 @@ html, body { max-width:100%; overflow-x:hidden; }
 }
 </style>
 
+
+<style id="aprann-course-navigation-style">
+.course-lesson-list { min-width:0; }
+.course-lesson-list details { background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:8px 10px; }
+.course-lesson-list summary { list-style:none; }
+.course-lesson-list summary::-webkit-details-marker { display:none; }
+@media(max-width:700px){ .course-lesson-list button { min-height:42px; } }
+</style>
+
 </head>
 <body>
 <header>
@@ -1027,36 +1036,42 @@ Student Login
       <h3>&#x1F5A5;&#xFE0F; Computer Systems</h3>
       <p class="muted" id="courseProgress-computer-systems">Loading progress...</p>
       <div class="dashboard-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" style="margin:10px 0 14px;"><i id="courseBar-computer-systems" style="width:0%"></i></div>
+      <div id="courseLessons-computer-systems" class="course-lesson-list" style="margin:12px 0;"></div>
       <button class="outline" onclick="openModuleLesson('computer-systems')">Open</button>
     </div>
     <div class="module course-progress-card" data-course-slug="input-output" data-course-total="5">
       <h3>&#x2328;&#xFE0F; Input & Output</h3>
       <p class="muted" id="courseProgress-input-output">Loading progress...</p>
       <div class="dashboard-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" style="margin:10px 0 14px;"><i id="courseBar-input-output" style="width:0%"></i></div>
+      <div id="courseLessons-input-output" class="course-lesson-list" style="margin:12px 0;"></div>
       <button class="outline" onclick="openModuleLesson('input-output',1)">Open</button>
     </div>
     <div class="module course-progress-card" data-course-slug="networks" data-course-total="5">
       <h3>&#x1F310; Networks</h3>
       <p class="muted" id="courseProgress-networks">Loading progress...</p>
       <div class="dashboard-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" style="margin:10px 0 14px;"><i id="courseBar-networks" style="width:0%"></i></div>
+      <div id="courseLessons-networks" class="course-lesson-list" style="margin:12px 0;"></div>
       <button class="outline" onclick="openModuleLesson('networks',1)">Open</button>
     </div>
     <div class="module course-progress-card" data-course-slug="data-handling" data-course-total="8">
       <h3>&#x1F4CA; Data Handling</h3>
       <p class="muted" id="courseProgress-data-handling">Loading progress...</p>
       <div class="dashboard-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" style="margin:10px 0 14px;"><i id="courseBar-data-handling" style="width:0%"></i></div>
+      <div id="courseLessons-data-handling" class="course-lesson-list" style="margin:12px 0;"></div>
       <button class="outline" onclick="openModuleLesson('data-handling',1)">Open</button>
     </div>
     <div class="module course-progress-card" data-course-slug="databases" data-course-total="5">
       <h3>&#x1F5C3;&#xFE0F; Databases</h3>
       <p class="muted" id="courseProgress-databases">Loading progress...</p>
       <div class="dashboard-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" style="margin:10px 0 14px;"><i id="courseBar-databases" style="width:0%"></i></div>
+      <div id="courseLessons-databases" class="course-lesson-list" style="margin:12px 0;"></div>
       <button class="outline" onclick="openModuleLesson('databases',1)">Open</button>
     </div>
     <div class="module course-progress-card" data-course-slug="ict-society" data-course-total="5">
       <h3>&#x1F510; ICT & Society</h3>
       <p class="muted" id="courseProgress-ict-society">Loading progress...</p>
       <div class="dashboard-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" style="margin:10px 0 14px;"><i id="courseBar-ict-society" style="width:0%"></i></div>
+      <div id="courseLessons-ict-society" class="course-lesson-list" style="margin:12px 0;"></div>
       <button class="outline" onclick="openModuleLesson('ict-society',1)">Open</button>
     </div>
   </div>
@@ -2183,6 +2198,62 @@ async function renderExamAndVideoSummary(email){
 }
 
 
+
+async function updateCourseLessonNavigation(){
+  const cards = document.querySelectorAll('.course-progress-card');
+  if(!cards.length) return;
+
+  try{
+    const response = await fetch('/api/lesson-progress', {
+      method:'GET',
+      headers:{'Accept':'application/json'}
+    });
+    const data = await response.json().catch(()=>({}));
+    if(!response.ok) throw new Error(data.error || 'Unable to load lesson progress.');
+
+    const progress = Array.isArray(data.progress) ? data.progress : [];
+
+    cards.forEach(card => {
+      const slug = card.getAttribute('data-course-slug');
+      const total = Number(card.getAttribute('data-course-total')) || 0;
+      const completed = new Set(
+        progress
+          .filter(x => x.module_slug === slug && (x.completed === 1 || x.completed === true))
+          .map(x => Number(x.lesson_number) || 0)
+      );
+
+      let nextLesson = null;
+      for(let n=1; n<=total; n++){
+        if(!completed.has(n)){ nextLesson = n; break; }
+      }
+
+      const container = document.getElementById('courseLessons-' + slug);
+      if(!container) return;
+
+      const continueButton = nextLesson
+        ? `<button class="primary" type="button" onclick="openModuleLesson('${slug}',${nextLesson})" style="width:100%;margin-bottom:10px;">Continue Lesson ${nextLesson} &#x2192;</button>`
+        : `<div style="padding:10px 12px;border-radius:10px;background:#ecfdf5;color:#166534;font-weight:800;margin-bottom:10px;">&#x2713; Module complete</div>`;
+
+      const lessonRows = Array.from({length:total}, (_,i) => {
+        const lessonNo = i + 1;
+        const isDone = completed.has(lessonNo);
+        return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid #e5e7eb;">
+          <span style="font-weight:700;">${isDone ? '&#x2713;' : '&#x25CB;'} Lesson ${lessonNo}</span>
+          <button class="outline" type="button" onclick="openModuleLesson('${slug}',${lessonNo})" style="padding:6px 10px;font-size:12px;">${isDone ? 'Review' : (lessonNo === nextLesson ? 'Continue' : 'Open')}</button>
+        </div>`;
+      }).join('');
+
+      container.innerHTML = `${continueButton}
+        <details>
+          <summary style="cursor:pointer;font-weight:800;color:#0369a1;padding:4px 0;">View all ${total} lessons</summary>
+          <div style="margin-top:6px;">${lessonRows}</div>
+        </details>`;
+    });
+  }catch(error){
+    console.warn('Could not load course lesson navigation:', error);
+  }
+}
+
 async function updateCourseTabProgress(){
   const cards = document.querySelectorAll('.course-progress-card');
   if(!cards.length) return;
@@ -2219,6 +2290,8 @@ async function updateCourseTabProgress(){
         bar.setAttribute('aria-valuenow', String(percent));
       }
     });
+
+    await updateCourseLessonNavigation();
   }catch(error){
     console.warn('Could not load course tab progress:', error);
     cards.forEach(card => {
@@ -8054,6 +8127,7 @@ function checkTuckShopFormulas() {
     }
 
     await loadProgress();
+    try { await updateCourseLessonNavigation(); } catch (e) { console.warn('Course navigation refresh failed.', e); }
     try { await loadStudentDashboard(); } catch (e) {
       console.warn('Dashboard refresh after lesson completion failed.', e);
     }
@@ -8087,6 +8161,7 @@ async function completeLesson(module, lesson) {
     }
 
     await loadProgress();
+    try{ await updateCourseLessonNavigation(); }catch(e){ console.warn('Course navigation refresh failed.', e); }
 
     const btn=document.getElementById('lessonCompleteBtn');
     if(btn){ btn.textContent='&#x2713; Lesson Completed'; btn.disabled=true; btn.style.opacity='0.75'; btn.style.cursor='default'; }
