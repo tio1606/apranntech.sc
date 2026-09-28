@@ -1608,12 +1608,11 @@ async function openProfile(){
     };
 
     const planName = planNames[plan] || (user.plan || 'Free');
-    const expiry = user.membership_expires || user.expires_at || user.expiry_date || '';
 
-    let active = false;
-    if(plan !== 'free'){
-      active = expiry ? new Date(expiry) >= new Date() : true;
-    }
+    // /api/me returns these exact membership fields from the Aprann Tech Worker.
+    const expiry = user.plan_expires_at || '';
+    const active = user.membership_active === true ||
+      (expiry ? new Date(String(expiry).replace(' ', 'T') + 'Z') >= new Date() : false);
 
     const role = user.role || user.user_role || 'student';
 
@@ -1626,11 +1625,19 @@ async function openProfile(){
     setText('profileEmail', email);
     setText('profilePlan', planName);
     setText('profileMembershipStatus', active ? 'ACTIVE' : 'INACTIVE');
-    setText(
-      'profileExpiry',
-      expiry ? new Date(expiry).toLocaleDateString() :
-        (plan === 'free' ? 'No paid membership' : 'Active membership')
-    );
+    let expiryDisplay = 'No paid membership';
+    if(expiry){
+      const expiryDate = new Date(String(expiry).replace(' ', 'T') + 'Z');
+      expiryDisplay = Number.isNaN(expiryDate.getTime())
+        ? String(expiry)
+        : expiryDate.toLocaleDateString(undefined, {
+            day:'numeric',
+            month:'long',
+            year:'numeric'
+          });
+    }
+
+    setText('profileExpiry', expiryDisplay);
     setText('profileRole', String(role).replace(/^./, c => c.toUpperCase()));
 
     const statusEl = document.getElementById('profileStatus');
