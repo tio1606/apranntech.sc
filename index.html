@@ -8506,7 +8506,7 @@ async function loadExamCentre(){
                     <td>${x.examTitle || 'ICT Exam'}</td>
                     <td>${x.type==='theory'?'Theory':'Practical'}</td>
                     <td>${x.score ?? 'â€”'}/${x.total ?? 'â€”'}</td>
-                    <td><strong>${pct}%</strong></td>
+                    <td><strong>${x.type==='practical' ? 'Submitted' : pct + '%'}</strong></td>
                     <td>${date}</td>
                   </tr>`;
                 }).join('')}
@@ -8536,7 +8536,7 @@ async function loadExamCentre(){
         </div>
         ${examAttempts.length ? `
           <div style="margin-top:12px;padding:9px 11px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:9px;color:#166534;font-size:13px;font-weight:800;">
-            ${examAttempts.length} attempt${examAttempts.length===1?'':'s'} &#8226; Best ${examBest}%
+            ${examAttempts.length} submission${examAttempts.length===1?'':'s'} &#8226; ${exam.type==='practical' ? 'Teacher marking required' : `Best ${examBest}%`}
           </div>` : `
           <div style="margin-top:12px;color:#64748b;font-size:13px;">
             Not attempted yet
@@ -8688,37 +8688,137 @@ function renderTheoryExam(win, exam){
 function renderPracticalExam(win, exam){
   let timeLeft = exam.duration * 60;
   let timer = null;
+  const checked = new Array(exam.tasks.length).fill(false);
+
+  function completedCount(){
+    return checked.filter(Boolean).length;
+  }
 
   function draw(){
+    const done = completedCount();
+    const pct = Math.round((done / exam.tasks.length) * 100);
+
     win.innerHTML = `
       <div style="background:white;width:min(950px,96vw);max-height:94vh;overflow:auto;border-radius:20px;padding:28px;box-shadow:0 25px 70px rgba(0,0,0,.3);">
-        ${examHeader(exam,timeLeft,'Complete the task in Microsoft Word, Excel or a database application on your computer.')}
-        <div style="background:#fff8e6;border-left:5px solid #f2c94c;padding:16px;border-radius:10px;margin-bottom:20px;">
-          <strong>\u26A0\uFE0F Practical paper</strong>
-          <p style="margin:7px 0 0;color:#52606d;">This task is not automatically marked because the actual file must be created in the relevant application.</p>
+        ${examHeader(exam,timeLeft,`Practical task â€¢ ${done} of ${exam.tasks.length} tasks checked`)}
+
+        <div style="margin-bottom:20px;">
+          <div style="display:flex;justify-content:space-between;gap:10px;font-size:13px;font-weight:800;color:#52606d;margin-bottom:7px;">
+            <span>Task checklist</span><span>${pct}%</span>
+          </div>
+          <div style="height:9px;background:#e8f1f6;border-radius:9px;overflow:hidden;">
+            <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#0077b6,#00c2e8);transition:width .2s;"></div>
+          </div>
         </div>
-        <ol style="line-height:1.9;padding-left:25px;">
-          ${exam.tasks.map(t=>`<li style="margin:8px 0;">${t}</li>`).join('')}
+
+        <div style="background:#eff8ff;border-left:5px solid #0788cc;padding:16px;border-radius:10px;margin-bottom:20px;">
+          <strong>Practical paper</strong>
+          <p style="margin:7px 0 0;color:#52606d;">
+            Complete the work in the relevant application on your computer. Tick each task after you have completed and checked it.
+            The platform records your submission, but it does not automatically grade the actual Word/Excel/database file.
+          </p>
+        </div>
+
+        <ol style="padding-left:0;list-style:none;margin:0;">
+          ${exam.tasks.map((task,i)=>`
+            <li style="margin:10px 0;padding:12px 13px;border:1px solid ${checked[i]?'#bbf7d0':'#dbe5ef'};
+              background:${checked[i]?'#f0fdf4':'#fff'};border-radius:10px;">
+              <label style="display:flex;align-items:flex-start;gap:11px;cursor:pointer;">
+                <input type="checkbox" ${checked[i]?'checked':''}
+                  onchange="window.__togglePracticalTask(${i},this.checked)"
+                  style="width:18px;height:18px;margin-top:3px;accent-color:#0788cc;">
+                <span><strong>Task ${i+1}</strong><br>${task}</span>
+              </label>
+            </li>
+          `).join('')}
         </ol>
+
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:24px;">
-          <button class="primary" onclick="window.__finishPracticalExam()">\u2713 Finish Task</button>
+          <button class="primary" onclick="window.__finishPracticalExam()">&#10003; Submit Practical</button>
           <button class="outline" onclick="window.__cancelPracticalExam()">Exit Exam</button>
         </div>
       </div>
     `;
 
     const timerEl = document.getElementById('examTimer');
-    if(timerEl) timerEl.textContent = '\u23F1\uFE0F ' + formatExamTime(timeLeft);
+    if(timerEl) timerEl.textContent = 'Time: ' + formatExamTime(timeLeft);
   }
 
-  window.__finishPracticalExam = ()=>{
+  window.__togglePracticalTask = (index,value)=>{
+    checked[index] = Boolean(value);
+    draw();
+  };
+
+  window.__finishPracticalExam = async (autoSubmitted=false)=>{
     if(timer) clearInterval(timer);
+
+    const completed = completedCount();
+    const total = exam.tasks.length;
+    const submittedAt = new Date().toISOString();
+
+    const identity = await getStudentIdentity();
+    const store = getLocalStudentProgress();
+    const key = identity.email;
+
+    if(!store[key]) store[key]={exams:[],watchedVideos:{}};
+    if(!Array.isArray(store[key].exams)) store[key].exams=[];
+
+    store[key].exams.unshift({
+      examId:exam.id,
+      examTitle:exam.title,
+      type:exam.type,
+      score:null,
+      total:null,
+      percentage:null,
+      status:'submitted',
+      tasksCompleted:completed,
+      tasksTotal:total,
+      submittedAt,
+      autoSubmitted:!!autoSubmitted
+    });
+
+    store[key].exams=store[key].exams.slice(0,50);
+    saveLocalStudentProgress(store);
+    renderExamAndVideoSummary(identity.email);
+
+    try{
+      const response=await fetch('/api/exam-results',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Accept':'application/json'},
+        body:JSON.stringify({
+          exam_id:exam.id,
+          exam_title:exam.title,
+          exam_type:exam.type,
+          score:null,
+          total:null,
+          percentage:null,
+          status:'submitted',
+          tasks_completed:completed,
+          tasks_total:total,
+          auto_submitted:!!autoSubmitted
+        })
+      });
+      if(!response.ok) console.warn('Server practical submission was not saved:',response.status);
+    }catch(error){
+      console.warn('Server practical submission unavailable; local submission retained.',error);
+    }
+
+    try{ await loadExamCentre(); }catch(e){ console.warn('Exam Centre refresh failed.',e); }
+
     win.innerHTML = `
       <div style="background:white;width:min(650px,94vw);border-radius:20px;padding:38px;text-align:center;box-shadow:0 25px 70px rgba(0,0,0,.3);">
-        <div style="font-size:52px;">\u2705</div>
-        <h2 style="color:#102a43;">Practical Task Completed</h2>
-        <p class="muted">Check that you saved your work with the correct filename before submitting it to your teacher.</p>
-        <button class="primary" style="margin-top:18px;" onclick="document.getElementById('examWindow').remove()">Return to Exam Centre</button>
+        <div style="font-size:52px;">&#10003;</div>
+        <h2 style="color:#102a43;">Practical Submitted</h2>
+        <p style="font-size:18px;font-weight:800;color:#102a43;margin:15px 0;">
+          ${completed} of ${total} tasks checked
+        </p>
+        <p class="muted">
+          Your submission has been recorded. The actual Word, Excel or database work must be reviewed by a teacher before a mark can be awarded.
+        </p>
+        ${autoSubmitted ? '<p style="color:#92400e;font-weight:800;">The time limit was reached, so the task was submitted automatically.</p>' : ''}
+        <button class="primary" style="margin-top:18px;" onclick="document.getElementById('examWindow').remove();loadExamCentre()">
+          Return to Exam Centre
+        </button>
       </div>
     `;
   };
@@ -8733,13 +8833,14 @@ function renderPracticalExam(win, exam){
   timer = setInterval(()=>{
     timeLeft--;
     const timerEl = document.getElementById('examTimer');
-    if(timerEl) timerEl.textContent = '\u23F1\uFE0F ' + formatExamTime(timeLeft);
+    if(timerEl) timerEl.textContent = 'Time: ' + formatExamTime(timeLeft);
     if(timeLeft <= 0){
       clearInterval(timer);
-      window.__finishPracticalExam();
+      window.__finishPracticalExam(true);
     }
   },1000);
 }
+
 
 async function loadVideos(){
   const grid = document.getElementById('videoGrid');
