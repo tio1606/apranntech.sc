@@ -713,6 +713,12 @@ footer::after{
 .dashboard-mini-stat span{font-size:12px;color:var(--muted)}
 @media(max-width:800px){.dashboard-progress-grid{grid-template-columns:1fr}.dashboard-summary-strip{grid-template-columns:1fr 1fr}}
 @media(max-width:500px){.dashboard-summary-strip{grid-template-columns:1fr}}
+
+<style id="aprann-profile-style">
+@media(max-width:700px){
+  #profileCard{grid-template-columns:1fr !important;}
+}
+</style>
 </style>
 </head>
 <body>
@@ -1027,6 +1033,62 @@ Student Login
     <div class="module" style="margin-top:20px;border:2px solid #16a34a;"><h2 style="margin-top:0;">&#128221; Marking Queue</h2><p class="muted">Download student papers, mark them, add feedback and upload the marked copy.</p><div id="adminSubmissionList"><p class="muted">Loading marking queue...</p></div></div>
   </div>
 </div>
+
+<div id="dprofile" class="dtab hidden">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;">
+    <div>
+      <h1 style="margin-bottom:6px;">My Profile</h1>
+      <p class="muted" style="margin-top:0;">View your Aprann Tech student account details.</p>
+    </div>
+    <button class="outline" type="button" onclick="openProfile()">Refresh Profile</button>
+  </div>
+
+  <div id="profileStatus" class="module" style="margin-top:20px;">
+    <p class="muted" style="margin:0;">Loading your profile...</p>
+  </div>
+
+  <div id="profileCard" class="module-grid" style="margin-top:20px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;">
+    <div class="module">
+      <span class="badge">STUDENT</span>
+      <h3 style="margin-bottom:8px;">Full Name</h3>
+      <p id="profileName" style="font-size:18px;font-weight:700;margin:0;">â€”</p>
+    </div>
+    <div class="module">
+      <span class="badge">ACCOUNT</span>
+      <h3 style="margin-bottom:8px;">Email</h3>
+      <p id="profileEmail" style="font-size:18px;font-weight:700;margin:0;word-break:break-word;">â€”</p>
+    </div>
+    <div class="module">
+      <span class="badge">MEMBERSHIP</span>
+      <h3 style="margin-bottom:8px;">Plan</h3>
+      <p id="profilePlan" style="font-size:18px;font-weight:700;margin:0;">â€”</p>
+    </div>
+    <div class="module">
+      <span class="badge">ACCESS</span>
+      <h3 style="margin-bottom:8px;">Membership Status</h3>
+      <p id="profileMembershipStatus" style="font-size:18px;font-weight:700;margin:0;">â€”</p>
+    </div>
+    <div class="module">
+      <span class="badge">EXPIRY</span>
+      <h3 style="margin-bottom:8px;">Access Until</h3>
+      <p id="profileExpiry" style="font-size:18px;font-weight:700;margin:0;">â€”</p>
+    </div>
+    <div class="module">
+      <span class="badge">ROLE</span>
+      <h3 style="margin-bottom:8px;">Account Type</h3>
+      <p id="profileRole" style="font-size:18px;font-weight:700;margin:0;">Student</p>
+    </div>
+  </div>
+
+  <div class="module" style="margin-top:20px;">
+    <h2 style="margin-top:0;">Account Information</h2>
+    <p class="muted" style="margin-bottom:0;">
+      Your profile information is loaded from your current Aprann Tech account.
+      If your membership is inactive, you can use the membership section to request an upgrade.
+    </p>
+  </div>
+</div>
+
  <div id="dprogress" class="dtab hidden">
 
   <h1>My Progress</h1>
@@ -1503,6 +1565,111 @@ async function openStudentCourse(){
     console.error('Unable to open My Course:',error);
   }
 }
+
+async function openProfile(){
+  const status = document.getElementById('profileStatus');
+
+  if(status){
+    status.innerHTML = '<p class="muted" style="margin:0;">Loading your profile...</p>';
+  }
+
+  try{
+    const response = await fetch('/api/me', {
+      method:'GET',
+      headers:{'Accept':'application/json'},
+      credentials:'same-origin'
+    });
+
+    let data = {};
+    try{
+      data = await response.json();
+    }catch(e){
+      data = {};
+    }
+
+    if(!response.ok || !data.authenticated || !data.user){
+      if(status){
+        status.innerHTML =
+          '<p style="margin:0;color:#b91c1c;font-weight:700;">Your session could not be verified. Please log in again.</p>';
+      }
+      return;
+    }
+
+    const user = data.user || {};
+    const name = user.name || 'Student';
+    const email = user.email || 'â€”';
+    const plan = String(user.plan || 'free').toLowerCase();
+
+    const planNames = {
+      free:'Free',
+      basic:'Basic',
+      standard:'Standard',
+      premium:'Premium'
+    };
+
+    const planName = planNames[plan] || (user.plan || 'Free');
+    const expiry = user.membership_expires || user.expires_at || user.expiry_date || '';
+
+    let active = false;
+    if(plan !== 'free'){
+      active = expiry ? new Date(expiry) >= new Date() : true;
+    }
+
+    const role = user.role || user.user_role || 'student';
+
+    const setText = (id,value) => {
+      const el = document.getElementById(id);
+      if(el) el.textContent = value;
+    };
+
+    setText('profileName', name);
+    setText('profileEmail', email);
+    setText('profilePlan', planName);
+    setText('profileMembershipStatus', active ? 'ACTIVE' : 'INACTIVE');
+    setText(
+      'profileExpiry',
+      expiry ? new Date(expiry).toLocaleDateString() :
+        (plan === 'free' ? 'No paid membership' : 'Active membership')
+    );
+    setText('profileRole', String(role).replace(/^./, c => c.toUpperCase()));
+
+    const statusEl = document.getElementById('profileStatus');
+    if(statusEl){
+      statusEl.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+          <div>
+            <strong style="font-size:18px;">Profile loaded successfully</strong>
+            <p class="muted" style="margin:5px 0 0;">Welcome, ${escapeProfileHtml(name)}.</p>
+          </div>
+          <span style="display:inline-block;padding:7px 11px;border-radius:999px;font-size:12px;font-weight:800;
+            background:${active ? '#e9f8ee' : '#fff1f2'};
+            color:${active ? '#166534' : '#b91c1c'};">
+            ${active ? 'MEMBERSHIP ACTIVE' : 'FREE / INACTIVE'}
+          </span>
+        </div>
+      `;
+    }
+  }catch(error){
+    console.error('Could not load student profile:', error);
+    if(status){
+      status.innerHTML =
+        '<p style="margin:0;color:#b91c1c;font-weight:700;">Unable to load your profile. Please refresh and try again.</p>';
+    }
+  }
+}
+
+function escapeProfileHtml(value){
+  return String(value == null ? '' : value).replace(/[&<>"']/g, function(m){
+    return {
+      '&':'&amp;',
+      '<':'&lt;',
+      '>':'&gt;',
+      '"':'&quot;',
+      "'":'&#39;'
+    }[m];
+  });
+}
+
 async function dashTab(id,btn){
   document.querySelectorAll('.dtab').forEach(x => x.classList.add('hidden'));
 
