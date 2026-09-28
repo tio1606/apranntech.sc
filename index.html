@@ -1433,8 +1433,28 @@ if (membership) {
   };
 
   const planName = planNames[plan] || 'Free';
-  const expires = meData.user.membership_expires || meData.user.expires_at || meData.user.expiry_date || '';
-  const active = plan !== 'free' && expires ? new Date(expires) >= new Date() : plan !== 'free';
+
+  const expires = meData.user.plan_expires_at || '';
+  const active = meData.user.membership_active === true ||
+    (expires ? new Date(String(expires).replace(' ', 'T') + 'Z') >= new Date() : false);
+
+  let expiryDate = null;
+  let daysRemaining = null;
+
+  if(expires){
+    expiryDate = new Date(String(expires).replace(' ', 'T') + 'Z');
+    if(!Number.isNaN(expiryDate.getTime())){
+      daysRemaining = Math.max(0, Math.ceil((expiryDate.getTime() - Date.now()) / 86400000));
+    }
+  }
+
+  const expiryText = expiryDate && !Number.isNaN(expiryDate.getTime())
+    ? expiryDate.toLocaleDateString(undefined, {day:'numeric', month:'long', year:'numeric'})
+    : '';
+
+  const remainingText = active && daysRemaining !== null
+    ? (daysRemaining === 1 ? '1 day remaining' : daysRemaining + ' days remaining')
+    : '';
 
   membership.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
@@ -1446,9 +1466,25 @@ if (membership) {
         ${active ? 'ACTIVE' : 'INACTIVE'}
       </span>
     </div>
-    <p class="muted" style="margin:8px 0 0;">
-      ${expires ? 'Access until: ' + new Date(expires).toLocaleDateString() : (plan === 'free' ? 'Free account â€” membership features are locked.' : 'Membership access is active.')}
-    </p>
+
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:12px;">
+      <div style="padding:12px 16px;border-radius:12px;background:#eff6ff;border:1px solid #bfdbfe;">
+        <div style="font-size:12px;font-weight:800;color:#0369a1;text-transform:uppercase;">Access Until</div>
+        <div style="font-size:18px;font-weight:800;color:#082f49;margin-top:3px;">
+          ${expiryText || (plan === 'free' ? 'No paid membership' : 'Not available')}
+        </div>
+      </div>
+
+      ${remainingText ? `
+        <div style="padding:12px 16px;border-radius:12px;background:#ecfdf5;border:1px solid #bbf7d0;">
+          <div style="font-size:12px;font-weight:800;color:#166534;text-transform:uppercase;">Membership Remaining</div>
+          <div style="font-size:18px;font-weight:800;color:#166534;margin-top:3px;">
+            ${remainingText}
+          </div>
+        </div>
+      ` : ''}
+    </div>
+
     ${plan === 'free' || !active ? '<button class="primary" style="margin-top:12px;" onclick="openMembershipPlans()">Upgrade Membership</button>' : ''}
   `;
   }
