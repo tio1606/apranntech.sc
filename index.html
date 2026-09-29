@@ -1312,6 +1312,22 @@ Student Login
     <div id="examResultsTable"><p class="muted">No exam attempts yet.</p></div>
   </div>
 
+  <div id="progressMarkingSummary" class="module" style="margin-bottom:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+      <div>
+        <h2 style="margin:0 0 6px;">My Assessment &amp; Marking</h2>
+        <p class="muted" style="margin:0;">Track papers submitted for marking, marked work and your average score.</p>
+      </div>
+      <button class="outline" type="button" onclick="loadProgress()">Refresh Progress</button>
+    </div>
+    <div id="progressMarkingCards" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:16px;">
+      <div class="module"><span class="badge">SUBMITTED</span><h3 id="progressMarkedSubmitted" style="font-size:28px;margin:12px 0 4px;">0</h3><p class="muted" style="margin:0;">Papers submitted</p></div>
+      <div class="module"><span class="badge">MARKED</span><h3 id="progressMarkedCount" style="font-size:28px;margin:12px 0 4px;">0</h3><p class="muted" style="margin:0;">Papers returned</p></div>
+      <div class="module"><span class="badge">AVERAGE</span><h3 id="progressMarkedAverage" style="font-size:28px;margin:12px 0 4px;">0%</h3><p class="muted" style="margin:0;">Average marked score</p></div>
+    </div>
+    <div id="progressMarkedRecent" style="margin-top:16px;"><p class="muted">Loading marked work...</p></div>
+  </div>
+
   <div id="realProgress">
     <p class="muted">Loading your module progress...</p>
   </div>
@@ -2876,8 +2892,24 @@ async function openNextDashboardLesson(){
   }
 }
 
+async function loadProgressMarkingSummary(){
+  const submittedEl=document.getElementById('progressMarkedSubmitted'), markedEl=document.getElementById('progressMarkedCount'), averageEl=document.getElementById('progressMarkedAverage'), recentEl=document.getElementById('progressMarkedRecent');
+  if(!recentEl) return;
+  try{
+    const r=await fetch('/api/submissions',{cache:'no-store',headers:{'Accept':'application/json','Cache-Control':'no-cache'}});
+    const d=await r.json().catch(()=>({})); if(!r.ok) throw new Error(d.error||'Unable to load marking data.');
+    const subs=Array.isArray(d.submissions)?d.submissions:[], marked=subs.filter(x=>String(x.status||'').toLowerCase()==='marked');
+    const scores=marked.map(x=>{const m=String(x.score||'').match(/(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/);return m?{score:Number(m[1]),total:Number(m[2])}:null;}).filter(Boolean);
+    const avg=scores.length?Math.round(scores.reduce((a,x)=>a+(x.score/x.total)*100,0)/scores.length):0;
+    if(submittedEl) submittedEl.textContent=subs.length; if(markedEl) markedEl.textContent=marked.length; if(averageEl) averageEl.textContent=avg+'%';
+    if(!marked.length){recentEl.innerHTML='<p class="muted">No marked papers yet. Submit a paper for marking to see your feedback here.</p>';return;}
+    const recent=marked.slice().sort((a,b)=>String(b.marked_at||b.created_at||'').localeCompare(String(a.marked_at||a.created_at||''))).slice(0,5);
+    recentEl.innerHTML='<h3 style="margin:0 0 10px;">Recent marked work</h3><div style="display:grid;gap:8px;">'+recent.map(x=>`<div style="padding:12px;border:1px solid #dbe5ef;border-radius:10px;background:#f8fafc;"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;"><strong>${escapeResourceHtml(x.original_name||'Paper')}</strong><span class="badge">MARKED • ${escapeResourceHtml(x.score||'—')}</span></div><div class="muted" style="margin-top:5px;">${x.marked_at?escapeResourceHtml(new Date(x.marked_at).toLocaleDateString()):'Date unavailable'}</div><div style="margin-top:7px;">${escapeResourceHtml(x.feedback||'No feedback provided.')}</div></div>`).join('')+'</div>';
+  }catch(e){if(submittedEl) submittedEl.textContent='—';if(markedEl) markedEl.textContent='—';if(averageEl) averageEl.textContent='—';recentEl.innerHTML='<p class="muted">Assessment marking data is unavailable right now.</p>';}
+}
 async function loadProgress() {
   const container = document.getElementById('realProgress');
+  try { await loadProgressMarkingSummary(); } catch(e) { console.warn('Marking summary unavailable.', e); }
   try{ const identity=await getStudentIdentity(); await renderExamAndVideoSummary(identity.email); }catch(e){ console.warn('Activity progress summary unavailable.',e); }
 
   if (!container) return;
