@@ -1226,27 +1226,27 @@ Student Login
     <div class="module">
       <span class="badge">STUDENT</span>
       <h3 style="margin-bottom:8px;">Full Name</h3>
-      <p id="profileName" style="font-size:18px;font-weight:700;margin:0;">—</p>
+      <p id="profileName" style="font-size:18px;font-weight:700;margin:0;">â€”</p>
     </div>
     <div class="module">
       <span class="badge">ACCOUNT</span>
       <h3 style="margin-bottom:8px;">Email</h3>
-      <p id="profileEmail" style="font-size:18px;font-weight:700;margin:0;word-break:break-word;">—</p>
+      <p id="profileEmail" style="font-size:18px;font-weight:700;margin:0;word-break:break-word;">â€”</p>
     </div>
     <div class="module">
       <span class="badge">MEMBERSHIP</span>
       <h3 style="margin-bottom:8px;">Plan</h3>
-      <p id="profilePlan" style="font-size:18px;font-weight:700;margin:0;">—</p>
+      <p id="profilePlan" style="font-size:18px;font-weight:700;margin:0;">â€”</p>
     </div>
     <div class="module">
       <span class="badge">ACCESS</span>
       <h3 style="margin-bottom:8px;">Membership Status</h3>
-      <p id="profileMembershipStatus" style="font-size:18px;font-weight:700;margin:0;">—</p>
+      <p id="profileMembershipStatus" style="font-size:18px;font-weight:700;margin:0;">â€”</p>
     </div>
     <div class="module">
       <span class="badge">EXPIRY</span>
       <h3 style="margin-bottom:8px;">Access Until</h3>
-      <p id="profileExpiry" style="font-size:18px;font-weight:700;margin:0;">—</p>
+      <p id="profileExpiry" style="font-size:18px;font-weight:700;margin:0;">â€”</p>
     </div>
     <div class="module">
       <span class="badge">ROLE</span>
@@ -1802,7 +1802,10 @@ async function loadAdminResourceCentre(){
       adminSummary.innerHTML=stat('Total papers',total)+stat('Awaiting marking',pending)+stat('Marked',marked);
     }
 
-    rl.innerHTML=items.length?`<div style="overflow:auto;"><table class="table"><thead><tr><th>Resource</th><th>Category</th><th>File</th><th>Action</th></tr></thead><tbody>`+items.map(x=>`<tr><td>`+escapeResourceHtml(x.title)+`</td><td>`+escapeResourceHtml(x.category)+`</td><td>`+escapeResourceHtml(x.original_name)+`</td><td><button class="outline" onclick="downloadResource(`+x.id+`)">Download</button></td></tr>`).join('')+`</tbody></table></div>`:'<p class="muted">No resources uploaded yet.</p>';
+    rl.innerHTML=items.length?`<div style="overflow:auto;"><table class="table"><thead><tr><th>Resource</th><th>Category</th><th>File</th><th>Action</th></tr></thead><tbody>`+items.map(x=>`<tr><td>`+escapeResourceHtml(x.title)+`</td><td>`+escapeResourceHtml(x.category)+`</td><td>`+escapeResourceHtml(x.original_name)+`</td><td style="display:flex;gap:8px;flex-wrap:wrap;">
+<button class="outline" onclick="downloadResource(`+x.id+`)">Download</button>
+<button class="outline" style="border-color:#dc2626;color:#dc2626;" onclick="deleteAdminResource(`+x.id+`,this)">Delete</button>
+</td></tr>`).join('')+`</tbody></table></div>`:'<p class="muted">No resources uploaded yet.</p>';
     sl.innerHTML=subs.length?`<div style="display:grid;gap:14px;">`+subs.map(x=>`<div class="module"><strong>`+escapeResourceHtml(x.student_name||'Student')+`</strong><div class="muted">`+escapeResourceHtml(x.student_email||'')+` &#8226; `+escapeResourceHtml(x.original_name)+`</div><button class="outline" onclick="downloadSubmission(`+x.id+`,false)">Download Paper</button><form onsubmit="return markSubmission(event,`+x.id+`)" style="display:grid;gap:9px;margin-top:12px;"><input name="score" class="field" placeholder="Score e.g. 72/100" value="`+escapeResourceHtml(x.score||'')+`"><textarea name="feedback" class="field" rows="3" placeholder="Teacher feedback">`+escapeResourceHtml(x.feedback||'')+`</textarea><input name="marked_file" type="file" style="padding:10px;border:1px solid #cbd5e1;border-radius:9px;background:white;"><button class="primary" type="submit">`+(x.status==='marked'?'Update Marking':'Mark & Save')+`</button></form></div>`).join('')+`</div>`:'<p class="muted">No student papers have been submitted.</p>';
   }catch(e){document.getElementById('adminSubmissionList').innerHTML='<p class="muted">Unable to load marking queue.</p>';}
 }
@@ -1928,7 +1931,7 @@ async function openProfile(){
 
     const user = data.user || {};
     const name = user.name || 'Student';
-    const email = user.email || '—';
+    const email = user.email || 'â€”';
     const plan = String(user.plan || 'free').toLowerCase();
 
     const planNames = {
@@ -2579,7 +2582,7 @@ async function updateCourseTabProgress(){
     cards.forEach(card => {
       const slug = card.getAttribute('data-course-slug');
       const text = document.getElementById('courseProgress-' + slug);
-      if(text) text.textContent = 'Progress unavailable — try Refresh Dashboard.';
+      if(text) text.textContent = 'Progress unavailable â€” try Refresh Dashboard.';
     });
   }
 }
@@ -2617,7 +2620,7 @@ async function loadStudentDashboard(){
           trendBars.innerHTML=recentTheory.map(x=>{
             const pct=Math.max(0,Math.min(100,Number(x.percentage)||0));
             const h=Math.max(8,Math.round((pct/maxPct)*105));
-            const date=x.submittedAt?new Date(x.submittedAt).toLocaleDateString(undefined,{day:'2-digit',month:'short'}):'—';
+            const date=x.submittedAt?new Date(x.submittedAt).toLocaleDateString(undefined,{day:'2-digit',month:'short'}):'â€”';
             return '<div class="dashboard-trend-item"><div class="dashboard-trend-score">'+pct+'%</div><div class="dashboard-trend-bar" style="height:'+h+'px" title="'+pct+'%"></div><div class="dashboard-trend-date">'+date+'</div></div>';
           }).join('');
           if(trendLabel)trendLabel.textContent=recentTheory.length+' recent '+(recentTheory.length===1?'result':'results');
@@ -2631,9 +2634,9 @@ async function loadStudentDashboard(){
         }else{
           recentEl.innerHTML='<div style="overflow:auto;"><table class="table"><thead><tr><th>Exam</th><th>Type</th><th>Score</th><th>Percentage</th><th>Date</th></tr></thead><tbody>'+
             exams.slice(0,5).map(x=>{
-              const date=x.submittedAt?new Date(x.submittedAt).toLocaleDateString():'—';
+              const date=x.submittedAt?new Date(x.submittedAt).toLocaleDateString():'â€”';
               const pct=Number(x.percentage)||0;
-              return '<tr><td>'+escapeResourceHtml(x.examTitle||'ICT Exam')+'</td><td>'+escapeResourceHtml(x.type==='theory'?'Theory':'Practical')+'</td><td>'+escapeResourceHtml((x.score??'—')+'/'+(x.total??'—'))+'</td><td><strong>'+pct+'%</strong></td><td>'+date+'</td></tr>';
+              return '<tr><td>'+escapeResourceHtml(x.examTitle||'ICT Exam')+'</td><td>'+escapeResourceHtml(x.type==='theory'?'Theory':'Practical')+'</td><td>'+escapeResourceHtml((x.score??'â€”')+'/'+(x.total??'â€”'))+'</td><td><strong>'+pct+'%</strong></td><td>'+date+'</td></tr>';
             }).join('')+
           '</tbody></table></div>';
         }
@@ -8521,7 +8524,7 @@ async function completeLesson(module, lesson) {
 
     const btn=document.getElementById('lessonCompleteBtn');
     if(btn){
-      btn.textContent='✓ Lesson Completed';
+      btn.textContent='âœ“ Lesson Completed';
       btn.disabled=true;
       btn.style.opacity='0.75';
       btn.style.cursor='default';
@@ -8729,11 +8732,11 @@ async function loadExamCentre(){
               <tbody>
                 ${attempts.slice(0,10).map(x=>{
                   const pct = Number(x.percentage)||0;
-                  const date = x.submittedAt ? new Date(x.submittedAt).toLocaleDateString() : '—';
+                  const date = x.submittedAt ? new Date(x.submittedAt).toLocaleDateString() : 'â€”';
                   return `<tr>
                     <td>${x.examTitle || 'ICT Exam'}</td>
                     <td>${x.type==='theory'?'Theory':'Practical'}</td>
-                    <td>${x.score ?? '—'}/${x.total ?? '—'}</td>
+                    <td>${x.score ?? 'â€”'}/${x.total ?? 'â€”'}</td>
                     <td><strong>${x.type==='practical' ? 'Submitted' : pct + '%'}</strong></td>
                     <td>${date}</td>
                   </tr>`;
@@ -8928,7 +8931,7 @@ function renderPracticalExam(win, exam){
 
     win.innerHTML = `
       <div style="background:white;width:min(950px,96vw);max-height:94vh;overflow:auto;border-radius:20px;padding:28px;box-shadow:0 25px 70px rgba(0,0,0,.3);">
-        ${examHeader(exam,timeLeft,`Practical task • ${done} of ${exam.tasks.length} tasks checked`)}
+        ${examHeader(exam,timeLeft,`Practical task â€¢ ${done} of ${exam.tasks.length} tasks checked`)}
 
         <div style="margin-bottom:20px;">
           <div style="display:flex;justify-content:space-between;gap:10px;font-size:13px;font-weight:800;color:#52606d;margin-bottom:7px;">
@@ -9153,7 +9156,7 @@ document.addEventListener('DOMContentLoaded', function(){
 </script>
 <button id="aprannChatButton" type="button" aria-label="Open Aprann Tech Chat" title="Chat with Aprann Tech"><span class="chat-icon" aria-hidden="true"></span></button>
 <div id="aprannChatWindow" role="dialog" aria-label="Aprann Tech Chat" aria-hidden="true">
-<div class="aprann-chat-head"><div class="aprann-chat-brand"><div class="aprann-chat-avatar"><span class="laptop-icon" aria-hidden="true"></span></div><div><strong>Aprann Tech</strong><div class="aprann-chat-status">Automatic support &#8226; Online</div></div></div><button class="aprann-chat-close" id="aprannChatClose" type="button">Ã—</button></div>
+<div class="aprann-chat-head"><div class="aprann-chat-brand"><div class="aprann-chat-avatar"><span class="laptop-icon" aria-hidden="true"></span></div><div><strong>Aprann Tech</strong><div class="aprann-chat-status">Automatic support &#8226; Online</div></div></div><button class="aprann-chat-close" id="aprannChatClose" type="button">Ãƒâ€”</button></div>
 <div id="aprannChatMessages"></div>
 <div id="aprannChatQuick"><button class="aprann-quick" data-chat="courses">Courses</button><button class="aprann-quick" data-chat="membership">Membership</button><button class="aprann-quick" data-chat="exams">Exams</button><button class="aprann-quick" data-chat="videos">Videos</button><button class="aprann-quick" data-chat="contact">Contact</button></div>
 <form class="aprann-chat-input" id="aprannChatForm"><input id="aprannChatInput" type="text" autocomplete="off" placeholder="Type your question..."><button id="aprannChatSend" type="submit" aria-label="Send"><span class="send-icon" aria-hidden="true"></span></button></form></div>
@@ -9165,7 +9168,7 @@ function open(){W.classList.add('open');W.setAttribute('aria-hidden','false');if
 function answer(q){q=q.toLowerCase().trim();
 if(!q)return'Please type a question and I will help you.';
 if(/hello|hi\b|hey|good morning|good afternoon|good evening/.test(q))return'Hello! Welcome to Aprann Tech. How can I help you today?';
-if(/course|learn|s1|s2|s3|s4|s5|igcse/.test(q))return'Aprann Tech provides ICT learning and exam preparation for S1–S5, IGCSE ICT and National Exams.';
+if(/course|learn|s1|s2|s3|s4|s5|igcse/.test(q))return'Aprann Tech provides ICT learning and exam preparation for S1â€“S5, IGCSE ICT and National Exams.';
 if(/price|pricing|cost|fee|membership|basic|standard|premium|free/.test(q))return'You can view the Free, Basic, Standard and Premium membership options in the Pricing section. Standard and Premium unlock the full Video Library and Exam Centre.';
 if(/exam|paper|past paper|quiz|practice/.test(q))return'The Exam Centre includes Paper 1 Theory Practice, Paper 2 Word Processing Practical, and Paper 3 Spreadsheet & Database Practical.';
 if(/video|videos|lesson/.test(q))return'The Video Library contains IGCSE ICT lessons covering computer systems, input/output devices, storage, networks, ICT applications, systems life cycle, safety and security, and exam walkthroughs.';
