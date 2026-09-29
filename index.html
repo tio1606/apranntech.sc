@@ -1191,7 +1191,18 @@ Student Login
     <div><h1 style="margin-bottom:6px;">Premium Resource & Marking Centre</h1><p class="muted" style="margin-top:0;">Download learning resources, submit papers for marking, and access your marked work.</p></div>
     <span class="badge">PREMIUM</span>
   </div>
-  <div class="module" style="margin-top:20px;"><h2 style="margin-top:0;">&#128218; Resource Library</h2><div id="premiumResourceList"><p class="muted">Loading resources...</p></div></div>
+  <div class="module" style="margin-top:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+      <h2 style="margin:0;">&#128218; Resource Library</h2>
+      <span class="badge" id="resourceLibraryCount">0 resources</span>
+    </div>
+    <p class="muted" style="margin:8px 0 12px;">Practical papers and their source files are grouped together when they share the same resource title.</p>
+    <div style="display:grid;grid-template-columns:minmax(220px,2fr) minmax(160px,1fr);gap:10px;margin-bottom:14px;">
+      <input id="resourceLibrarySearch" class="field" type="search" placeholder="Search resources, files or categories..." autocomplete="off">
+      <select id="resourceLibraryCategory" class="field"><option value="">All categories</option></select>
+    </div>
+    <div id="premiumResourceList"><p class="muted">Loading resources...</p></div>
+  </div>
   <div class="module" style="margin-top:20px;"><h2 style="margin-top:0;">&#128228; Submit a Paper for Marking</h2><p class="muted">Upload your completed paper. Your teacher/admin can download it, mark it and return the marked file with feedback.</p><form id="premiumSubmissionForm" style="display:grid;gap:12px;max-width:650px;"><input type="file" required accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip" style="padding:12px;border:1px solid #cbd5e1;border-radius:9px;background:white;"><button class="primary" type="submit">Submit Paper for Marking</button></form><div id="premiumSubmissionStatus" class="muted" style="margin-top:10px;"></div></div>
   <div class="module" style="margin-top:20px;">
     <h2 style="margin-top:0;">&#128221; My Submissions &amp; Marked Papers</h2>
@@ -1226,27 +1237,27 @@ Student Login
     <div class="module">
       <span class="badge">STUDENT</span>
       <h3 style="margin-bottom:8px;">Full Name</h3>
-      <p id="profileName" style="font-size:18px;font-weight:700;margin:0;">â€”</p>
+      <p id="profileName" style="font-size:18px;font-weight:700;margin:0;">—</p>
     </div>
     <div class="module">
       <span class="badge">ACCOUNT</span>
       <h3 style="margin-bottom:8px;">Email</h3>
-      <p id="profileEmail" style="font-size:18px;font-weight:700;margin:0;word-break:break-word;">â€”</p>
+      <p id="profileEmail" style="font-size:18px;font-weight:700;margin:0;word-break:break-word;">—</p>
     </div>
     <div class="module">
       <span class="badge">MEMBERSHIP</span>
       <h3 style="margin-bottom:8px;">Plan</h3>
-      <p id="profilePlan" style="font-size:18px;font-weight:700;margin:0;">â€”</p>
+      <p id="profilePlan" style="font-size:18px;font-weight:700;margin:0;">—</p>
     </div>
     <div class="module">
       <span class="badge">ACCESS</span>
       <h3 style="margin-bottom:8px;">Membership Status</h3>
-      <p id="profileMembershipStatus" style="font-size:18px;font-weight:700;margin:0;">â€”</p>
+      <p id="profileMembershipStatus" style="font-size:18px;font-weight:700;margin:0;">—</p>
     </div>
     <div class="module">
       <span class="badge">EXPIRY</span>
       <h3 style="margin-bottom:8px;">Access Until</h3>
-      <p id="profileExpiry" style="font-size:18px;font-weight:700;margin:0;">â€”</p>
+      <p id="profileExpiry" style="font-size:18px;font-weight:700;margin:0;">—</p>
     </div>
     <div class="module">
       <span class="badge">ROLE</span>
@@ -1737,6 +1748,38 @@ async function requirePremiumResourceAccess(){
 }
 function escapeResourceHtml(v){return String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
 function formatFileSize(b){b=Number(b||0);return b<1024?b+' B':b<1048576?(b/1024).toFixed(1)+' KB':(b/1048576).toFixed(1)+' MB';}
+function renderStudentResourceLibrary(){
+  const rl=document.getElementById('premiumResourceList');
+  const countEl=document.getElementById('resourceLibraryCount');
+  const searchEl=document.getElementById('resourceLibrarySearch');
+  const catEl=document.getElementById('resourceLibraryCategory');
+  if(!rl)return;
+  const items=Array.isArray(window.aprannTechResources)?window.aprannTechResources:[];
+  const q=String(searchEl?.value||'').trim().toLowerCase();
+  const category=String(catEl?.value||'').trim().toLowerCase();
+  const filtered=items.filter(x=>{
+    const hay=[x.title,x.category,x.description,x.original_name].map(v=>String(v||'').toLowerCase()).join(' ');
+    return (!q||hay.includes(q))&&(!category||String(x.category||'').toLowerCase()===category);
+  });
+  if(countEl)countEl.textContent=filtered.length+' resource'+(filtered.length===1?'':'s');
+  if(!filtered.length){
+    rl.innerHTML=items.length?'<p class="muted">No resources match your search.</p>':'<p class="muted">No resources have been published yet.</p>';
+    return;
+  }
+  const groups=new Map();
+  filtered.forEach(x=>{
+    const key=String(x.title||'Resource')+'||'+String(x.category||'Resource');
+    if(!groups.has(key))groups.set(key,{title:x.title||'Resource',category:x.category||'Resource',description:x.description||'',files:[]});
+    groups.get(key).files.push(x);
+  });
+  rl.innerHTML='<div class="module-grid">'+[...groups.values()].map(g=>{
+    const files=g.files.map(x=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid #e5e7eb;flex-wrap:wrap;">
+      <div style="min-width:0;flex:1;"><strong style="word-break:break-word;">${escapeResourceHtml(x.original_name)}</strong><div class="muted" style="font-size:13px;">${formatFileSize(x.size_bytes)}</div></div>
+      <button class="outline" type="button" onclick="downloadResource(${x.id})">Download</button>
+    </div>`).join('');
+    return `<div class="module"><span class="badge">${escapeResourceHtml(g.category)}</span><h3>${escapeResourceHtml(g.title)}</h3><p class="muted">${escapeResourceHtml(g.description)}</p><div style="margin-top:8px;"><strong>${g.files.length} file${g.files.length===1?'':'s'}</strong>${files}</div></div>`;
+  }).join('')+'</div>';
+}
 async function loadResourceCentre(){
   const rl=document.getElementById('premiumResourceList'),sl=document.getElementById('premiumSubmissionList');
   try{
@@ -1756,7 +1799,15 @@ async function loadResourceCentre(){
       summary.innerHTML=stat('Submitted',submitted)+stat('Awaiting marking',pending)+stat('Marked',marked);
     }
 
-    rl.innerHTML=items.length ? `<div class="module-grid">`+items.map(x=>`<div class="module"><span class="badge">`+escapeResourceHtml(x.category||'Resource')+`</span><h3>`+escapeResourceHtml(x.title)+`</h3><p class="muted">`+escapeResourceHtml(x.description||'')+`</p><small class="muted">`+escapeResourceHtml(x.original_name)+` &#8226; `+formatFileSize(x.size_bytes)+`</small><button class="primary" style="width:100%;margin-top:12px;" onclick="downloadResource(`+x.id+`)">Download</button></div>`).join('')+`</div>` : '<p class="muted">No resources have been published yet.</p>';
+    window.aprannTechResources=items;
+    const catEl=document.getElementById('resourceLibraryCategory');
+    if(catEl){
+      const current=String(catEl.value||'').toLowerCase();
+      const cats=[...new Set(items.map(x=>String(x.category||'Resource').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+      catEl.innerHTML='<option value="">All categories</option>'+cats.map(c=>`<option value="${escapeResourceHtml(c.toLowerCase())}">${escapeResourceHtml(c)}</option>`).join('');
+      if(cats.some(c=>c.toLowerCase()===current))catEl.value=current;
+    }
+    renderStudentResourceLibrary();
     sl.innerHTML=subs.length ? `<div style="overflow:auto;"><table class="table"><thead><tr><th>Paper</th><th>Status</th><th>Score</th><th>Feedback</th><th>Submitted</th><th>Files</th></tr></thead><tbody>`+subs.map(x=>`<tr>
       <td>`+escapeResourceHtml(x.original_name)+`</td>
       <td><strong>`+(String(x.status||'').toLowerCase()==='marked'?'Marked':'Awaiting marking')+`</strong></td>
@@ -1811,6 +1862,10 @@ async function loadAdminResourceCentre(){
 }
 async function markSubmission(e,id){e.preventDefault();try{const r=await fetch('/api/admin/submissions/'+id+'/mark',{method:'POST',body:new FormData(e.target)}),d=await r.json();if(!r.ok){const detail=d.detail?`\n\nTechnical detail: ${d.detail}`:'';throw new Error((d.error||'Unable to mark paper.')+detail);}alert('Marked paper saved successfully.');await loadResourceCentre();}catch(err){alert(err.message);}return false;}
 document.addEventListener('DOMContentLoaded',function(){
+  const resourceSearch=document.getElementById('resourceLibrarySearch');
+  const resourceCategory=document.getElementById('resourceLibraryCategory');
+  if(resourceSearch)resourceSearch.addEventListener('input',renderStudentResourceLibrary);
+  if(resourceCategory)resourceCategory.addEventListener('change',renderStudentResourceLibrary);
   const fileInput=document.getElementById('adminResourceFiles');
   const fileList=document.getElementById('adminResourceFileList');
   if(fileInput&&fileList){
@@ -1931,7 +1986,7 @@ async function openProfile(){
 
     const user = data.user || {};
     const name = user.name || 'Student';
-    const email = user.email || 'â€”';
+    const email = user.email || '—';
     const plan = String(user.plan || 'free').toLowerCase();
 
     const planNames = {
@@ -2582,7 +2637,7 @@ async function updateCourseTabProgress(){
     cards.forEach(card => {
       const slug = card.getAttribute('data-course-slug');
       const text = document.getElementById('courseProgress-' + slug);
-      if(text) text.textContent = 'Progress unavailable â€” try Refresh Dashboard.';
+      if(text) text.textContent = 'Progress unavailable — try Refresh Dashboard.';
     });
   }
 }
@@ -2620,7 +2675,7 @@ async function loadStudentDashboard(){
           trendBars.innerHTML=recentTheory.map(x=>{
             const pct=Math.max(0,Math.min(100,Number(x.percentage)||0));
             const h=Math.max(8,Math.round((pct/maxPct)*105));
-            const date=x.submittedAt?new Date(x.submittedAt).toLocaleDateString(undefined,{day:'2-digit',month:'short'}):'â€”';
+            const date=x.submittedAt?new Date(x.submittedAt).toLocaleDateString(undefined,{day:'2-digit',month:'short'}):'—';
             return '<div class="dashboard-trend-item"><div class="dashboard-trend-score">'+pct+'%</div><div class="dashboard-trend-bar" style="height:'+h+'px" title="'+pct+'%"></div><div class="dashboard-trend-date">'+date+'</div></div>';
           }).join('');
           if(trendLabel)trendLabel.textContent=recentTheory.length+' recent '+(recentTheory.length===1?'result':'results');
@@ -2634,9 +2689,9 @@ async function loadStudentDashboard(){
         }else{
           recentEl.innerHTML='<div style="overflow:auto;"><table class="table"><thead><tr><th>Exam</th><th>Type</th><th>Score</th><th>Percentage</th><th>Date</th></tr></thead><tbody>'+
             exams.slice(0,5).map(x=>{
-              const date=x.submittedAt?new Date(x.submittedAt).toLocaleDateString():'â€”';
+              const date=x.submittedAt?new Date(x.submittedAt).toLocaleDateString():'—';
               const pct=Number(x.percentage)||0;
-              return '<tr><td>'+escapeResourceHtml(x.examTitle||'ICT Exam')+'</td><td>'+escapeResourceHtml(x.type==='theory'?'Theory':'Practical')+'</td><td>'+escapeResourceHtml((x.score??'â€”')+'/'+(x.total??'â€”'))+'</td><td><strong>'+pct+'%</strong></td><td>'+date+'</td></tr>';
+              return '<tr><td>'+escapeResourceHtml(x.examTitle||'ICT Exam')+'</td><td>'+escapeResourceHtml(x.type==='theory'?'Theory':'Practical')+'</td><td>'+escapeResourceHtml((x.score??'—')+'/'+(x.total??'—'))+'</td><td><strong>'+pct+'%</strong></td><td>'+date+'</td></tr>';
             }).join('')+
           '</tbody></table></div>';
         }
@@ -8524,7 +8579,7 @@ async function completeLesson(module, lesson) {
 
     const btn=document.getElementById('lessonCompleteBtn');
     if(btn){
-      btn.textContent='âœ“ Lesson Completed';
+      btn.textContent='✓ Lesson Completed';
       btn.disabled=true;
       btn.style.opacity='0.75';
       btn.style.cursor='default';
@@ -8732,11 +8787,11 @@ async function loadExamCentre(){
               <tbody>
                 ${attempts.slice(0,10).map(x=>{
                   const pct = Number(x.percentage)||0;
-                  const date = x.submittedAt ? new Date(x.submittedAt).toLocaleDateString() : 'â€”';
+                  const date = x.submittedAt ? new Date(x.submittedAt).toLocaleDateString() : '—';
                   return `<tr>
                     <td>${x.examTitle || 'ICT Exam'}</td>
                     <td>${x.type==='theory'?'Theory':'Practical'}</td>
-                    <td>${x.score ?? 'â€”'}/${x.total ?? 'â€”'}</td>
+                    <td>${x.score ?? '—'}/${x.total ?? '—'}</td>
                     <td><strong>${x.type==='practical' ? 'Submitted' : pct + '%'}</strong></td>
                     <td>${date}</td>
                   </tr>`;
@@ -8931,7 +8986,7 @@ function renderPracticalExam(win, exam){
 
     win.innerHTML = `
       <div style="background:white;width:min(950px,96vw);max-height:94vh;overflow:auto;border-radius:20px;padding:28px;box-shadow:0 25px 70px rgba(0,0,0,.3);">
-        ${examHeader(exam,timeLeft,`Practical task â€¢ ${done} of ${exam.tasks.length} tasks checked`)}
+        ${examHeader(exam,timeLeft,`Practical task • ${done} of ${exam.tasks.length} tasks checked`)}
 
         <div style="margin-bottom:20px;">
           <div style="display:flex;justify-content:space-between;gap:10px;font-size:13px;font-weight:800;color:#52606d;margin-bottom:7px;">
@@ -9156,7 +9211,7 @@ document.addEventListener('DOMContentLoaded', function(){
 </script>
 <button id="aprannChatButton" type="button" aria-label="Open Aprann Tech Chat" title="Chat with Aprann Tech"><span class="chat-icon" aria-hidden="true"></span></button>
 <div id="aprannChatWindow" role="dialog" aria-label="Aprann Tech Chat" aria-hidden="true">
-<div class="aprann-chat-head"><div class="aprann-chat-brand"><div class="aprann-chat-avatar"><span class="laptop-icon" aria-hidden="true"></span></div><div><strong>Aprann Tech</strong><div class="aprann-chat-status">Automatic support &#8226; Online</div></div></div><button class="aprann-chat-close" id="aprannChatClose" type="button">Ãƒâ€”</button></div>
+<div class="aprann-chat-head"><div class="aprann-chat-brand"><div class="aprann-chat-avatar"><span class="laptop-icon" aria-hidden="true"></span></div><div><strong>Aprann Tech</strong><div class="aprann-chat-status">Automatic support &#8226; Online</div></div></div><button class="aprann-chat-close" id="aprannChatClose" type="button">Ã—</button></div>
 <div id="aprannChatMessages"></div>
 <div id="aprannChatQuick"><button class="aprann-quick" data-chat="courses">Courses</button><button class="aprann-quick" data-chat="membership">Membership</button><button class="aprann-quick" data-chat="exams">Exams</button><button class="aprann-quick" data-chat="videos">Videos</button><button class="aprann-quick" data-chat="contact">Contact</button></div>
 <form class="aprann-chat-input" id="aprannChatForm"><input id="aprannChatInput" type="text" autocomplete="off" placeholder="Type your question..."><button id="aprannChatSend" type="submit" aria-label="Send"><span class="send-icon" aria-hidden="true"></span></button></form></div>
@@ -9168,7 +9223,7 @@ function open(){W.classList.add('open');W.setAttribute('aria-hidden','false');if
 function answer(q){q=q.toLowerCase().trim();
 if(!q)return'Please type a question and I will help you.';
 if(/hello|hi\b|hey|good morning|good afternoon|good evening/.test(q))return'Hello! Welcome to Aprann Tech. How can I help you today?';
-if(/course|learn|s1|s2|s3|s4|s5|igcse/.test(q))return'Aprann Tech provides ICT learning and exam preparation for S1â€“S5, IGCSE ICT and National Exams.';
+if(/course|learn|s1|s2|s3|s4|s5|igcse/.test(q))return'Aprann Tech provides ICT learning and exam preparation for S1–S5, IGCSE ICT and National Exams.';
 if(/price|pricing|cost|fee|membership|basic|standard|premium|free/.test(q))return'You can view the Free, Basic, Standard and Premium membership options in the Pricing section. Standard and Premium unlock the full Video Library and Exam Centre.';
 if(/exam|paper|past paper|quiz|practice/.test(q))return'The Exam Centre includes Paper 1 Theory Practice, Paper 2 Word Processing Practical, and Paper 3 Spreadsheet & Database Practical.';
 if(/video|videos|lesson/.test(q))return'The Video Library contains IGCSE ICT lessons covering computer systems, input/output devices, storage, networks, ICT applications, systems life cycle, safety and security, and exam walkthroughs.';
