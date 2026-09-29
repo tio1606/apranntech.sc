@@ -997,8 +997,7 @@ Student Login
       <h1 id="studentWelcome" style="margin-bottom:6px;">Welcome back, Student &#x1F44B;</h1>
       <p class="muted" style="margin-top:0;">Your Aprann Tech learning dashboard</p>
     </div>
-    <button class="outline" onclick="loadStudentDashboard()">Refresh Dashboard</button>
-  </div>
+    <button class="outline" onclick="loadStudentDashboard()">Refresh Dashboard</button>  </div>
 
   <div id="membershipPlan" class="module" style="margin:18px 0;padding:18px;border-left:5px solid #0ea5e9;">
     <h3 style="margin:0 0 8px;">Membership Plan</h3>
@@ -1188,7 +1187,7 @@ Student Login
 
 <div id="dresources" class="dtab hidden">
   <div style="display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;">
-    <div><h1 style="margin-bottom:6px;">Premium Resource & Marking Centre</h1><p class="muted" style="margin-top:0;">Download learning resources, submit papers for marking, and access your marked work.</p></div>
+    <div><h1 style="margin-bottom:6px;">Premium Resource & Marking Centre</h1><p class="muted" style="margin-top:0;">Download resource packages, submit papers for marking, and access your marked work.</p></div>
     <span class="badge">PREMIUM</span>
   </div>
   <div class="module" style="margin-top:20px;">
@@ -1196,7 +1195,7 @@ Student Login
       <h2 style="margin:0;">&#128218; Resource Library</h2>
       <span class="badge" id="resourceLibraryCount">0 resources</span>
     </div>
-    <p class="muted" style="margin:8px 0 12px;">Practical papers and their source files are grouped together when they share the same resource title.</p>
+    <p class="muted" style="margin:8px 0 12px;">Practical papers and their source files are grouped together when they share the same package name.</p>
     <div style="display:grid;grid-template-columns:minmax(220px,2fr) minmax(160px,1fr);gap:10px;margin-bottom:14px;">
       <input id="resourceLibrarySearch" class="field" type="search" placeholder="Search resources, files or categories..." autocomplete="off">
       <select id="resourceLibraryCategory" class="field"><option value="">All categories</option></select>
@@ -1210,7 +1209,7 @@ Student Login
     <div id="premiumSubmissionList"><p class="muted">Loading submissions...</p></div>
   </div>
   <div id="adminResourcePanel" class="hidden">
-    <div class="module" style="margin-top:20px;border:2px solid #0077b6;"><h2 style="margin-top:0;">&#128104;&#8205;&#127979; Teacher Resource Manager</h2><p class="muted">Upload resources that Premium students can download.</p><form id="adminResourceForm" style="display:grid;gap:12px;max-width:700px;"><input id="adminResourceTitle" type="text" placeholder="Resource title" required class="field"><input id="adminResourceCategory" type="text" placeholder="Category e.g. Past Papers, Revision Notes" class="field"><textarea id="adminResourceDescription" placeholder="Short description" rows="3" class="field"></textarea><input id="adminResourceFiles" type="file" multiple required accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.txt,.csv,.jpg,.jpeg,.png" style="padding:12px;border:1px solid #cbd5e1;border-radius:9px;background:white;"><div id="adminResourceFileList" class="muted" style="font-size:14px;">You can select multiple files, e.g. the practical paper and its source files.</div><button class="primary" type="submit">Upload Resource</button><div class="muted" style="font-size:13px;">Tip: select the practical paper together with its source files. Each selected file will be uploaded and listed under the same resource title.</div></form><div id="adminResourceStatus" class="muted" style="margin-top:10px;"></div><div id="adminResourceList" style="margin-top:18px;"><p class="muted">Loading teacher resources...</p></div></div>
+    <div class="module" style="margin-top:20px;border:2px solid #0077b6;"><h2 style="margin-top:0;">&#128104;&#8205;&#127979; Teacher Resource Manager</h2><p class="muted">Upload resources that Premium students can download.</p><form id="adminResourceForm" style="display:grid;gap:12px;max-width:700px;"><input id="adminResourceTitle" type="text" placeholder="Package name e.g. National Exam 2024 - ICT Practical" required class="field"><input id="adminResourceCategory" type="text" placeholder="Category e.g. Past Papers, Revision Notes" class="field"><textarea id="adminResourceDescription" placeholder="Short description" rows="3" class="field"></textarea><input id="adminResourceFiles" type="file" multiple required accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.txt,.csv,.jpg,.jpeg,.png" style="padding:12px;border:1px solid #cbd5e1;border-radius:9px;background:white;"><div id="adminResourceFileList" class="muted" style="font-size:14px;">You can select multiple files, e.g. the practical paper and its source files. All selected files will use the same package name.</div><button class="primary" type="submit">Upload Resource</button><div class="muted" style="font-size:13px;">Tip: select the practical paper together with its source files. Use one package name for all selected files so students see them together as one package.</div></form><div id="adminResourceStatus" class="muted" style="margin-top:10px;"></div><div id="adminResourceList" style="margin-top:18px;"><p class="muted">Loading teacher resources...</p></div></div>
     <div class="module" style="margin-top:20px;border:2px solid #16a34a;">
       <h2 style="margin-top:0;">&#128221; Marking Queue</h2>
       <p class="muted">Download student papers, mark them, add feedback and upload the marked copy.</p>
@@ -1768,16 +1767,22 @@ function renderStudentResourceLibrary(){
   }
   const groups=new Map();
   filtered.forEach(x=>{
-    const key=String(x.title||'Resource')+'||'+String(x.category||'Resource');
-    if(!groups.has(key))groups.set(key,{title:x.title||'Resource',category:x.category||'Resource',description:x.description||'',files:[]});
-    groups.get(key).files.push(x);
+    const packageName=String(x.title||'Resource').trim()||'Resource';
+    const key=packageName.toLowerCase();
+    if(!groups.has(key))groups.set(key,{title:packageName,categories:[],description:x.description||'',files:[]});
+    const group=groups.get(key);
+    const cat=String(x.category||'').trim();
+    if(cat && !group.categories.includes(cat))group.categories.push(cat);
+    if(!group.description && x.description)group.description=x.description;
+    group.files.push(x);
   });
   rl.innerHTML='<div class="module-grid">'+[...groups.values()].map(g=>{
+    const categoryLabel=g.categories.length?g.categories.join(' &bull; '):'Resource';
     const files=g.files.map(x=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid #e5e7eb;flex-wrap:wrap;">
       <div style="min-width:0;flex:1;"><strong style="word-break:break-word;">${escapeResourceHtml(x.original_name)}</strong><div class="muted" style="font-size:13px;">${formatFileSize(x.size_bytes)}</div></div>
       <button class="outline" type="button" onclick="downloadResource(${x.id})">Download</button>
     </div>`).join('');
-    return `<div class="module"><span class="badge">${escapeResourceHtml(g.category)}</span><h3>${escapeResourceHtml(g.title)}</h3><p class="muted">${escapeResourceHtml(g.description)}</p><div style="margin-top:8px;"><strong>${g.files.length} file${g.files.length===1?'':'s'}</strong>${files}</div></div>`;
+    return `<div class="module"><span class="badge">${escapeResourceHtml(categoryLabel)}</span><h3>${escapeResourceHtml(g.title)}</h3><p class="muted">${escapeResourceHtml(g.description)}</p><div style="margin-top:8px;"><strong>${g.files.length} file${g.files.length===1?'':'s'}</strong>${files}</div></div>`;
   }).join('')+'</div>';
 }
 async function loadResourceCentre(){
@@ -1997,7 +2002,6 @@ async function openProfile(){
     };
 
     const planName = planNames[plan] || (user.plan || 'Free');
-
     // /api/me returns these exact membership fields from the Aprann Tech Worker.
     const expiry = user.plan_expires_at || '';
     const active = user.membership_active === true ||
@@ -2997,7 +3001,6 @@ async function loadProgress() {
     Object.keys(modules).forEach(moduleSlug => {
 
       const module = modules[moduleSlug];
-
       const completed =
         progress.filter(item =>
           item.module_slug === moduleSlug &&
@@ -3997,8 +4000,7 @@ async function loadProgress() {
       ">
 
         <button
-          onclick="alert('Correct! Schools use databases to manage student information.')"
-          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
+          onclick="alert('Correct! Schools use databases to manage student information.')"          style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
           A. A school
         </button>
 
@@ -4997,7 +4999,6 @@ async function loadProgress() {
           style="padding:12px;text-align:left;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">
           C. &lt;
         </button>
-
       </div>
     `
           },
@@ -5997,8 +5998,7 @@ async function loadProgress() {
       <h3>\u2696\uFE0F Advantages of Networking</h3>
       <ul>
         <li>Files can be shared easily.</li>
-        <li>Hardware such as printers can be shared.</li>
-        <li>Users can communicate easily.</li>
+        <li>Hardware such as printers can be shared.</li>        <li>Users can communicate easily.</li>
         <li>Centralised management is possible.</li>
       </ul>
 
@@ -6997,8 +6997,7 @@ header{
 .hero-actions{margin-top:28px}
 .hero-actions .primary{
   background:#fff;
-  color:#0757c9;
-  padding:13px 23px;
+  color:#0757c9;  padding:13px 23px;
   box-shadow:0 10px 24px rgba(0,0,0,.14);
 }
 .hero-actions .outline{
@@ -7997,7 +7996,6 @@ function startDataActivity(){
                 SCR 210
               </td>
             </tr>
-
             <tr>
               <td style="padding:10px;border:1px solid #ddd;">Water</td>
               <td style="padding:10px;border:1px solid #ddd;text-align:center;">
@@ -8997,8 +8995,7 @@ function renderPracticalExam(win, exam){
           </div>
         </div>
 
-        <div style="background:#eff8ff;border-left:5px solid #0788cc;padding:16px;border-radius:10px;margin-bottom:20px;">
-          <strong>Practical paper</strong>
+        <div style="background:#eff8ff;border-left:5px solid #0788cc;padding:16px;border-radius:10px;margin-bottom:20px;">          <strong>Practical paper</strong>
           ${exam.id === 'paper3' ? `
             <div style="margin:10px 0 4px;padding:10px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:9px;color:#166534;font-size:14px;font-weight:800;">
               Spreadsheet &amp; Database Practical
