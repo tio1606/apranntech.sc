@@ -620,6 +620,19 @@ async function handleAdminResourceUpload(request, env) {
 }
 __name(handleAdminResourceUpload, "handleAdminResourceUpload");
 
+async function handleAdminResourceDelete(request, env, resourceId) {
+  const admin = await requireAdmin(request, env);
+  if (!admin) return json({ error: "Admin access required." }, 403);
+  const store = env.RESOURCE_FILES || null;
+  if (!store) return json({ error: "Resource file storage is not configured. Add the RESOURCE_FILES R2 binding to the Worker." }, 503);
+  const resource = await env.DB.prepare("SELECT object_key FROM resources WHERE id = ? LIMIT 1").bind(resourceId).first();
+  if (!resource) return json({ error: "Resource not found." }, 404);
+  await store.delete(resource.object_key);
+  await env.DB.prepare("DELETE FROM resources WHERE id = ?").bind(resourceId).run();
+  return json({ success: true, message: "Resource deleted." });
+}
+__name(handleAdminResourceDelete, "handleAdminResourceDelete");
+
 async function handleAdminSubmissions(request, env) {
   const admin = await requireAdmin(request, env);
   if (!admin) return json({ error: "Admin access required." }, 403);
@@ -1438,6 +1451,10 @@ var worker_default = {
         }
         if (url.pathname === "/api/admin/resources/upload" && method === "POST") {
           return await handleAdminResourceUpload(request, env);
+        }
+        const adminResourceDeleteMatch = url.pathname.match(/^\/api\/admin\/resources\/(\d+)$/);
+        if (adminResourceDeleteMatch && method === "DELETE") {
+          return await handleAdminResourceDelete(request, env, Number(adminResourceDeleteMatch[1]));
         }
         if (url.pathname === "/api/admin/submissions" && method === "GET") {
           return await handleAdminSubmissions(request, env);
