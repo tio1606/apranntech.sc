@@ -1199,7 +1199,7 @@ Student Login
     <div id="premiumSubmissionList"><p class="muted">Loading submissions...</p></div>
   </div>
   <div id="adminResourcePanel" class="hidden">
-    <div class="module" style="margin-top:20px;border:2px solid #0077b6;"><h2 style="margin-top:0;">&#128104;&#8205;&#127979; Teacher Resource Manager</h2><p class="muted">Upload resources that Premium students can download.</p><form id="adminResourceForm" style="display:grid;gap:12px;max-width:700px;"><input id="adminResourceTitle" type="text" placeholder="Resource title" required class="field"><input id="adminResourceCategory" type="text" placeholder="Category e.g. Past Papers, Revision Notes" class="field"><textarea id="adminResourceDescription" placeholder="Short description" rows="3" class="field"></textarea><input type="file" required style="padding:12px;border:1px solid #cbd5e1;border-radius:9px;background:white;"><button class="primary" type="submit">Upload Resource</button></form><div id="adminResourceStatus" class="muted" style="margin-top:10px;"></div><div id="adminResourceList" style="margin-top:18px;"><p class="muted">Loading teacher resources...</p></div></div>
+    <div class="module" style="margin-top:20px;border:2px solid #0077b6;"><h2 style="margin-top:0;">&#128104;&#8205;&#127979; Teacher Resource Manager</h2><p class="muted">Upload resources that Premium students can download.</p><form id="adminResourceForm" style="display:grid;gap:12px;max-width:700px;"><input id="adminResourceTitle" type="text" placeholder="Resource title" required class="field"><input id="adminResourceCategory" type="text" placeholder="Category e.g. Past Papers, Revision Notes" class="field"><textarea id="adminResourceDescription" placeholder="Short description" rows="3" class="field"></textarea><input id="adminResourceFiles" type="file" multiple required accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.txt,.csv,.jpg,.jpeg,.png" style="padding:12px;border:1px solid #cbd5e1;border-radius:9px;background:white;"><div id="adminResourceFileList" class="muted" style="font-size:14px;">You can select multiple files, e.g. the practical paper and its source files.</div><button class="primary" type="submit">Upload Resource</button><div class="muted" style="font-size:13px;">Tip: select the practical paper together with its source files. Each selected file will be uploaded and listed under the same resource title.</div></form><div id="adminResourceStatus" class="muted" style="margin-top:10px;"></div><div id="adminResourceList" style="margin-top:18px;"><p class="muted">Loading teacher resources...</p></div></div>
     <div class="module" style="margin-top:20px;border:2px solid #16a34a;">
       <h2 style="margin-top:0;">&#128221; Marking Queue</h2>
       <p class="muted">Download student papers, mark them, add feedback and upload the marked copy.</p>
@@ -1792,14 +1792,86 @@ async function loadAdminResourceCentre(){
   }catch(e){document.getElementById('adminSubmissionList').innerHTML='<p class="muted">Unable to load marking queue.</p>';}
 }
 async function markSubmission(e,id){e.preventDefault();try{const r=await fetch('/api/admin/submissions/'+id+'/mark',{method:'POST',body:new FormData(e.target)}),d=await r.json();if(!r.ok){const detail=d.detail?`\n\nTechnical detail: ${d.detail}`:'';throw new Error((d.error||'Unable to mark paper.')+detail);}alert('Marked paper saved successfully.');await loadResourceCentre();}catch(err){alert(err.message);}return false;}
-document.addEventListener('submit',async function(e){
-  if(e.target.id!=='premiumSubmissionForm'&&e.target.id!=='adminResourceForm')return;e.preventDefault();
-  const form=e.target,file=form.querySelector('input[type="file"]');if(!file.files.length){alert('Please select a file.');return;}
-  const fd=new FormData();fd.append('file',file.files[0]);
-  if(form.id==='adminResourceForm'){fd.append('title',document.getElementById('adminResourceTitle').value);fd.append('category',document.getElementById('adminResourceCategory').value);fd.append('description',document.getElementById('adminResourceDescription').value);}
-  const status=document.getElementById(form.id==='premiumSubmissionForm'?'premiumSubmissionStatus':'adminResourceStatus');if(status)status.textContent='Uploading...';
-  try{const r=await fetch(form.id==='premiumSubmissionForm'?'/api/submissions':'/api/admin/resources/upload',{method:'POST',body:fd}),d=await r.json();if(!r.ok)throw new Error(d.error||'Upload failed.');if(status)status.textContent=d.message||'Upload successful.';form.reset();await loadResourceCentre();}catch(err){if(status)status.textContent=err.message;}
+document.addEventListener('DOMContentLoaded',function(){
+  const fileInput=document.getElementById('adminResourceFiles');
+  const fileList=document.getElementById('adminResourceFileList');
+  if(fileInput&&fileList){
+    fileInput.addEventListener('change',function(){
+      const files=[...fileInput.files];
+      fileList.innerHTML=files.length
+        ? '<strong>'+files.length+' file'+(files.length===1?'':'s')+' selected:</strong> '+files.map(f=>escapeResourceHtml(f.name)).join(', ')
+        : 'You can select multiple files, e.g. the practical paper and its source files.';
+    });
+  }
 });
+
+document.addEventListener('submit',async function(e){
+  if(e.target.id!=='premiumSubmissionForm'&&e.target.id!=='adminResourceForm')return;
+  e.preventDefault();
+  const form=e.target;
+  const fileInput=form.querySelector('input[type="file"]');
+  const files=[...fileInput.files];
+  if(!files.length){alert('Please select a file.');return;}
+
+  const isAdminResource=form.id==='adminResourceForm';
+  const status=document.getElementById(isAdminResource?'adminResourceStatus':'premiumSubmissionStatus');
+  const uploadUrl=isAdminResource?'/api/admin/resources/upload':'/api/submissions';
+
+  try{
+    if(isAdminResource){
+      const title=document.getElementById('adminResourceTitle').value.trim();
+      const category=document.getElementById('adminResourceCategory').value.trim();
+      const description=document.getElementById('adminResourceDescription').value.trim();
+      if(!title){alert('Please enter a resource title.');return;}
+
+      let completed=0;
+      const failed=[];
+      if(status)status.textContent='Uploading 0 of '+files.length+' files...';
+
+      for(const file of files){
+        const fd=new FormData();
+        fd.append('file',file);
+        fd.append('title',title);
+        fd.append('category',category);
+        fd.append('description',description);
+
+        const r=await fetch(uploadUrl,{method:'POST',body:fd});
+        let d={};
+        try{d=await r.json();}catch(_){}
+        if(!r.ok){
+          failed.push(file.name+': '+(d.error||'Upload failed.'));
+        }else{
+          completed++;
+        }
+        if(status)status.textContent='Uploading '+completed+' of '+files.length+' files...';
+      }
+
+      if(failed.length){
+        if(status)status.innerHTML='Uploaded '+completed+' of '+files.length+' files.<br>'+failed.map(escapeResourceHtml).join('<br>');
+      }else{
+        if(status)status.textContent='Successfully uploaded '+completed+' file'+(completed===1?'':'s')+'.';
+      }
+      form.reset();
+      const list=document.getElementById('adminResourceFileList');
+      if(list)list.textContent='You can select multiple files, e.g. the practical paper and its source files.';
+      await loadResourceCentre();
+      return;
+    }
+
+    const fd=new FormData();
+    fd.append('file',files[0]);
+    if(status)status.textContent='Uploading...';
+    const r=await fetch(uploadUrl,{method:'POST',body:fd});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error||'Upload failed.');
+    if(status)status.textContent=d.message||'Upload successful.';
+    form.reset();
+    await loadResourceCentre();
+  }catch(err){
+    if(status)status.textContent=err.message;
+  }
+});
+
 async function openStudentCourse(){
   try{
     await dashTab('course',document.querySelector('.side button[onclick*="dashTab(\'course\'"]'));
