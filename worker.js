@@ -412,6 +412,284 @@ async function handleSaveVideoActivity(request, env) {
 }
 __name(handleSaveVideoActivity, "handleSaveVideoActivity");
 
+
+
+const RESOURCE_MAX_FILE_BYTES = 25 * 1024 * 1024;
+function getFileStore(env) {
+  return env.FILES || null;
+}
+__name(getFileStore, "getFileStore");
+
+async function ensureResourceTables(env) {
+  // The production database already contains the resources table with the
+  // established schema: object_key/content_type/is_published and the
+  // RESOURCE_FILES R2 binding. Do not recreate or alter that table here.
+  await env.DB.prepare(`
+    CREATE TABLE IF NOT EXISTS submissions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      original_name TEXT NOT NULL,
+      mime_type TEXT NOT NULL DEFAULT 'application/octet-stream',
+      size_bytes INTEGER NOT NULL DEFAULT 0,
+      storage_key TEXT NOT NULL UNIQUE,
+      marked_storage_key TEXT,
+      marked_name TEXT,
+      score TEXT,
+      feedback TEXT,
+      status TEXT NOT NULL DEFAULT 'submitted',
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      marked_at TEXT,
+      FOREIGN KEY(user_id) REFERENCES users(id)
+    )
+  `).run();
+
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_submissions_user ON submissions(user_id, created_at DESC)`).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_resources_created ON resources(created_at DESC)`).run();
+}
+__name(ensureResourceTables, "ensureResourceTables");
+
+function hasPremiumAccess(user) {
+  if (isAdminUser(user)) return true;
+  return membershipInfo(user).plan === "premium" && membershipInfo(user).active;
+}
+__name(hasPremiumAccess, "hasPremiumAccess");
+
+function safeFileName(name) {
+  const value = String(name || "file").trim().replace(/[^a-zA-Z0-9._-]+/g, "_");
+  return value.slice(-160) || "file";
+}
+__name(safeFileName, "safeFileName");
+
+function makeStorageKey(prefix, userId, originalName) {
+  return `${prefix}/${userId}/${crypto.randomUUID()}-${safeFileName(originalName)}`;
+}
+__name(makeStorageKey, "makeStorageKey");
+
+function fileDownloadResponse(object, fallbackName, mimeType) {
+  if (!object) return new Response("File not found.", { status: 404 });
+  const headers = new Headers();
+  headers.set("content-type", object.httpMetadata?.contentType || mimeType || "application/octet-stream");
+  headers.set("content-length", String(object.size || 0));
+  headers.set("cache-control", "private, no-store");
+  headers.set("content-disposition", `attachment; filename="${safeFileName(fallbackName)}"`);
+  return new Response(object.body, { headers });
+}
+__name(fileDownloadResponse, "fileDownloadResponse");
+
+async function handleResources(request, env) {
+  const user = await getSessionUser(request, env);
+  if (!user) return json({ error: "Not authenticated." }, 401);
+  if (!hasPremiumAccess(user)) return json({ error: "The Resource & Marking Centre is available to Premium members." }, 403);
+
+  const result = await env.DB.prepare(`
+    SELECT id, title, category, description, original_name, content_type, size_bytes, created_at
+    FROM resources
+    WHERE is_published = 1
+    ORDER BY created_at DESC, id DESC
+  `).all();
+  return json({ success: true, resources: result.results || [] });
+}
+__name(handleResources, "handleResources");
+
+async function handleResourceDownload(request, env, id) {
+  const user = await getSessionUser(request, env);
+  if (!user) return json({ error: "Not authenticated." }, 401);
+  if (!hasPremiumAccess(user)) return json({ error: "Premium membership required." }, 403);
+  const store = env.RESOURCE_FILES || null;
+  if (!store) return json({ error: "Resource file storage is not configured. Add the RESOURCE_FILES R2 binding to the Worker." }, 503);
+
+  const resource = await env.DB.prepare(`SELECT original_name, content_type, object_key FROM resources WHERE id = ? AND is_published = 1 LIMIT 1`).bind(id).first();
+  if (!resource) return json({ error: "Resource not found." }, 404);
+  const object = await store.get(resource.object_key);
+  return fileDownloadResponse(object, resource.original_name, resource.content_type);
+}
+__name(handleResourceDownload, "handleResourceDownload");
+
+async function handleSubmissions(request, env) {
+  const user = await getSessionUser(request, env);
+  if (!user) return json({ error: "Not authenticated." }, 401);
+  if (!hasPremiumAccess(user)) return json({ error: "The Resource & Marking Centre is available to Premium members." }, 403);
+
+  const result = await env.DB.prepare(`
+    SELECT id, original_name, size_bytes, score, feedback, status, created_at, marked_at, marked_name
+    FROM submissions
+    WHERE user_id = ?
+    ORDER BY created_at DESC, id DESC
+  `).bind(user.id).all();
+  return json({ success: true, submissions: result.results || [] });
+}
+__name(handleSubmissions, "handleSubmissions");
+
+async function handleSubmissionDownload(request, env, id, marked) {
+  const user = await getSessionUser(request, env);
+  if (!user) return json({ error: "Not authenticated." }, 401);
+  if (!hasPremiumAccess(user)) return json({ error: "Premium membership required." }, 403);
+  const store = getFileStore(env);
+  if (!store) return json({ error: "File storage is not configured. Add the FILES R2 binding to the Worker." }, 503);
+
+  const submission = await env.DB.prepare(`
+    SELECT original_name, mime_type, storage_key, marked_storage_key, marked_name
+    FROM submissions WHERE id = ? AND user_id = ? LIMIT 1
+  `).bind(id, user.id).first();
+  if (!submission) return json({ error: "Submission not found." }, 404);
+
+  const key = marked ? submission.marked_storage_key : submission.storage_key;
+  if (!key) return json({ error: "The marked paper is not available yet." }, 404);
+  const name = marked ? (submission.marked_name || `marked-${submission.original_name}`) : submission.original_name;
+  const object = await store.get(key);
+  if (!object) {
+    return json({
+      error: marked ? "The marked paper file could not be found." : "The submitted paper file could not be found."
+    }, 404);
+  }
+  return fileDownloadResponse(object, name, marked ? (object.httpMetadata?.contentType || submission.mime_type) : submission.mime_type);
+}
+__name(handleSubmissionDownload, "handleSubmissionDownload");
+
+async function handleCreateSubmission(request, env) {
+  const user = await getSessionUser(request, env);
+  if (!user) return json({ error: "Not authenticated." }, 401);
+  if (!hasPremiumAccess(user)) return json({ error: "The Resource & Marking Centre is available to Premium members." }, 403);
+  const store = getFileStore(env);
+  if (!store) return json({ error: "File storage is not configured. Add the FILES R2 binding to the Worker." }, 503);
+
+  const form = await request.formData();
+  const file = form.get("file");
+  if (!(file instanceof File) || !file.name) return json({ error: "Please select a file." }, 400);
+  if (file.size < 1) return json({ error: "The selected file is empty." }, 400);
+  if (file.size > RESOURCE_MAX_FILE_BYTES) return json({ error: "File is too large. Maximum size is 25 MB." }, 413);
+
+  const key = makeStorageKey("submissions", user.id, file.name);
+  await store.put(key, file.stream(), {
+    httpMetadata: { contentType: file.type || "application/octet-stream" }
+  });
+  try {
+    await env.DB.prepare(`
+      INSERT INTO submissions (user_id, original_name, mime_type, size_bytes, storage_key, status)
+      VALUES (?, ?, ?, ?, ?, 'submitted')
+    `).bind(user.id, file.name, file.type || "application/octet-stream", file.size, key).run();
+  } catch (error) {
+    await store.delete(key);
+    throw error;
+  }
+  return json({ success: true, message: "Paper submitted successfully for marking." }, 201);
+}
+__name(handleCreateSubmission, "handleCreateSubmission");
+
+async function handleAdminResources(request, env) {
+  const admin = await requireAdmin(request, env);
+  if (!admin) return json({ error: "Admin access required." }, 403);
+  const result = await env.DB.prepare(`
+    SELECT id, title, category, description, original_name, content_type, size_bytes, created_at, is_published
+    FROM resources ORDER BY created_at DESC, id DESC
+  `).all();
+  return json({ success: true, resources: result.results || [] });
+}
+__name(handleAdminResources, "handleAdminResources");
+
+async function handleAdminResourceUpload(request, env) {
+  const admin = await requireAdmin(request, env);
+  if (!admin) return json({ error: "Admin access required." }, 403);
+  const store = env.RESOURCE_FILES || null;
+  if (!store) return json({ error: "Resource file storage is not configured. Add the RESOURCE_FILES R2 binding to the Worker." }, 503);
+
+  const form = await request.formData();
+  const file = form.get("file");
+  const title = String(form.get("title") || "").trim();
+  const category = String(form.get("category") || "Resource").trim() || "Resource";
+  const description = String(form.get("description") || "").trim();
+  if (!title) return json({ error: "Please enter a resource title." }, 400);
+  if (!(file instanceof File) || !file.name) return json({ error: "Please select a resource file." }, 400);
+  if (file.size < 1) return json({ error: "The selected file is empty." }, 400);
+  if (file.size > RESOURCE_MAX_FILE_BYTES) return json({ error: "File is too large. Maximum size is 25 MB." }, 413);
+
+  const key = makeStorageKey("resources", admin.id, file.name);
+  await store.put(key, file.stream(), {
+    httpMetadata: { contentType: file.type || "application/octet-stream" }
+  });
+  try {
+    await env.DB.prepare(`
+      INSERT INTO resources (title, description, category, object_key, original_name, content_type, size_bytes, uploaded_by, is_published)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
+    `).bind(title, description, category, key, file.name, file.type || "application/octet-stream", file.size, admin.email).run();
+  } catch (error) {
+    await store.delete(key);
+    throw error;
+  }
+  return json({ success: true, message: "Resource uploaded successfully." }, 201);
+}
+__name(handleAdminResourceUpload, "handleAdminResourceUpload");
+
+async function handleAdminSubmissions(request, env) {
+  const admin = await requireAdmin(request, env);
+  if (!admin) return json({ error: "Admin access required." }, 403);
+  const result = await env.DB.prepare(`
+    SELECT s.id, s.original_name, s.size_bytes, s.score, s.feedback, s.status, s.created_at, s.marked_at, s.marked_name,
+           u.name AS student_name, u.email AS student_email
+    FROM submissions s
+    JOIN users u ON u.id = s.user_id
+    ORDER BY s.created_at DESC, s.id DESC
+  `).all();
+  return json({ success: true, submissions: result.results || [] });
+}
+__name(handleAdminSubmissions, "handleAdminSubmissions");
+
+async function handleAdminMarkSubmission(request, env, id) {
+  const admin = await requireAdmin(request, env);
+  if (!admin) return json({ error: "Admin access required." }, 403);
+  const store = getFileStore(env);
+  if (!store) return json({ error: "File storage is not configured. Add the FILES R2 binding to the Worker." }, 503);
+
+  const existing = await env.DB.prepare(`
+    SELECT id, marked_storage_key, original_name FROM submissions WHERE id = ? LIMIT 1
+  `).bind(id).first();
+  if (!existing) return json({ error: "Submission not found." }, 404);
+
+  const form = await request.formData();
+  const score = String(form.get("score") || "").trim();
+  const feedback = String(form.get("feedback") || "").trim();
+  const markedFile = form.get("marked_file");
+  let markedKey = existing.marked_storage_key || null;
+  let markedName = null;
+
+  // A submission may only be moved to "marked" when an actual marked
+  // document exists. This prevents a paper being shown as marked while
+  // the student has nothing to download.
+  if (!(markedFile instanceof File && markedFile.name) && !markedKey) {
+    return json({
+      error: "Please upload the marked paper before saving the marking."
+    }, 400);
+  }
+
+  if (markedFile instanceof File && markedFile.name) {
+    if (markedFile.size > RESOURCE_MAX_FILE_BYTES) return json({ error: "Marked file is too large. Maximum size is 25 MB." }, 413);
+    markedKey = makeStorageKey("marked", admin.id, markedFile.name);
+    markedName = markedFile.name;
+    await store.put(markedKey, markedFile.stream(), {
+      httpMetadata: { contentType: markedFile.type || "application/octet-stream" }
+    });
+  }
+
+  try {
+    await env.DB.prepare(`
+      UPDATE submissions
+      SET score = ?, feedback = ?, status = 'marked',
+          marked_storage_key = ?, marked_name = COALESCE(?, marked_name),
+          marked_at = datetime('now')
+      WHERE id = ?
+    `).bind(score || null, feedback || null, markedKey, markedName, id).run();
+  } catch (error) {
+    if (markedFile instanceof File && markedFile.name && markedKey) await store.delete(markedKey);
+    throw error;
+  }
+
+  if (existing.marked_storage_key && markedFile instanceof File && markedFile.name && existing.marked_storage_key !== markedKey) {
+    await store.delete(existing.marked_storage_key).catch(() => {});
+  }
+  return json({ success: true, message: "Marked paper saved successfully." });
+}
+__name(handleAdminMarkSubmission, "handleAdminMarkSubmission");
+
 async function handleAdminStats(request, env) {
   const admin = await requireAdmin(request, env);
   if (!admin) return json({ error: "Admin access required." }, 403);
@@ -1119,6 +1397,7 @@ var worker_default = {
       await ensureAdminAccount(env);
       await ensurePaymentColumns(env);
       await ensureActivityTables(env);
+      await ensureResourceTables(env);
     } catch (error) {
       console.error("membership initialization error", error);
     }
@@ -1144,6 +1423,24 @@ var worker_default = {
             request,
             env
           );
+        }
+        if (url.pathname === "/api/resources" && method === "GET") {
+          return await handleResources(request, env);
+        }
+        if (url.pathname === "/api/submissions" && method === "GET") {
+          return await handleSubmissions(request, env);
+        }
+        if (url.pathname === "/api/submissions" && method === "POST") {
+          return await handleCreateSubmission(request, env);
+        }
+        if (url.pathname === "/api/admin/resources" && method === "GET") {
+          return await handleAdminResources(request, env);
+        }
+        if (url.pathname === "/api/admin/resources/upload" && method === "POST") {
+          return await handleAdminResourceUpload(request, env);
+        }
+        if (url.pathname === "/api/admin/submissions" && method === "GET") {
+          return await handleAdminSubmissions(request, env);
         }
         if (url.pathname === "/api/admin/payments" && method === "GET") {
           return await handleAdminPayments(request, env);
@@ -1198,6 +1495,22 @@ var worker_default = {
             request,
             env
           );
+        }
+        const resourceDownloadMatch = url.pathname.match(/^\/api\/resources\/(\d+)\/download$/);
+        if (resourceDownloadMatch && method === "GET") {
+          return await handleResourceDownload(request, env, Number(resourceDownloadMatch[1]));
+        }
+        const markedSubmissionDownloadMatch = url.pathname.match(/^\/api\/submissions\/(\d+)\/marked\/download$/);
+        if (markedSubmissionDownloadMatch && method === "GET") {
+          return await handleSubmissionDownload(request, env, Number(markedSubmissionDownloadMatch[1]), true);
+        }
+        const submissionDownloadMatch = url.pathname.match(/^\/api\/submissions\/(\d+)\/download$/);
+        if (submissionDownloadMatch && method === "GET") {
+          return await handleSubmissionDownload(request, env, Number(submissionDownloadMatch[1]), false);
+        }
+        const adminMarkSubmissionMatch = url.pathname.match(/^\/api\/admin\/submissions\/(\d+)\/mark$/);
+        if (adminMarkSubmissionMatch && method === "POST") {
+          return await handleAdminMarkSubmission(request, env, Number(adminMarkSubmissionMatch[1]));
         }
         const courseMatch = url.pathname.match(
           /^\/api\/courses\/(\d+)$/
