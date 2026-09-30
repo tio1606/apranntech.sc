@@ -9473,19 +9473,7 @@ document.addEventListener('DOMContentLoaded',function(){
   loadVideos();
 });
 
-document.addEventListener('DOMContentLoaded', function(){
-  const loginButton = document.getElementById('loginSubmit');
-  if (loginButton) {
-    loginButton.addEventListener('click', enterApp);
-  }
-  const loginForm = document.getElementById('loginForm');
-  if (loginForm) {
-    loginForm.addEventListener('submit', function(e){
-      e.preventDefault();
-      enterApp();
-    });
-  }
-});
+/* Login is handled by the login form's submit handler above. */
 </script>
 <button id="aprannChatButton" type="button" aria-label="Open Aprann Tech Chat" title="Chat with Aprann Tech"><span class="chat-icon" aria-hidden="true"></span></button>
 <div id="aprannChatWindow" role="dialog" aria-label="Aprann Tech Chat" aria-hidden="true">
