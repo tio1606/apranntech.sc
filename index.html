@@ -1301,6 +1301,20 @@ Student Login
     </p>
   </div>
 
+  <div id="learningPerformanceOverview" class="module" style="margin-bottom:20px;border:2px solid #dbeafe;background:linear-gradient(135deg,#ffffff 0%,#f0f9ff 100%);">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;">
+      <div><span class="badge">LEARNING PERFORMANCE</span><h2 style="margin:8px 0 5px;">Your Learning Overview</h2><p class="muted" style="margin:0;">A quick view of your course progress, assessments and learning activity.</p></div>
+      <div style="font-size:13px;font-weight:800;color:#0369a1;">Pti Pa Pti Pa, Gro Rezilta!</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:12px;margin-top:18px;">
+      <div class="module"><span class="badge">COURSE</span><h3 id="overviewCoursePercent" style="font-size:28px;margin:10px 0 3px;">0%</h3><p class="muted" style="margin:0;">Course complete</p></div>
+      <div class="module"><span class="badge">EXAMS</span><h3 id="overviewExamCount" style="font-size:28px;margin:10px 0 3px;">0</h3><p class="muted" style="margin:0;">Attempts</p></div>
+      <div class="module"><span class="badge">EXAM AVG</span><h3 id="overviewExamAverage" style="font-size:28px;margin:10px 0 3px;">0%</h3><p class="muted" style="margin:0;">Theory average</p></div>
+      <div class="module"><span class="badge">VIDEOS</span><h3 id="overviewVideoCount" style="font-size:28px;margin:10px 0 3px;">0</h3><p class="muted" style="margin:0;">Watched</p></div>
+      <div class="module"><span class="badge">MARKED</span><h3 id="overviewMarkedAverage" style="font-size:28px;margin:10px 0 3px;">0%</h3><p class="muted" style="margin:0;">Marked-paper average</p></div>
+    </div>
+  </div>
+
   <div id="progressActivitySummary" class="module-grid" style="margin-bottom:20px;">
     <div class="module"><span class="badge">EXAMS</span><h3 id="progressExamCount" style="font-size:28px;margin:12px 0 4px;">0</h3><p class="muted" style="margin:0;">Exams completed</p></div>
     <div class="module"><span class="badge">AVERAGE</span><h3 id="progressExamAverage" style="font-size:28px;margin:12px 0 4px;">0%</h3><p class="muted" style="margin:0;">Theory exam average</p></div>
@@ -2595,6 +2609,12 @@ async function renderExamAndVideoSummary(email){
   if(countEl) countEl.textContent=exams.length;
   if(avgEl) avgEl.textContent=avg+'%';
   if(videoEl) videoEl.textContent=watched;
+  const overviewExam=document.getElementById('overviewExamCount');
+  const overviewAvg=document.getElementById('overviewExamAverage');
+  const overviewVideo=document.getElementById('overviewVideoCount');
+  if(overviewExam) overviewExam.textContent=exams.length;
+  if(overviewAvg) overviewAvg.textContent=avg+'%';
+  if(overviewVideo) overviewVideo.textContent=watched;
   if(dashCount) dashCount.textContent=exams.length;
   if(dashAvg) dashAvg.textContent=avg+'%';
   if(dashVideo) dashVideo.textContent=watched;
@@ -2902,6 +2922,8 @@ async function loadProgressMarkingSummary(){
     const scores=marked.map(x=>{const m=String(x.score||'').match(/(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/);return m?{score:Number(m[1]),total:Number(m[2])}:null;}).filter(Boolean);
     const avg=scores.length?Math.round(scores.reduce((a,x)=>a+(x.score/x.total)*100,0)/scores.length):0;
     if(submittedEl) submittedEl.textContent=subs.length; if(markedEl) markedEl.textContent=marked.length; if(averageEl) averageEl.textContent=avg+'%';
+    const overviewMarked=document.getElementById('overviewMarkedAverage');
+    if(overviewMarked) overviewMarked.textContent=avg+'%';
     if(!marked.length){recentEl.innerHTML='<p class="muted">No marked papers yet. Submit a paper for marking to see your feedback here.</p>';return;}
     const recent=marked.slice().sort((a,b)=>String(b.marked_at||b.created_at||'').localeCompare(String(a.marked_at||a.created_at||''))).slice(0,5);
     recentEl.innerHTML='<h3 style="margin:0 0 10px;">Recent marked work</h3><div style="display:grid;gap:8px;">'+recent.map(x=>`<div style="padding:12px;border:1px solid #dbe5ef;border-radius:10px;background:#f8fafc;"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;"><strong>${escapeResourceHtml(x.original_name||'Paper')}</strong><span class="badge">MARKED • ${escapeResourceHtml(x.score||'—')}</span></div><div class="muted" style="margin-top:5px;">${x.marked_at?escapeResourceHtml(new Date(x.marked_at).toLocaleDateString()):'Date unavailable'}</div><div style="margin-top:7px;">${escapeResourceHtml(x.feedback||'No feedback provided.')}</div></div>`).join('')+'</div>';
@@ -3022,6 +3044,9 @@ async function loadProgress() {
       overallPercentElement.textContent =
         overallPercent + '%';
     }
+
+    const overviewCourse=document.getElementById('overviewCoursePercent');
+    if(overviewCourse) overviewCourse.textContent=overallPercent+'%';
 
     if (overallBar) {
       overallBar.style.width =
