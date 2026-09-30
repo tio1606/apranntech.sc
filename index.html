@@ -792,6 +792,18 @@ html, body { max-width:100%; overflow-x:hidden; }
 }
 </style>
 
+<style id="aprann-achievement-centre">
+#studentAchievementCentre .achievement-card{position:relative;min-height:150px;border-radius:14px;padding:18px;border:1px solid #dbeafe;background:white;transition:transform .2s ease,box-shadow .2s ease;}
+#studentAchievementCentre .achievement-card.unlocked{border-color:#bae6fd;box-shadow:0 7px 20px rgba(2,132,199,.08);}
+#studentAchievementCentre .achievement-card.unlocked:hover{transform:translateY(-2px);box-shadow:0 11px 26px rgba(2,132,199,.13);}
+#studentAchievementCentre .achievement-card.locked{background:#f8fafc;opacity:.72;}
+#studentAchievementCentre .achievement-icon{font-size:30px;margin-bottom:8px;}
+#studentAchievementCentre .achievement-status{position:absolute;top:14px;right:14px;font-size:11px;font-weight:900;padding:5px 8px;border-radius:999px;}
+#studentAchievementCentre .achievement-status.earned{background:#ecfdf5;color:#166534;border:1px solid #bbf7d0;}
+#studentAchievementCentre .achievement-status.locked{background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;}
+@media(max-width:800px){#studentAchievementCentre > div:last-child{grid-template-columns:1fr 1fr !important;}}
+@media(max-width:520px){#studentAchievementCentre > div:last-child{grid-template-columns:1fr !important;}}
+</style>
 </head>
 <body>
 <header>
@@ -1312,6 +1324,20 @@ Student Login
       <div class="module"><span class="badge">EXAM AVG</span><h3 id="overviewExamAverage" style="font-size:28px;margin:10px 0 3px;">0%</h3><p class="muted" style="margin:0;">Theory average</p></div>
       <div class="module"><span class="badge">VIDEOS</span><h3 id="overviewVideoCount" style="font-size:28px;margin:10px 0 3px;">0</h3><p class="muted" style="margin:0;">Watched</p></div>
       <div class="module"><span class="badge">MARKED</span><h3 id="overviewMarkedAverage" style="font-size:28px;margin:10px 0 3px;">0%</h3><p class="muted" style="margin:0;">Marked-paper average</p></div>
+    </div>
+  </div>
+
+  <div id="studentAchievementCentre" class="module" style="margin-bottom:20px;border:2px solid #dbeafe;background:linear-gradient(135deg,#ffffff 0%,#f8fbff 55%,#ecfeff 100%);">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;">
+      <div>
+        <span class="badge">ACHIEVEMENT CENTRE</span>
+        <h2 style="margin:8px 0 5px;">Your Achievements</h2>
+        <p class="muted" style="margin:0;">Milestones earned from your lessons, exams and assessment activity.</p>
+      </div>
+      <div id="achievementSummaryBadge" style="font-size:13px;font-weight:800;color:#0369a1;background:#e0f2fe;border:1px solid #bae6fd;padding:8px 12px;border-radius:999px;">Loading achievements...</div>
+    </div>
+    <div id="achievementGrid" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:18px;">
+      <div class="module"><p class="muted" style="margin:0;">Loading your achievements...</p></div>
     </div>
   </div>
 
@@ -2943,10 +2969,65 @@ async async function loadProgressMarkingSummary(){
     recentEl.innerHTML='<h3 style="margin:0 0 10px;">Recent marked work</h3><div style="display:grid;gap:8px;">'+recent.map(x=>`<div style="padding:12px;border:1px solid #dbe5ef;border-radius:10px;background:#f8fafc;"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;"><strong>${escapeResourceHtml(x.original_name||'Paper')}</strong><span class="badge">MARKED • ${escapeResourceHtml(x.score||'—')}</span></div><div class="muted" style="margin-top:5px;">${x.marked_at?escapeResourceHtml(new Date(x.marked_at).toLocaleDateString()):'Date unavailable'}</div><div style="margin-top:7px;">${escapeResourceHtml(x.feedback||'No feedback provided.')}</div></div>`).join('')+'</div>';
   }catch(e){if(submittedEl) submittedEl.textContent='—';if(markedEl) markedEl.textContent='—';if(averageEl) averageEl.textContent='—';recentEl.innerHTML='<p class="muted">Assessment marking data is unavailable right now.</p>';}
 }
+async function loadStudentAchievements(){
+  const grid=document.getElementById('achievementGrid');
+  const badge=document.getElementById('achievementSummaryBadge');
+  if(!grid) return;
+  const escapeText=(v)=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  try{
+    const identity=await getStudentIdentity();
+    const store=getLocalStudentProgress();
+    const student=store[identity.email] || {exams:[],watchedVideos:{}};
+    const exams=Array.isArray(student.exams)?student.exams:[];
+    const theory=exams.filter(x=>x.type==='theory' && Number.isFinite(Number(x.percentage)));
+    const bestExam=theory.length ? Math.max(...theory.map(x=>Number(x.percentage)||0)) : 0;
+    const progressResponse=await fetch('/api/lesson-progress',{cache:'no-store',headers:{'Accept':'application/json','Cache-Control':'no-cache'}});
+    const progressData=await progressResponse.json().catch(()=>({}));
+    const progress=progressResponse.ok && Array.isArray(progressData.progress) ? progressData.progress : [];
+    const modules={'computer-systems':4,'input-output':5,'networks':5,'data-handling':8,'databases':5,'ict-society':5};
+    const totalLessons=Object.values(modules).reduce((a,b)=>a+b,0);
+    const completedLessons=progress.filter(x=>x.completed===1 || x.completed===true).length;
+    const coursePercent=totalLessons ? Math.round((completedLessons/totalLessons)*100) : 0;
+    let submissions=[];
+    try{
+      const sr=await fetch('/api/submissions',{cache:'no-store',headers:{'Accept':'application/json','Cache-Control':'no-cache'}});
+      const sd=await sr.json().catch(()=>({}));
+      if(sr.ok && Array.isArray(sd.submissions)) submissions=sd.submissions;
+    }catch(e){ console.warn('Achievement marking data unavailable.',e); }
+    const marked=submissions.filter(x=>String(x.status||'').toLowerCase()==='marked');
+    const achievements=[
+      {icon:'📘',title:'First Lesson',desc:'Complete your first lesson.',earned:completedLessons>=1},
+      {icon:'🌱',title:'25% Complete',desc:'Reach 25% of the full course.',earned:coursePercent>=25},
+      {icon:'🚀',title:'50% Complete',desc:'Reach 50% of the full course.',earned:coursePercent>=50},
+      {icon:'🏅',title:'75% Complete',desc:'Reach 75% of the full course.',earned:coursePercent>=75},
+      {icon:'🎓',title:'Course Complete',desc:'Complete all 32 required lessons.',earned:coursePercent>=100},
+      {icon:'📝',title:'First Exam',desc:'Complete your first theory exam.',earned:theory.length>=1},
+      {icon:'⭐',title:'80% Exam Result',desc:'Achieve 80% or higher in a theory exam.',earned:bestExam>=80},
+      {icon:'📤',title:'First Paper Submitted',desc:'Submit your first paper for teacher marking.',earned:submissions.length>=1},
+      {icon:'✅',title:'First Paper Marked',desc:'Receive your first marked paper and feedback.',earned:marked.length>=1}
+    ];
+    const earned=achievements.filter(x=>x.earned).length;
+    if(badge) badge.textContent=earned+' of '+achievements.length+' achievements earned';
+    grid.innerHTML=achievements.map(x=>`
+      <div class="achievement-card ${x.earned?'unlocked':'locked'}">
+        <span class="achievement-status ${x.earned?'earned':'locked'}">${x.earned?'✓ EARNED':'🔒 LOCKED'}</span>
+        <div class="achievement-icon">${x.icon}</div>
+        <h3 style="margin:0 0 6px;color:#082f49;">${escapeText(x.title)}</h3>
+        <p class="muted" style="margin:0;font-size:13px;">${escapeText(x.desc)}</p>
+      </div>
+    `).join('');
+  }catch(error){
+    console.warn('Could not load student achievements:',error);
+    if(badge) badge.textContent='Achievements unavailable';
+    grid.innerHTML='<div class="module"><p class="muted" style="margin:0;">Unable to load achievements right now. Please refresh My Progress.</p></div>';
+  }
+}
+
 async function loadProgress() {
   const container = document.getElementById('realProgress');
   try { await loadProgressMarkingSummary(); } catch(e) { console.warn('Marking summary unavailable.', e); }
   try{ const identity=await getStudentIdentity(); await renderExamAndVideoSummary(identity.email); }catch(e){ console.warn('Activity progress summary unavailable.',e); }
+  try{ await loadStudentAchievements(); }catch(e){ console.warn('Achievement summary unavailable.',e); }
 
   if (!container) return;
 
