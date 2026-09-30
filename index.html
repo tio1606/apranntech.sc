@@ -928,7 +928,7 @@ Student Login
 </section>
 
 <section id="app" class="app">
-<div class="app-grid"><aside class="side"><b style="font-size:18px">AT</b><button class="active" onclick="dashTab('home',this)"><span>Dashboard</span></button><button onclick="dashTab('course',this)"><span>My Course</span></button><button onclick="dashTab('activity',this)"><span>Activities</span></button><button onclick="dashTab('quiz',this)"><span>Quizzes</span></button><button onclick="dashTab('exam',this)"><span>Exam Centre</span></button><button onclick="dashTab('videos',this)"><span>Videos</span></button><button onclick="dashTab('progress',this)"><span>Progress</span></button><button onclick="dashTab('resources',this)"><span>Resources & Marking</span></button><button id="studentProfileButton" data-at-profile="1" onclick="dashTab('profile',this)"><span>My Profile</span></button><button id="adminPaymentsButton" class="hidden" onclick="dashTab('adminPayments',this);loadAdminPayments()"><span>Payments</span></button><button id="adminDashboardButton" class="hidden" onclick="dashTab('adminDashboard',this);loadAdminDashboard()"><span>Admin Dashboard</span></button></aside>
+<div class="app-grid"><aside class="side"><b style="font-size:18px">AT</b><button class="active" onclick="dashTab('home',this)"><span>Dashboard</span></button><button onclick="dashTab('course',this)"><span>My Course</span></button><button onclick="dashTab('activity',this)"><span>Activities</span></button><button onclick="dashTab('quiz',this)"><span>Quizzes</span></button><button onclick="dashTab('exam',this)"><span>Exam Centre</span></button><button onclick="dashTab('videos',this)"><span>Videos</span></button><button onclick="dashTab('progress',this)"><span>Progress</span></button><button onclick="dashTab('resources',this)"><span>Resources & Marking</span></button><button id="studentProfileButton" data-at-profile="1" onclick="dashTab('profile',this)"><span>My Profile</span></button><button type="button" onclick="logoutStudent()" aria-label="Log out"><span>Log Out</span></button><button id="adminPaymentsButton" class="hidden" onclick="dashTab('adminPayments',this);loadAdminPayments()"><span>Payments</span></button><button id="adminDashboardButton" class="hidden" onclick="dashTab('adminDashboard',this);loadAdminDashboard()"><span>Admin Dashboard</span></button></aside>
 <div class="dash">
 <div id="dadminDashboard" class="dtab hidden">
   <div style="display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;">
@@ -1580,6 +1580,36 @@ function showPricing(event){
   },50);
 }
 function home(){hideAll();document.getElementById('public').style.display='block';window.scrollTo(0,0)}
+
+async function logoutStudent(){
+  try{
+    const response=await fetch('/api/logout',{
+      method:'POST',
+      credentials:'same-origin',
+      headers:{'Accept':'application/json'}
+    });
+
+    if(!response.ok){
+      let message='Unable to log out. Please try again.';
+      try{
+        const data=await response.json();
+        if(data && data.error) message=data.error;
+      }catch(e){}
+      alert(message);
+      return;
+    }
+
+    hideAll();
+    document.getElementById('loginArea').style.display='block';
+    document.getElementById('email').value='';
+    document.getElementById('pass').value='';
+    window.scrollTo(0,0);
+  }catch(error){
+    console.error('Logout error:',error);
+    alert('Unable to connect to the logout service. Please try again.');
+  }
+}
+
 function showStudentLogin(){
   hideAll();
   document.getElementById('loginArea').style.display='block';
@@ -1675,122 +1705,132 @@ async function enterAdminApp(){
 }
 
 async function enterApp(){
-  const emailEl=document.getElementById('email');
-  const passwordEl=document.getElementById('pass');
-  const button=document.getElementById('loginSubmit');
-  const email=(emailEl?.value||'').trim();
-  const password=passwordEl?.value||'';
-
-  let statusEl=document.getElementById('studentLoginStatus');
-  if(!statusEl){
-    statusEl=document.createElement('p');
-    statusEl.id='studentLoginStatus';
-    statusEl.className='muted';
-    statusEl.style.cssText='min-height:22px;margin:12px 0 0;text-align:center;font-weight:600;';
-    const loginButton=document.getElementById('loginSubmit');
-    if(loginButton) loginButton.insertAdjacentElement('afterend',statusEl);
-  }
-
-  const setStatus=(message,isError=false)=>{
-    if(statusEl){
-      statusEl.textContent=message;
-      statusEl.style.color=isError?'#b91c1c':'#166534';
-    }
-  };
+  const email=document.getElementById('email').value.trim();
+  const password=document.getElementById('pass').value;
 
   if(!email||!password){
-    setStatus('Please enter your email and password.',true);
+    alert('Please enter an email and password.');
     return;
   }
 
   try{
-    if(button) button.disabled=true;
-    setStatus('Signing in...');
-
     const response=await fetch('/api/login',{
       method:'POST',
-      headers:{'Content-Type':'application/json','Accept':'application/json'},
-      credentials:'same-origin',
+      headers:{'Content-Type':'application/json'},
       body:JSON.stringify({email,password})
     });
 
-    const raw=await response.text();
-    let data={};
-    try{ data=raw?JSON.parse(raw):{}; }
-    catch(e){
-      console.error('Login returned non-JSON:',raw);
-      setStatus('The login service returned an unexpected response. Please deploy the latest Worker.',true);
-      return;
-    }
+    const data=await response.json();
 
     if(!response.ok){
-      setStatus(data.error||'Login failed. Please check your email and password.',true);
+      alert(data.error||'Login failed. Please check your email and password.');
       return;
     }
 
-    // Verify that the session cookie created by /api/login is actually usable.
-    const meResponse=await fetch('/api/me',{
-      method:'GET',
-      credentials:'same-origin',
-      headers:{'Accept':'application/json','Cache-Control':'no-cache'},
-      cache:'no-store'
-    });
-
-    const meRaw=await meResponse.text();
-    let meData={};
-    try{ meData=meRaw?JSON.parse(meRaw):{}; }
-    catch(e){
-      console.error('/api/me returned non-JSON:',meRaw);
-      setStatus('Login succeeded, but the session could not be verified. Please deploy the latest Worker.',true);
-      return;
-    }
-
-    if(!meResponse.ok || !meData.authenticated || !meData.user){
-      console.error('Login session verification failed:',meResponse.status,meData);
-      setStatus('Your login was accepted, but the session was not saved. Please deploy the latest Worker and try again.',true);
-      return;
-    }
-
-    setStatus('Login successful. Opening your dashboard...');
-
-    // Only change screens after authentication has been verified.
     hideAll();
-    const app=document.getElementById('app');
-    if(app) app.style.display='block';
+    
 
-    try{
-      await loadMyCourse();
-    }catch(courseError){
-      console.error('Course loading after login:',courseError);
-    }
+document.getElementById('app').style.display='block';
+await loadMyCourse();
 
-    const welcome=document.getElementById('studentWelcome');
-    if(welcome) welcome.textContent=`Welcome back, ${meData.user.name || 'Student'} ðŸ‘‹`;
+const welcome = document.getElementById('studentWelcome');
+
+try{
+  const meResponse = await fetch('/api/me');
+  const meData = await meResponse.json();
+
+  if(welcome && meData.authenticated && meData.user){
+    const userRole=String(meData.user.role||meData.user.user_role||'').toLowerCase();
+    const isAdmin = userRole === 'admin';
 
     const adminButton=document.getElementById('adminPaymentsButton');
     const adminDashButton=document.getElementById('adminDashboardButton');
-    const role=String(meData.user.role||meData.user.user_role||'').toLowerCase();
-    const isAdmin=role==='admin';
-    if(adminButton) adminButton.classList.toggle('hidden',!isAdmin);
-    if(adminDashButton) adminDashButton.classList.toggle('hidden',!isAdmin);
 
-    const membership=document.getElementById('membershipPlan');
-    if(membership){
-      const plan=meData.user.plan||'free';
-      const planNames={free:'Free',basic:'Basic',standard:'Standard',premium:'Premium'};
-      const planName=planNames[plan]||'Free';
-      membership.innerHTML=`<h3 style="margin:0 0 8px;">Membership Plan</h3><p style="margin:0;font-size:20px;font-weight:700;">${planName}</p><p class="muted" style="margin:6px 0 0;">Your current Aprann Tech membership</p>`;
+    if(adminButton) adminButton.classList.toggle('hidden', !isAdmin);
+    if(adminDashButton) adminDashButton.classList.toggle('hidden', !isAdmin);
+
+    welcome.textContent = `Welcome back, ${meData.user.name || 'Student'} \uD83D\uDC4B`;
+ const membership = document.getElementById('membershipPlan');
+
+if (membership) {
+  const plan = meData.user.plan || 'free';
+
+  const planNames = {
+    free: 'Free',
+    basic: 'Basic',
+    standard: 'Standard',
+    premium: 'Premium'
+  };
+
+  const planName = planNames[plan] || 'Free';
+
+  const expires = meData.user.plan_expires_at || '';
+  const active = meData.user.membership_active === true ||
+    (expires ? new Date(String(expires).replace(' ', 'T') + 'Z') >= new Date() : false);
+
+  let expiryDate = null;
+  let daysRemaining = null;
+
+  if(expires){
+    expiryDate = new Date(String(expires).replace(' ', 'T') + 'Z');
+    if(!Number.isNaN(expiryDate.getTime())){
+      daysRemaining = Math.max(0, Math.ceil((expiryDate.getTime() - Date.now()) / 86400000));
     }
-
-    window.scrollTo(0,0);
-  }catch(error){
-    console.error('Student login error:',error);
-    setStatus('Unable to connect to the Aprann Tech login service. Please try again.',true);
-  }finally{
-    if(button) button.disabled=false;
   }
+
+  const expiryText = expiryDate && !Number.isNaN(expiryDate.getTime())
+    ? expiryDate.toLocaleDateString(undefined, {day:'numeric', month:'long', year:'numeric'})
+    : '';
+
+  const remainingText = active && daysRemaining !== null
+    ? (daysRemaining === 1 ? '1 day remaining' : daysRemaining + ' days remaining')
+    : '';
+
+  membership.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+      <div>
+        <h3 style="margin:0 0 8px;">Membership Plan</h3>
+        <p style="margin:0;font-size:20px;font-weight:700;">${planName}</p>
+      </div>
+      <span style="display:inline-block;padding:7px 11px;border-radius:999px;font-size:12px;font-weight:800;background:${active ? '#e9f8ee' : '#fff1f2'};color:${active ? '#166534' : '#b91c1c'};">
+        ${active ? 'ACTIVE' : 'INACTIVE'}
+      </span>
+    </div>
+
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:12px;">
+      <div style="padding:12px 16px;border-radius:12px;background:#eff6ff;border:1px solid #bfdbfe;">
+        <div style="font-size:12px;font-weight:800;color:#0369a1;text-transform:uppercase;">Access Until</div>
+        <div style="font-size:18px;font-weight:800;color:#082f49;margin-top:3px;">
+          ${expiryText || (plan === 'free' ? 'No paid membership' : 'Not available')}
+        </div>
+      </div>
+
+      ${remainingText ? `
+        <div style="padding:12px 16px;border-radius:12px;background:#ecfdf5;border:1px solid #bbf7d0;">
+          <div style="font-size:12px;font-weight:800;color:#166534;text-transform:uppercase;">Membership Remaining</div>
+          <div style="font-size:18px;font-weight:800;color:#166534;margin-top:3px;">
+            ${remainingText}
+          </div>
+        </div>
+      ` : ''}
+    </div>
+
+    ${plan === 'free' || !active ? '<button class="primary" style="margin-top:12px;" onclick="openMembershipPlans()">Upgrade Membership</button>' : ''}
+  `;
+  }
+} 
+}catch(error){
+  console.error('Could not load student profile', error);
 }
-function showRegister(){
+
+try{ const identity=await getStudentIdentity(); await renderExamAndVideoSummary(identity.email); }catch(e){ console.warn('Could not load learning stats.',e); }
+try{ await loadStudentDashboard(); }catch(e){ console.warn('Could not load dashboard insights.',e); }
+
+window.scrollTo(0,0);
+  }catch(error){
+    alert('Unable to connect to the server. Please try again.');
+  }
+}function showRegister(){
   hideAll();
   document.getElementById('registerArea').style.display='block';
   window.scrollTo(0,0);
