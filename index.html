@@ -860,13 +860,16 @@ html, body { max-width:100%; overflow-x:hidden; }
 <h2>Student Login</h2>
 <p class="muted">Sign in to access your Aprann Tech learning dashboard.</p>
 
+<form id="loginForm" onsubmit="handleLoginSubmit(event)" novalidate>
 <label>Email</label>
-<input class="field" id="email" type="email" placeholder="student@email.com">
+<input class="field" id="email" type="email" autocomplete="username" placeholder="student@email.com">
 
 <label>Password</label>
-<input class="field" id="pass" type="password" placeholder="Password">
+<input class="field" id="pass" type="password" autocomplete="current-password" placeholder="Password">
 
-<button id="loginSubmit" class="primary" type="button" style="width:100%" onclick="enterApp()">Log In</button>
+<button id="loginSubmit" class="primary" type="submit" style="width:100%">Log In</button>
+<div id="loginStatus" style="min-height:22px;margin-top:10px;text-align:center;font-size:13px;font-weight:700;color:#64748b;" aria-live="polite"></div>
+</form>
 
 <p class="muted" style="text-align:center;margin-top:18px">
 New student?
@@ -1623,26 +1626,73 @@ function showPricing(event){
 }
 function home(){hideAll();document.getElementById('public').style.display='block';window.scrollTo(0,0)}
 function login(){hideAll();document.getElementById('loginArea').style.display='block';window.scrollTo(0,0)}
+async function handleLoginSubmit(event){
+  if(event) event.preventDefault();
+
+  const button=document.getElementById('loginSubmit');
+  const status=document.getElementById('loginStatus');
+  if(button) button.disabled=true;
+  if(status){
+    status.style.color='#0369a1';
+    status.textContent='Signing in...';
+  }
+
+  try{
+    await enterApp();
+  }finally{
+    if(button) button.disabled=false;
+  }
+}
+
 async function enterApp(){
-  const email=document.getElementById('email').value.trim();
-  const password=document.getElementById('pass').value;
+  const emailEl=document.getElementById('email');
+  const passwordEl=document.getElementById('pass');
+  const status=document.getElementById('loginStatus');
+  const email=emailEl ? emailEl.value.trim() : '';
+  const password=passwordEl ? passwordEl.value : '';
 
   if(!email||!password){
-    alert('Please enter an email and password.');
+    if(status){
+      status.style.color='#b91c1c';
+      status.textContent='Please enter your email and password.';
+    }else{
+      alert('Please enter an email and password.');
+    }
     return;
   }
 
   try{
-    const response=await fetch('/api/login',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({email,password})
-    });
+    const controller=new AbortController();
+    const timeout=setTimeout(()=>controller.abort(),15000);
+    let response;
+    try{
+      response=await fetch('/api/login',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Accept':'application/json'},
+        credentials:'same-origin',
+        body:JSON.stringify({email,password}),
+        signal:controller.signal
+      });
+    }finally{
+      clearTimeout(timeout);
+    }
 
-    const data=await response.json();
+    const raw=await response.text();
+    let data={};
+    try{
+      data=raw ? JSON.parse(raw) : {};
+    }catch(parseError){
+      console.error('Login returned non-JSON response:',raw);
+    }
 
-    if(!response.ok){
-      alert(data.error||'Login failed. Please check your email and password.');
+    if(!response.ok || data.ok !== true){
+      const message=data.error || ('Login failed (HTTP '+response.status+'). Please try again.');
+      if(status){
+        status.style.color='#b91c1c';
+        status.textContent=message;
+      }else{
+        alert(message);
+      }
       return;
     }
 
@@ -1744,7 +1794,17 @@ try{ await loadStudentDashboard(); }catch(e){ console.warn('Could not load dashb
 
 window.scrollTo(0,0);
   }catch(error){
-    alert('Unable to connect to the server. Please try again.');
+    console.error('Aprann Tech login error:',error);
+    const status=document.getElementById('loginStatus');
+    const message=error && error.name==='AbortError'
+      ? 'The login request timed out. Please try again.'
+      : 'Unable to connect to the server. Please try again.';
+    if(status){
+      status.style.color='#b91c1c';
+      status.textContent=message;
+    }else{
+      alert(message);
+    }
   }
 }function showRegister(){
   hideAll();
