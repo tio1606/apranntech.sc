@@ -1323,6 +1323,11 @@ Student Login
 
   <div class="module" style="margin-bottom:20px;">
     <h2 style="margin-top:0;">My Exam Results</h2>
+    <div id="examPerformanceCards" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:16px 0;">
+      <div class="module"><span class="badge">BEST</span><h3 id="progressExamBest" style="font-size:28px;margin:10px 0 3px;">0%</h3><p class="muted" style="margin:0;">Best theory result</p></div>
+      <div class="module"><span class="badge">LATEST</span><h3 id="progressExamLatest" style="font-size:28px;margin:10px 0 3px;">0%</h3><p class="muted" style="margin:0;">Latest theory result</p></div>
+      <div class="module"><span class="badge">ATTEMPTS</span><h3 id="progressExamAttempts" style="font-size:28px;margin:10px 0 3px;">0</h3><p class="muted" style="margin:0;">Theory attempts</p></div>
+    </div>
     <div id="examResultsTable"><p class="muted">No exam attempts yet.</p></div>
   </div>
 
@@ -2606,6 +2611,9 @@ async function renderExamAndVideoSummary(email){
   const dashCount=document.getElementById('dashboardExamCount');
   const dashAvg=document.getElementById('dashboardExamAverage');
   const dashVideo=document.getElementById('dashboardVideoCount');
+  const bestEl=document.getElementById('progressExamBest');
+  const latestEl=document.getElementById('progressExamLatest');
+  const attemptsEl=document.getElementById('progressExamAttempts');
   if(countEl) countEl.textContent=exams.length;
   if(avgEl) avgEl.textContent=avg+'%';
   if(videoEl) videoEl.textContent=watched;
@@ -2618,6 +2626,12 @@ async function renderExamAndVideoSummary(email){
   if(dashCount) dashCount.textContent=exams.length;
   if(dashAvg) dashAvg.textContent=avg+'%';
   if(dashVideo) dashVideo.textContent=watched;
+  const theoryPercentages=theory.map(x=>Number(x.percentage)||0);
+  const best=theoryPercentages.length?Math.max(...theoryPercentages):0;
+  const latest=theory.length?(Number(theory[theory.length-1].percentage)||0):0;
+  if(bestEl) bestEl.textContent=best+'%';
+  if(latestEl) latestEl.textContent=latest+'%';
+  if(attemptsEl) attemptsEl.textContent=theory.length;
 
   const table=document.getElementById('examResultsTable');
   if(table){
