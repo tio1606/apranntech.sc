@@ -2912,7 +2912,7 @@ async function openNextDashboardLesson(){
   }
 }
 
-async function loadProgressMarkingSummary(){
+async async function loadProgressMarkingSummary(){
   const submittedEl=document.getElementById('progressMarkedSubmitted'), markedEl=document.getElementById('progressMarkedCount'), averageEl=document.getElementById('progressMarkedAverage'), recentEl=document.getElementById('progressMarkedRecent');
   if(!recentEl) return;
   try{
