@@ -1563,7 +1563,10 @@ function paypalCheckoutPage(env) {
   if (!clientId) return new Response("PayPal checkout is not configured.", { status: 503 });
   const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Aprann Tech PayPal Checkout</title><style>body{font-family:Arial,sans-serif;background:#f4f7fb;color:#17243a;margin:0;padding:24px}.card{max-width:520px;margin:32px auto;background:#fff;padding:28px;border-radius:16px;box-shadow:0 8px 30px #12213b18}h1{margin-top:0;color:#163d70}.muted{color:#526174;line-height:1.5}.plans{display:grid;gap:10px;margin:22px 0}.plan{padding:14px;border:1px solid #ccd6e3;border-radius:10px;cursor:pointer}.plan.active{border:2px solid #1769aa;background:#f0f7ff}.plan input{margin-right:8px}#paypal-button-container{margin-top:20px}#message{margin-top:16px;font-weight:600}.notice{font-size:13px;color:#667085;margin-top:18px}</style><script src="https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&currency=USD&intent=capture"></script></head><body><main class="card"><h1>Aprann Tech Membership</h1><p class="muted">Choose a plan for 30 days of access. Payments are one-time; there is no automatic monthly charge.</p><div class="plans"><label class="plan active"><input type="radio" name="plan" value="basic" checked>Basic — $10.99 USD</label><label class="plan"><input type="radio" name="plan" value="standard">Standard — $17.99 USD</label><label class="plan"><input type="radio" name="plan" value="premium">Premium — $42.99 USD</label></div><div id="paypal-button-container"></div><p id="message" role="status"></p><p class="notice">Sandbox test page. Do not use real money. You must be logged in to your Aprann Tech student account.</p></main><script>
 const message=document.getElementById('message');
+const requestedPlan=new URLSearchParams(location.search).get('plan');
+if(['basic','standard','premium'].includes(requestedPlan)){const selected=document.querySelector('input[name="plan"][value="'+requestedPlan+'"]');if(selected)selected.checked=true;}
 document.querySelectorAll('input[name="plan"]').forEach(input=>input.addEventListener('change',()=>{document.querySelectorAll('.plan').forEach(label=>label.classList.toggle('active',label.querySelector('input').checked));}));
+document.querySelectorAll('.plan').forEach(label=>label.classList.toggle('active',label.querySelector('input').checked));
 if(new URLSearchParams(location.search).get('status')==='cancelled') message.textContent='Payment cancelled. No membership payment was taken.';
 if(new URLSearchParams(location.search).get('status')==='success') message.textContent='Return received. Complete the payment below if it is not already confirmed.';
 paypal.Buttons({
@@ -1755,9 +1758,56 @@ var worker_default = {
     ctx.waitUntil(
       cleanupExpiredSessions(env)
     );
-    return env.ASSETS.fetch(
-      request
-    );
+    const assetResponse = await env.ASSETS.fetch(request);
+    if (request.method === "GET" && (url.pathname === "/" || url.pathname.endsWith(".html") || url.pathname === "/index.html")) {
+      const contentType = assetResponse.headers.get("content-type") || "";
+      if (contentType.includes("text/html") && assetResponse.ok) {
+        let html = await assetResponse.text();
+        const membershipBridge = `<script>
+(function(){
+  function updateMembershipPrices(){
+    const replacements = [[/\\bSCR\\s*150\\b/g, '$10.99 USD'], [/\\bSCR\\s*250\\b/g, '$17.99 USD'], [/\\bSCR\\s*600\\b/g, '$42.99 USD']];
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT);
+    let node;
+    while ((node = walker.nextNode())) {
+      if (node.children.length === 0 && !['SCRIPT','STYLE','NOSCRIPT'].includes(node.tagName)) {
+        let value = node.textContent;
+        for (const [pattern, replacement] of replacements) value = value.replace(pattern, replacement);
+        if (value !== node.textContent) node.textContent = value;
+      }
+    }
+  }
+  function interceptPlanButtons(event){
+    const button = event.target && event.target.closest ? event.target.closest('button,a,[role="button"]') : null;
+    if (!button) return;
+    const label = (button.innerText || button.textContent || '').replace(/\\s+/g,' ').trim().toLowerCase();
+    const match = label.match(/choose\\s+(basic|standard|premium)/);
+    if (!match) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+    window.location.href = '/paypal-checkout?plan=' + encodeURIComponent(match[1]);
+  }
+  document.addEventListener('click', interceptPlanButtons, true);
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', updateMembershipPrices, {once:true}); else updateMembershipPrices();
+  const observer = new MutationObserver(updateMembershipPrices);
+  const startObserver = function(){ if(document.body) observer.observe(document.body,{childList:true,subtree:true,characterData:true}); };
+  if(document.body) startObserver(); else document.addEventListener('DOMContentLoaded',startObserver,{once:true});
+})();
+</script>`;
+        if (!html.includes("AprannTechMembershipBridge")) {
+          const markedBridge = membershipBridge.replace("<script>", "<script id=\\"AprannTechMembershipBridge\\">");
+          if (html.includes("</body>")) html = html.replace("</body>", markedBridge + "</body>");
+          else html += markedBridge;
+        }
+        const headers = new Headers(assetResponse.headers);
+        headers.delete("content-length");
+        headers.delete("content-encoding");
+        headers.delete("etag");
+        return new Response(html, { status: assetResponse.status, statusText: assetResponse.statusText, headers });
+      }
+    }
+    return assetResponse;
   }
 };
 export {
