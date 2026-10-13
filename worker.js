@@ -1603,7 +1603,7 @@ var worker_default = {
     } catch (error) {
       console.error("membership initialization error", error);
     }
-    if (url.pathname.startsWith(
+    if (url.pathname === "/paypal-checkout" && request.method === "GET") {\n      return paypalCheckoutPage(env);\n    }\n    if (url.pathname.startsWith(
       "/api/"
     )) {
       const method = request.method.toUpperCase();
