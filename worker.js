@@ -1796,7 +1796,7 @@ var worker_default = {
 })();
 </script>`;
         if (!html.includes("AprannTechMembershipBridge")) {
-          const markedBridge = membershipBridge.replace("<script>", "<script id=\\"AprannTechMembershipBridge\\">");
+          const markedBridge = membershipBridge.replace("<script>", "<script id=\"AprannTechMembershipBridge\">");
           if (html.includes("</body>")) html = html.replace("</body>", markedBridge + "</body>");
           else html += markedBridge;
         }
