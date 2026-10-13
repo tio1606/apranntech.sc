@@ -1767,13 +1767,14 @@ var worker_default = {
 (function(){
   function updateMembershipPrices(){
     const replacements = [[/\\bSCR\\s*150\\b/g, '$10.99 USD'], [/\\bSCR\\s*250\\b/g, '$17.99 USD'], [/\\bSCR\\s*600\\b/g, '$42.99 USD']];
-    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT);
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     let node;
     while ((node = walker.nextNode())) {
-      if (node.children.length === 0 && !['SCRIPT','STYLE','NOSCRIPT'].includes(node.tagName)) {
-        let value = node.textContent;
+      const parent = node.parentElement;
+      if (parent && !['SCRIPT','STYLE','NOSCRIPT'].includes(parent.tagName)) {
+        let value = node.nodeValue || '';
         for (const [pattern, replacement] of replacements) value = value.replace(pattern, replacement);
-        if (value !== node.textContent) node.textContent = value;
+        if (value !== node.nodeValue) node.nodeValue = value;
       }
     }
   }
