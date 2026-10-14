@@ -1678,6 +1678,12 @@ var worker_default = {
         if (url.pathname === "/api/video-activity" && method === "POST") {
           return await handleSaveVideoActivity(request, env);
         }
+        if (url.pathname === "/api/paypal/create-order" && method === "POST") {
+          return await handlePayPalCreateOrder(request, env);
+        }
+        if (url.pathname === "/api/paypal/capture-order" && method === "POST") {
+          return await handlePayPalCaptureOrder(request, env);
+        }
         if (url.pathname === "/api/create-payment" && method === "POST") {
           return await handleCreatePayment(
             request,
