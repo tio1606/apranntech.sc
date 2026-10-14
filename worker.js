@@ -1511,18 +1511,30 @@ async function handlePayPalCaptureOrder(request, env) {
       return json({ error: "Payment details did not match the membership plan." }, 409);
     }
     const token = await paypalAccessToken(env);
-    const response = await fetch(paypalBaseUrl(env) + "/v2/checkout/orders/" + encodeURIComponent(orderId) + "/capture", {
+    const captureResponse = await fetch(paypalBaseUrl(env) + "/v2/checkout/orders/" + encodeURIComponent(orderId) + "/capture", {
       method: "POST",
       headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json", "Prefer": "return=representation" },
       body: "{}"
     });
-    const captured = await response.json();
-    if (!response.ok) {
-      if (captured.name === "UNPROCESSABLE_ENTITY" && captured.details?.some((d) => d.issue === "ORDER_ALREADY_CAPTURED")) {
-        return json({ error: "This order was already captured. Contact support if your membership has not activated." }, 409);
+    let captured = await captureResponse.json();
+    if (!captureResponse.ok) {
+      const issue = (captured.details || []).map((d) => d.issue).filter(Boolean).join(", ");
+      console.error("PayPal capture failed", captureResponse.status, captured.name, issue);
+      // PayPal may have completed the capture even if the capture response was lost or retried.
+      // Check the order itself before telling the student that payment failed.
+      const orderResponse = await fetch(paypalBaseUrl(env) + "/v2/checkout/orders/" + encodeURIComponent(orderId), {
+        method: "GET",
+        headers: { "Authorization": "Bearer " + token, "Prefer": "return=representation" }
+      });
+      const orderDetails = await orderResponse.json();
+      if (orderResponse.ok && orderDetails.status === "COMPLETED") {
+        captured = orderDetails;
+      } else {
+        const safeIssue = issue || captured.name || "UNKNOWN";
+        return json({
+          error: "PayPal could not confirm the payment (" + safeIssue + "). No membership change was confirmed. Please try again or contact support."
+        }, 502);
       }
-      console.error("PayPal capture failed", response.status, captured.name);
-      return json({ error: "PayPal could not confirm this payment. Please contact support before trying again." }, 502);
     }
     const purchase = captured.purchase_units?.[0];
     const capture = purchase?.payments?.captures?.[0];
