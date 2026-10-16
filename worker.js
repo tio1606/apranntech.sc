@@ -1637,7 +1637,10 @@ document.querySelectorAll('input[name="plan"]').forEach(input=>input.addEventLis
 document.querySelectorAll('.plan').forEach(label=>label.classList.toggle('active',label.querySelector('input').checked));
 if(new URLSearchParams(location.search).get('status')==='cancelled') message.textContent='Payment cancelled. No membership payment was taken.';
 if(new URLSearchParams(location.search).get('status')==='success') message.textContent='Return received. Complete the payment below if it is not already confirmed.';
-paypal.Buttons({
+if (typeof window.paypal === 'undefined' || !window.paypal.Buttons) {
+  message.textContent = 'PayPal buttons could not load. Check the Sandbox Client ID and browser connection, then refresh.';
+} else {
+window.paypal.Buttons({
   createOrder: async () => {
     message.textContent='Preparing secure PayPal checkout…';
     const plan=document.querySelector('input[name="plan"]:checked').value;
@@ -1656,6 +1659,7 @@ paypal.Buttons({
   onCancel: () => { message.textContent='Payment cancelled. No membership payment was taken.'; },
   onError: (err) => { message.textContent=(err&&err.message)||'PayPal checkout could not be completed. Please try again.'; }
 }).render('#paypal-button-container').catch(err=>{message.textContent=err.message||'PayPal checkout could not load.';});
+}
 </script></body></html>`;
   return new Response(html, { headers: { "content-type": "text/html; charset=UTF-8", "cache-control": "no-store" } });
 }
