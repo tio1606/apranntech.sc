@@ -1536,13 +1536,69 @@ async function handlePayPalCaptureOrder(request, env) {
         }, 502);
       }
     }
-    const purchase = captured.purchase_units?.[0];
-    const capture = purchase?.payments?.captures?.[0];
-    const paidAmount = capture?.amount;
-    if (captured.status !== "COMPLETED" || capture?.status !== "COMPLETED" ||
-        paidAmount?.currency_code !== "USD" || paidAmount?.value !== details.amount ||
-        (purchase?.custom_id && purchase.custom_id !== payment.transaction_reference)) {
-      return json({ error: "PayPal did not confirm the expected completed payment." }, 409);
+    // PayPal can return a sparse capture response or an already-captured order.
+    // If the capture payload does not include the full completed capture, fetch the
+    // authoritative order representation before rejecting the payment.
+    const isExpectedCompletedOrder = (order) => {
+      const units = Array.isArray(order?.purchase_units) ? order.purchase_units : [];
+      const matchingUnit = units.find((unit) =>
+        unit?.custom_id === payment.transaction_reference
+      );
+      const purchase = matchingUnit || units[0];
+      const captures = Array.isArray(purchase?.payments?.captures)
+        ? purchase.payments.captures
+        : [];
+      const capture = captures.find((item) => item?.status === "COMPLETED") || captures[0];
+      const paidAmount = capture?.amount;
+      const customIdMatches = !purchase?.custom_id ||
+        purchase.custom_id === payment.transaction_reference;
+      return {
+        valid: order?.status === "COMPLETED" &&
+          capture?.status === "COMPLETED" &&
+          paidAmount?.currency_code === "USD" &&
+          String(paidAmount?.value || "") === details.amount &&
+          customIdMatches,
+        orderStatus: order?.status || "MISSING",
+        captureStatus: capture?.status || "MISSING",
+        currency: paidAmount?.currency_code || "MISSING",
+        amountMatches: String(paidAmount?.value || "") === details.amount,
+        referenceMatches: customIdMatches
+      };
+    };
+    let verification = isExpectedCompletedOrder(captured);
+    if (!verification.valid) {
+      const orderResponse = await fetch(
+        paypalBaseUrl(env) + "/v2/checkout/orders/" + encodeURIComponent(orderId),
+        {
+          method: "GET",
+          headers: {
+            "Authorization": "Bearer " + token,
+            "Prefer": "return=representation"
+          }
+        }
+      );
+      const orderDetails = await orderResponse.json();
+      if (orderResponse.ok) {
+        const orderVerification = isExpectedCompletedOrder(orderDetails);
+        if (orderVerification.valid) {
+          captured = orderDetails;
+          verification = orderVerification;
+        } else {
+          verification = orderVerification;
+        }
+      }
+    }
+    if (!verification.valid) {
+      console.error("PayPal completed-order verification mismatch", {
+        orderStatus: verification.orderStatus,
+        captureStatus: verification.captureStatus,
+        currency: verification.currency,
+        amountMatches: verification.amountMatches,
+        referenceMatches: verification.referenceMatches
+      });
+      return json({
+        error: "PayPal may have received the payment, but Aprann Tech could not safely match it to this order. Do not pay again; contact support for verification."
+      }, 409);
     }
     const started = new Date();
     const expires = new Date(started.getTime() + 30 * 864e5);
