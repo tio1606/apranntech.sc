@@ -1866,9 +1866,17 @@ var worker_default = {
 })();
 </script>`;
         const markedBridge = membershipBridge.replace("<script>", '<script id="AprannTechMembershipBridge">');
-        const existingBridge = /<script\s+id=["']AprannTechMembershipBridge["'][^>]*>[\s\S]*?<\/script>/i;
-        if (existingBridge.test(html)) {
-          html = html.replace(existingBridge, markedBridge);
+        const bridgeMarker = 'id="AprannTechMembershipBridge"';
+        const bridgeStart = html.indexOf("<script " + bridgeMarker);
+        if (bridgeStart !== -1) {
+          const bridgeEnd = html.indexOf("</script>", bridgeStart);
+          if (bridgeEnd !== -1) {
+            html = html.slice(0, bridgeStart) + markedBridge + html.slice(bridgeEnd + "</script>".length);
+          } else if (html.includes("</body>")) {
+            html = html.replace("</body>", markedBridge + "</body>");
+          } else {
+            html += markedBridge;
+          }
         } else if (html.includes("</body>")) {
           html = html.replace("</body>", markedBridge + "</body>");
         } else {
