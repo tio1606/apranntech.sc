@@ -1843,31 +1843,57 @@ var worker_default = {
         let html = await assetResponse.text();
         const membershipBridge = `<script>
 (function(){
-  function interceptPlanButtons(event){
-    const button = event.target && event.target.closest ? event.target.closest('button,a,[role="button"],.btn,.membership-button,[data-plan],[onclick]') : null;
-    if (!button) return;
-    const label = (button.innerText || button.textContent || button.getAttribute('aria-label') || '').replace(/\s+/g,' ').trim().toLowerCase();
-    const match = label.match(/choose\\s+(basic|standard|premium)/) ||
-      (/upgrade\\s+membership/i.test(label) ? ['upgrade membership', 'standard'] : null);
-    if (!match) return;
+  function planForLabel(value){
+    const label = String(value || '').replace(/\\s+/g,' ').trim().toLowerCase();
+    const chosen = label.match(/choose\\s+(basic|standard|premium)/);
+    if (chosen) return chosen[1];
+    if (/upgrade\\s+membership/.test(label)) return 'standard';
+    return null;
+  }
+  function findMembershipPlan(event){
+    const path = typeof event.composedPath === 'function' ? event.composedPath() : [];
+    const candidates = path.concat([event.target]);
+    for (const node of candidates) {
+      if (!node || !node.tagName) continue;
+      const tag = String(node.tagName).toLowerCase();
+      if (!['button','a','input','div','span'].includes(tag)) continue;
+      const text = (node.innerText || node.textContent || node.getAttribute('aria-label') || node.value || '');
+      const plan = planForLabel(text);
+      if (plan) return plan;
+      if (tag === 'button' || tag === 'a' || node.getAttribute('role') === 'button') {
+        const parentPlan = planForLabel(node.parentElement && (node.parentElement.innerText || node.parentElement.textContent));
+        if (parentPlan) return parentPlan;
+      }
+    }
+    return null;
+  }
+  let redirecting = false;
+  function interceptMembership(event){
+    if (redirecting) return;
+    const plan = findMembershipPlan(event);
+    if (!plan) return;
     event.preventDefault();
     event.stopPropagation();
     if (event.stopImmediatePropagation) event.stopImmediatePropagation();
-    fetch('/api/me', { credentials: 'same-origin' })
-      .then(response => response.ok ? response.json() : { authenticated: false })
+    redirecting = true;
+    fetch('/api/me', {credentials:'same-origin', cache:'no-store'})
+      .then(response => response.ok ? response.json() : Promise.reject(new Error('not-authenticated')))
       .then(data => {
-        if (!data.authenticated) {
+        if (!data || !(data.authenticated || data.user || data.email || data.id)) {
+          redirecting = false;
           alert('Please log in to your student account first.');
           if (typeof window.login === 'function') window.login();
           return;
         }
-        window.location.href = '/paypal-checkout?plan=' + encodeURIComponent(match[1]);
+        window.location.assign('/paypal-checkout?plan=' + encodeURIComponent(plan));
       })
       .catch(() => {
-        alert('Unable to verify your student login. Please try again.');
+        redirecting = false;
+        alert('Unable to verify your student login. Please log in again and retry.');
       });
   }
-  window.addEventListener('click', interceptPlanButtons, true);
+  window.addEventListener('pointerdown', interceptMembership, true);
+  window.addEventListener('click', interceptMembership, true);
 })();
 </script>`;
         const markedBridge = membershipBridge.replace("<script>", '<script id="AprannTechMembershipBridge">');
