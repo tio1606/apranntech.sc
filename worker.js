@@ -1839,19 +1839,6 @@ var worker_default = {
         let html = await assetResponse.text();
         const membershipBridge = `<script>
 (function(){
-  function updateMembershipPrices(){
-    const replacements = [[/\\bSCR\\s*150\\b/g, '$10.99 USD'], [/\\bSCR\\s*250\\b/g, '$17.99 USD'], [/\\bSCR\\s*600\\b/g, '$42.99 USD']];
-    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-    let node;
-    while ((node = walker.nextNode())) {
-      const parent = node.parentElement;
-      if (parent && !['SCRIPT','STYLE','NOSCRIPT'].includes(parent.tagName)) {
-        let value = node.nodeValue || '';
-        for (const [pattern, replacement] of replacements) value = value.replace(pattern, replacement);
-        if (value !== node.nodeValue) node.nodeValue = value;
-      }
-    }
-  }
   function interceptPlanButtons(event){
     const button = event.target && event.target.closest ? event.target.closest('button,a,[role="button"]') : null;
     if (!button) return;
@@ -1861,13 +1848,21 @@ var worker_default = {
     event.preventDefault();
     event.stopPropagation();
     if (event.stopImmediatePropagation) event.stopImmediatePropagation();
-    window.location.href = '/paypal-checkout?plan=' + encodeURIComponent(match[1]);
+    fetch('/api/me', { credentials: 'same-origin' })
+      .then(response => response.ok ? response.json() : { authenticated: false })
+      .then(data => {
+        if (!data.authenticated) {
+          alert('Please log in to your student account first.');
+          if (typeof window.login === 'function') window.login();
+          return;
+        }
+        window.location.href = '/paypal-checkout?plan=' + encodeURIComponent(match[1]);
+      })
+      .catch(() => {
+        alert('Unable to verify your student login. Please try again.');
+      });
   }
   document.addEventListener('click', interceptPlanButtons, true);
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', updateMembershipPrices, {once:true}); else updateMembershipPrices();
-  const observer = new MutationObserver(updateMembershipPrices);
-  const startObserver = function(){ if(document.body) observer.observe(document.body,{childList:true,subtree:true,characterData:true}); };
-  if(document.body) startObserver(); else document.addEventListener('DOMContentLoaded',startObserver,{once:true});
 })();
 </script>`;
         if (!html.includes("AprannTechMembershipBridge")) {
