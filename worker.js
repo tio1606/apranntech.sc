@@ -1550,19 +1550,22 @@ async function handlePayPalCaptureOrder(request, env) {
         : [];
       const capture = captures.find((item) => item?.status === "COMPLETED") || captures[0];
       const paidAmount = capture?.amount;
-      const customIdMatches = !purchase?.custom_id ||
-        purchase.custom_id === payment.transaction_reference;
+      const expectedReference = String(payment.transaction_reference || "");
+      const referenceMatches =
+        purchase?.custom_id === expectedReference ||
+        purchase?.reference_id === expectedReference ||
+        purchase?.invoice_id === expectedReference;
       return {
         valid: order?.status === "COMPLETED" &&
           capture?.status === "COMPLETED" &&
           paidAmount?.currency_code === "USD" &&
           String(paidAmount?.value || "") === details.amount &&
-          customIdMatches,
+          referenceMatches,
         orderStatus: order?.status || "MISSING",
         captureStatus: capture?.status || "MISSING",
         currency: paidAmount?.currency_code || "MISSING",
         amountMatches: String(paidAmount?.value || "") === details.amount,
-        referenceMatches: customIdMatches
+        referenceMatches
       };
     };
     let verification = isExpectedCompletedOrder(captured);
