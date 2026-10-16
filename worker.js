@@ -1866,7 +1866,7 @@ var worker_default = {
         alert('Unable to verify your student login. Please try again.');
       });
   }
-  document.addEventListener('click', interceptPlanButtons, true);
+  window.addEventListener('click', interceptPlanButtons, true);
 })();
 </script>`;
         const markedBridge = membershipBridge.replace("<script>", '<script id="AprannTechMembershipBridge">');
