@@ -1865,10 +1865,14 @@ var worker_default = {
   document.addEventListener('click', interceptPlanButtons, true);
 })();
 </script>`;
-        if (!html.includes("AprannTechMembershipBridge")) {
-          const markedBridge = membershipBridge.replace("<script>", '<script id="AprannTechMembershipBridge">');
-          if (html.includes("</body>")) html = html.replace("</body>", markedBridge + "</body>");
-          else html += markedBridge;
+        const markedBridge = membershipBridge.replace("<script>", '<script id="AprannTechMembershipBridge">');
+        const existingBridge = /<script\\s+id=["']AprannTechMembershipBridge["'][^>]*>[\\s\\S]*?<\\/script>/i;
+        if (existingBridge.test(html)) {
+          html = html.replace(existingBridge, markedBridge);
+        } else if (html.includes("</body>")) {
+          html = html.replace("</body>", markedBridge + "</body>");
+        } else {
+          html += markedBridge;
         }
         const headers = new Headers(assetResponse.headers);
         headers.delete("content-length");
