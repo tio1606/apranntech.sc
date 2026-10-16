@@ -1866,7 +1866,7 @@ var worker_default = {
 })();
 </script>`;
         const markedBridge = membershipBridge.replace("<script>", '<script id="AprannTechMembershipBridge">');
-        const existingBridge = /<script\\s+id=["']AprannTechMembershipBridge["'][^>]*>[\\s\\S]*?<\\/script>/i;
+        const existingBridge = /<script\s+id=["']AprannTechMembershipBridge["'][^>]*>[\s\S]*?<\/script>/i;
         if (existingBridge.test(html)) {
           html = html.replace(existingBridge, markedBridge);
         } else if (html.includes("</body>")) {
