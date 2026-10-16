@@ -1847,8 +1847,8 @@ var worker_default = {
     const button = event.target && event.target.closest ? event.target.closest('button,a,[role="button"],.btn,.membership-button,[data-plan],[onclick]') : null;
     if (!button) return;
     const label = (button.innerText || button.textContent || button.getAttribute('aria-label') || '').replace(/\s+/g,' ').trim().toLowerCase();
-    const match = label.match(/choose\s+(basic|standard|premium)/) ||
-      (/\bupgrade membership\b/.test(label) ? ['upgrade membership', 'standard'] : null);
+    const match = label.match(/choose\\s+(basic|standard|premium)/) ||
+      (/upgrade\\s+membership/i.test(label) ? ['upgrade membership', 'standard'] : null);
     if (!match) return;
     event.preventDefault();
     event.stopPropagation();
