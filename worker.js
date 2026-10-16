@@ -1842,8 +1842,8 @@ var worker_default = {
   function interceptPlanButtons(event){
     const button = event.target && event.target.closest ? event.target.closest('button,a,[role="button"]') : null;
     if (!button) return;
-    const label = (button.innerText || button.textContent || '').replace(/\\s+/g,' ').trim().toLowerCase();
-    const match = label.match(/choose\\s+(basic|standard|premium)/);
+    const label = (button.innerText || button.textContent || '').replace(/\s+/g,' ').trim().toLowerCase();
+    const match = label.match(/choose\s+(basic|standard|premium)/);
     if (!match) return;
     event.preventDefault();
     event.stopPropagation();
