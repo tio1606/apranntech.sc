@@ -1614,10 +1614,22 @@ async function handlePayPalCaptureOrder(request, env) {
     if (!result.success || Number(result.meta?.changes || 0) !== 1) {
       return json({ error: "Payment was already processed. Refresh your membership page." }, 409);
     }
-    await env.DB.prepare(`
+    const membershipUpdate = await env.DB.prepare(`
       UPDATE users SET plan = ?, plan_started_at = ?, plan_expires_at = ?
       WHERE lower(email) = ?
     `).bind(payment.plan, startedSql, expiresSql, normalizeEmail(user.email)).run();
+    if (!membershipUpdate.success || Number(membershipUpdate.meta?.changes || 0) !== 1) {
+      // The PayPal capture is verified, but membership activation did not complete.
+      // Restore the payment to pending so support can safely retry activation.
+      await env.DB.prepare(`
+        UPDATE payments SET status = 'pending', approved_at = NULL
+        WHERE id = ? AND status = 'paid'
+      `).bind(payment.id).run();
+      console.error("PayPal membership activation failed after capture", { paymentId: payment.id });
+      return json({
+        error: "Payment was received, but membership activation needs support. Do not pay again; contact support with your order reference."
+      }, 500);
+    }
     return json({
       success: true,
       message: "Payment confirmed. Your 30-day membership is active.",
@@ -1632,7 +1644,9 @@ __name(handlePayPalCaptureOrder, "handlePayPalCaptureOrder");
 function paypalCheckoutPage(env) {
   const clientId = String(env.PAYPAL_CLIENT_ID || "");
   if (!clientId) return new Response("PayPal checkout is not configured.", { status: 503 });
-  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Aprann Tech PayPal Checkout</title><style>body{font-family:Arial,sans-serif;background:#f4f7fb;color:#17243a;margin:0;padding:24px}.card{max-width:520px;margin:32px auto;background:#fff;padding:28px;border-radius:16px;box-shadow:0 8px 30px #12213b18}h1{margin-top:0;color:#163d70}.muted{color:#526174;line-height:1.5}.plans{display:grid;gap:10px;margin:22px 0}.plan{padding:14px;border:1px solid #ccd6e3;border-radius:10px;cursor:pointer}.plan.active{border:2px solid #1769aa;background:#f0f7ff}.plan input{margin-right:8px}#paypal-button-container{margin-top:20px}#message{margin-top:16px;font-weight:600}.notice{font-size:13px;color:#667085;margin-top:18px}</style><script src="https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&currency=USD&intent=capture"></script></head><body><main class="card"><h1>Aprann Tech Membership</h1><p class="muted">Choose a plan for 30 days of access. Your membership prices are listed in SCR; PayPal charges the one-time USD amount shown. There is no automatic monthly charge.</p><div class="plans"><label class="plan active"><input type="radio" name="plan" value="basic" checked>Basic — SCR 150 (pay $10.99 USD)</label><label class="plan"><input type="radio" name="plan" value="standard">Standard — SCR 250 (pay $17.99 USD)</label><label class="plan"><input type="radio" name="plan" value="premium">Premium — SCR 600 (pay $42.99 USD)</label></div><div id="paypal-button-container"></div><div id="recovery" style="display:none;margin-top:18px;padding:14px;border:1px solid #ccd6e3;border-radius:10px"><strong>Recover a completed sandbox payment</strong><p class="muted">Use this only for the existing payment you already completed. It will not charge you again.</p><button id="recover-button" type="button" style="padding:12px 16px;border:0;border-radius:8px;background:#1769aa;color:#fff;font-weight:700;cursor:pointer">Verify existing payment</button></div><p id="message" role="status"></p><p class="notice">Sandbox test page. Do not use real money. You must be logged in to your Aprann Tech student account.</p></main><script>
+  const isLive = String(env.PAYPAL_ENV || "sandbox").toLowerCase() === "live";
+  const environmentLabel = isLive ? "Live payment page" : "Sandbox test page";
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Aprann Tech PayPal Checkout</title><style>body{font-family:Arial,sans-serif;background:#f4f7fb;color:#17243a;margin:0;padding:24px}.card{max-width:520px;margin:32px auto;background:#fff;padding:28px;border-radius:16px;box-shadow:0 8px 30px #12213b18}h1{margin-top:0;color:#163d70}.muted{color:#526174;line-height:1.5}.plans{display:grid;gap:10px;margin:22px 0}.plan{padding:14px;border:1px solid #ccd6e3;border-radius:10px;cursor:pointer}.plan.active{border:2px solid #1769aa;background:#f0f7ff}.plan input{margin-right:8px}#paypal-button-container{margin-top:20px}#message{margin-top:16px;font-weight:600}.notice{font-size:13px;color:#667085;margin-top:18px}</style><script src="https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&currency=USD&intent=capture"></script></head><body><main class="card"><h1>Aprann Tech Membership</h1><p class="muted">Choose a plan for 30 days of access. Your membership prices are listed in SCR; PayPal charges the one-time USD amount shown. There is no automatic monthly charge.</p><div class="plans"><label class="plan active"><input type="radio" name="plan" value="basic" checked>Basic — SCR 150 (pay $10.99 USD)</label><label class="plan"><input type="radio" name="plan" value="standard">Standard — SCR 250 (pay $17.99 USD)</label><label class="plan"><input type="radio" name="plan" value="premium">Premium — SCR 600 (pay $42.99 USD)</label></div><div id="paypal-button-container"></div><div id="recovery" style="display:none;margin-top:18px;padding:14px;border:1px solid #ccd6e3;border-radius:10px"><strong>Verify an existing payment</strong><p class="muted">Use this only for the existing payment you already completed. It will not charge you again.</p><button id="recover-button" type="button" style="padding:12px 16px;border:0;border-radius:8px;background:#1769aa;color:#fff;font-weight:700;cursor:pointer">Verify existing payment</button></div><p id="message" role="status"></p><p class="notice">${environmentLabel}. One-time payment only; no automatic recurring charges. You must be logged in to your Aprann Tech student account.</p></main><script>
 const message=document.getElementById('message');
 const params=new URLSearchParams(location.search);
 const recoveryOrder=params.get('recover');
@@ -1644,7 +1658,7 @@ document.querySelectorAll('.plan').forEach(label=>label.classList.toggle('active
 if(new URLSearchParams(location.search).get('status')==='cancelled') message.textContent='Payment cancelled. No membership payment was taken.';
 if(new URLSearchParams(location.search).get('status')==='success') message.textContent='Return received. Complete the payment below if it is not already confirmed.';
 if (typeof window.paypal === 'undefined' || !window.paypal.Buttons) {
-  message.textContent = 'PayPal buttons could not load. Check the Sandbox Client ID and browser connection, then refresh.';
+  message.textContent = 'PayPal buttons could not load. Check the PayPal configuration and browser connection, then refresh.';
 } else {
 window.paypal.Buttons({
   createOrder: async () => {
