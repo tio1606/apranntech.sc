@@ -1401,6 +1401,332 @@ async function handleLessonProgress(request, env) {
   }
 }
 __name(handleLessonProgress, "handleLessonProgress");
+
+function paypalBaseUrl(env) {
+  return String(env.PAYPAL_ENV || "sandbox").toLowerCase() === "live"
+    ? "https://api-m.paypal.com"
+    : "https://api-m.sandbox.paypal.com";
+}
+__name(paypalBaseUrl, "paypalBaseUrl");
+async function paypalAccessToken(env) {
+  if (!env.PAYPAL_CLIENT_ID || !env.PAYPAL_CLIENT_SECRET) {
+    throw new Error("PayPal credentials are not configured.");
+  }
+  const response = await fetch(paypalBaseUrl(env) + "/v1/oauth2/token", {
+    method: "POST",
+    headers: {
+      "Authorization": "Basic " + btoa(env.PAYPAL_CLIENT_ID + ":" + env.PAYPAL_CLIENT_SECRET),
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    body: "grant_type=client_credentials"
+  });
+  const data = await response.json();
+  if (!response.ok || !data.access_token) {
+    console.error("PayPal token request failed", response.status, data.error);
+    throw new Error("PayPal authentication failed.");
+  }
+  return data.access_token;
+}
+__name(paypalAccessToken, "paypalAccessToken");
+function paypalPlanDetails(plan) {
+  const plans = {
+    basic: { name: "Basic", amount: "10.99" },
+    standard: { name: "Standard", amount: "17.99" },
+    premium: { name: "Premium", amount: "42.99" }
+  };
+  return plans[String(plan || "").toLowerCase()] || null;
+}
+__name(paypalPlanDetails, "paypalPlanDetails");
+async function handlePayPalCreateOrder(request, env) {
+  const user = await getSessionUser(request, env);
+  if (!user) return json({ error: "Please log in before paying." }, 401);
+  try {
+    const body = await request.json();
+    const plan = String(body.plan || "").trim().toLowerCase();
+    const details = paypalPlanDetails(plan);
+    if (!details) return json({ error: "Invalid membership plan." }, 400);
+    const reference = await createPaymentReference();
+    const token = await paypalAccessToken(env);
+    const response = await fetch(paypalBaseUrl(env) + "/v2/checkout/orders", {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + token,
+        "Content-Type": "application/json",
+        "Prefer": "return=representation"
+      },
+      body: JSON.stringify({
+        intent: "CAPTURE",
+        purchase_units: [{
+          reference_id: reference,
+          custom_id: reference,
+          invoice_id: reference,
+          description: "Aprann Tech " + details.name + " membership - 30 days",
+          amount: { currency_code: "USD", value: details.amount }
+        }],
+        application_context: {
+          brand_name: "Aprann Tech",
+          user_action: "PAY_NOW",
+          shipping_preference: "NO_SHIPPING",
+          return_url: new URL("/paypal-checkout?status=success&plan=" + plan, request.url).toString(),
+          cancel_url: new URL("/paypal-checkout?status=cancelled&plan=" + plan, request.url).toString()
+        }
+      })
+    });
+    const order = await response.json();
+    if (!response.ok || !order.id) {
+      console.error("PayPal create order failed", response.status, order.name);
+      return json({ error: "PayPal could not create the order. Please try again." }, 502);
+    }
+    await env.DB.prepare(`
+      INSERT INTO payments
+        (user_email, amount, currency, status, payment_intent_id, description, transaction_reference, plan)
+      VALUES (?, ?, 'USD', 'pending', ?, ?, ?, ?)
+    `).bind(
+      user.email, Number(details.amount), order.id,
+      "Aprann Tech " + details.name + " membership - 30 days",
+      reference, plan
+    ).run();
+    return json({ success: true, id: order.id, amount: details.amount, currency: "USD", plan_name: details.name });
+  } catch (error) {
+    console.error("PayPal order creation error", error);
+    return json({ error: "Unable to start PayPal checkout. Please try again." }, 500);
+  }
+}
+__name(handlePayPalCreateOrder, "handlePayPalCreateOrder");
+async function handlePayPalCaptureOrder(request, env) {
+  const user = await getSessionUser(request, env);
+  if (!user) return json({ error: "Please log in before completing payment." }, 401);
+  try {
+    const body = await request.json();
+    const orderId = String(body.orderID || "").trim();
+    if (!orderId || orderId.length > 100) return json({ error: "Invalid PayPal order." }, 400);
+    const payment = await env.DB.prepare(`
+      SELECT id, user_email, amount, currency, status, payment_intent_id, transaction_reference, plan
+      FROM payments WHERE payment_intent_id = ? AND lower(user_email) = ? LIMIT 1
+    `).bind(orderId, normalizeEmail(user.email)).first();
+    if (!payment) return json({ error: "This PayPal order does not belong to your account." }, 404);
+    if (payment.status === "paid") {
+      const currentMembership = await env.DB.prepare(`
+        SELECT plan, plan_expires_at FROM users
+        WHERE lower(email) = ? LIMIT 1
+      `).bind(normalizeEmail(user.email)).first();
+      const expiry = currentMembership?.plan_expires_at
+        ? new Date(String(currentMembership.plan_expires_at).replace(" ", "T") + "Z")
+        : null;
+      if (
+        currentMembership &&
+        String(currentMembership.plan || "").toLowerCase() === String(payment.plan || "").toLowerCase() &&
+        expiry && Number.isFinite(expiry.getTime()) && expiry.getTime() > Date.now()
+      ) {
+        return json({ success: true, message: "Payment already confirmed; membership is active." });
+      }
+      // Never reopen a previously paid order: doing so could allow an old
+      // completed PayPal order to grant a fresh 30-day period repeatedly.
+      // If the paid record and membership disagree, stop for manual support review.
+      return json({
+        error: "This payment is recorded, but the membership status needs support review. Do not pay again; contact Aprann Tech support."
+      }, 409);
+    }
+    const details = paypalPlanDetails(payment.plan);
+    if (!details || payment.currency !== "USD" || Number(payment.amount).toFixed(2) !== details.amount) {
+      return json({ error: "Payment details did not match the membership plan." }, 409);
+    }
+    const token = await paypalAccessToken(env);
+    let captureResponse;
+    let captured;
+    if (body.verifyOnly === true) {
+      // Recovery is strictly read-only: never call PayPal's capture endpoint.
+      captureResponse = await fetch(
+        paypalBaseUrl(env) + "/v2/checkout/orders/" + encodeURIComponent(orderId),
+        {
+          method: "GET",
+          headers: { "Authorization": "Bearer " + token, "Prefer": "return=representation" }
+        }
+      );
+      captured = await captureResponse.json();
+      if (!captureResponse.ok) {
+        return json({
+          error: "Could not verify the existing PayPal order. Do not pay again; contact support if you were charged."
+        }, 502);
+      }
+    } else {
+      captureResponse = await fetch(paypalBaseUrl(env) + "/v2/checkout/orders/" + encodeURIComponent(orderId) + "/capture", {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json", "Prefer": "return=representation" },
+        body: "{}"
+      });
+      captured = await captureResponse.json();
+    }
+    if (!captureResponse.ok) {
+      const issue = (captured.details || []).map((d) => d.issue).filter(Boolean).join(", ");
+      console.error("PayPal capture failed", captureResponse.status, captured.name, issue);
+      // PayPal may have completed the capture even if the capture response was lost or retried.
+      // Check the order itself before telling the student that payment failed.
+      const orderResponse = await fetch(paypalBaseUrl(env) + "/v2/checkout/orders/" + encodeURIComponent(orderId), {
+        method: "GET",
+        headers: { "Authorization": "Bearer " + token, "Prefer": "return=representation" }
+      });
+      const orderDetails = await orderResponse.json();
+      if (orderResponse.ok && orderDetails.status === "COMPLETED") {
+        captured = orderDetails;
+      } else {
+        const safeIssue = issue || captured.name || "UNKNOWN";
+        return json({
+          error: "PayPal could not confirm the payment (" + safeIssue + "). No membership change was confirmed. Please try again or contact support."
+        }, 502);
+      }
+    }
+    // PayPal can return a sparse capture response or an already-captured order.
+    // If the capture payload does not include the full completed capture, fetch the
+    // authoritative order representation before rejecting the payment.
+    const isExpectedCompletedOrder = (order) => {
+      const units = Array.isArray(order?.purchase_units) ? order.purchase_units : [];
+      const matchingUnit = units.find((unit) =>
+        unit?.custom_id === payment.transaction_reference
+      );
+      const purchase = matchingUnit || units[0];
+      const captures = Array.isArray(purchase?.payments?.captures)
+        ? purchase.payments.captures
+        : [];
+      const capture = captures.find((item) => item?.status === "COMPLETED") || captures[0];
+      const paidAmount = capture?.amount;
+      const expectedReference = String(payment.transaction_reference || "");
+      const referenceMatches =
+        purchase?.custom_id === expectedReference ||
+        purchase?.reference_id === expectedReference ||
+        purchase?.invoice_id === expectedReference;
+      return {
+        valid: order?.status === "COMPLETED" &&
+          capture?.status === "COMPLETED" &&
+          paidAmount?.currency_code === "USD" &&
+          String(paidAmount?.value || "") === details.amount &&
+          referenceMatches,
+        orderStatus: order?.status || "MISSING",
+        captureStatus: capture?.status || "MISSING",
+        currency: paidAmount?.currency_code || "MISSING",
+        amountMatches: String(paidAmount?.value || "") === details.amount,
+        referenceMatches
+      };
+    };
+    let verification = isExpectedCompletedOrder(captured);
+    if (!verification.valid) {
+      const orderResponse = await fetch(
+        paypalBaseUrl(env) + "/v2/checkout/orders/" + encodeURIComponent(orderId),
+        {
+          method: "GET",
+          headers: {
+            "Authorization": "Bearer " + token,
+            "Prefer": "return=representation"
+          }
+        }
+      );
+      const orderDetails = await orderResponse.json();
+      if (orderResponse.ok) {
+        const orderVerification = isExpectedCompletedOrder(orderDetails);
+        if (orderVerification.valid) {
+          captured = orderDetails;
+          verification = orderVerification;
+        } else {
+          verification = orderVerification;
+        }
+      }
+    }
+    if (!verification.valid) {
+      console.error("PayPal completed-order verification mismatch", {
+        orderStatus: verification.orderStatus,
+        captureStatus: verification.captureStatus,
+        currency: verification.currency,
+        amountMatches: verification.amountMatches,
+        referenceMatches: verification.referenceMatches
+      });
+      return json({
+        error: "PayPal may have received the payment, but Aprann Tech could not safely match it to this order. Do not pay again; contact support for verification."
+      }, 409);
+    }
+    const started = new Date();
+    const expires = new Date(started.getTime() + 30 * 864e5);
+    const startedSql = started.toISOString().slice(0, 19).replace("T", " ");
+    const expiresSql = expires.toISOString().slice(0, 19).replace("T", " ");
+    const result = await env.DB.prepare(`
+      UPDATE payments SET status = 'paid', approved_at = datetime('now')
+      WHERE id = ? AND status = 'pending'
+    `).bind(payment.id).run();
+    if (!result.success || Number(result.meta?.changes || 0) !== 1) {
+      return json({ error: "Payment was already processed. Refresh your membership page." }, 409);
+    }
+    const membershipUpdate = await env.DB.prepare(`
+      UPDATE users SET plan = ?, plan_started_at = ?, plan_expires_at = ?
+      WHERE lower(email) = ?
+    `).bind(payment.plan, startedSql, expiresSql, normalizeEmail(user.email)).run();
+    if (!membershipUpdate.success || Number(membershipUpdate.meta?.changes || 0) !== 1) {
+      // The PayPal capture is verified, but membership activation did not complete.
+      // Restore the payment to pending so support can safely retry activation.
+      await env.DB.prepare(`
+        UPDATE payments SET status = 'pending', approved_at = NULL
+        WHERE id = ? AND status = 'paid'
+      `).bind(payment.id).run();
+      console.error("PayPal membership activation failed after capture", { paymentId: payment.id });
+      return json({
+        error: "Payment was received, but membership activation needs support. Do not pay again; contact support with your order reference."
+      }, 500);
+    }
+    return json({
+      success: true,
+      message: "Payment confirmed. Your 30-day membership is active.",
+      membership: { plan: details.name, started_at: startedSql, expires_at: expiresSql }
+    });
+  } catch (error) {
+    console.error("PayPal capture error", error);
+    return json({ error: "Unable to confirm PayPal payment. Please contact support." }, 500);
+  }
+}
+__name(handlePayPalCaptureOrder, "handlePayPalCaptureOrder");
+function paypalCheckoutPage(env) {
+  const clientId = String(env.PAYPAL_CLIENT_ID || "");
+  if (!clientId) return new Response("PayPal checkout is not configured.", { status: 503 });
+  const isLive = String(env.PAYPAL_ENV || "sandbox").toLowerCase() === "live";
+  const environmentLabel = isLive ? "Live payment page" : "Sandbox test page";
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Aprann Tech PayPal Checkout</title><style>body{font-family:Arial,sans-serif;background:#f4f7fb;color:#17243a;margin:0;padding:24px}.card{max-width:520px;margin:32px auto;background:#fff;padding:28px;border-radius:16px;box-shadow:0 8px 30px #12213b18}h1{margin-top:0;color:#163d70}.muted{color:#526174;line-height:1.5}.plans{display:grid;gap:10px;margin:22px 0}.plan{padding:14px;border:1px solid #ccd6e3;border-radius:10px;cursor:pointer}.plan.active{border:2px solid #1769aa;background:#f0f7ff}.plan input{margin-right:8px}#paypal-button-container{margin-top:20px}#message{margin-top:16px;font-weight:600}.notice{font-size:13px;color:#667085;margin-top:18px}</style><script src="https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&currency=USD&intent=capture"></script></head><body><main class="card"><h1>Aprann Tech Membership</h1><p class="muted">Choose a plan for 30 days of access. Your membership prices are listed in SCR; PayPal charges the one-time USD amount shown. There is no automatic monthly charge.</p><div class="plans"><label class="plan active"><input type="radio" name="plan" value="basic" checked>Basic — SCR 150 (pay $10.99 USD)</label><label class="plan"><input type="radio" name="plan" value="standard">Standard — SCR 250 (pay $17.99 USD)</label><label class="plan"><input type="radio" name="plan" value="premium">Premium — SCR 600 (pay $42.99 USD)</label></div><div id="paypal-button-container"></div><div id="recovery" style="display:none;margin-top:18px;padding:14px;border:1px solid #ccd6e3;border-radius:10px"><strong>Verify an existing payment</strong><p class="muted">Use this only for the existing payment you already completed. It will not charge you again.</p><button id="recover-button" type="button" style="padding:12px 16px;border:0;border-radius:8px;background:#1769aa;color:#fff;font-weight:700;cursor:pointer">Verify existing payment</button></div><p id="message" role="status"></p><p class="notice">${environmentLabel}. One-time payment only; no automatic recurring charges. You must be logged in to your Aprann Tech student account.</p></main><script>
+const message=document.getElementById('message');
+const params=new URLSearchParams(location.search);
+const recoveryOrder=params.get('recover');
+const liveCheckout = ${isLive};
+if(recoveryOrder && liveCheckout){document.getElementById('recovery').style.display='block';document.getElementById('paypal-button-container').style.display='none';document.querySelector('.plans').style.display='none';document.getElementById('recover-button').style.display='none';document.querySelector('#recovery .muted').textContent='Automatic recovery is disabled for live payments to prevent an accidental capture. Do not pay again. Contact Aprann Tech support and provide your PayPal order ID for verification.';message.textContent='Live payment recovery requires support verification. Do not pay again.';}
+else if(recoveryOrder){document.getElementById('recovery').style.display='block';document.getElementById('paypal-button-container').style.display='none';document.querySelector('.plans').style.display='none';document.getElementById('recover-button').addEventListener('click',async()=>{const button=document.getElementById('recover-button');button.disabled=true;button.textContent='Verifying…';message.textContent='Checking the existing PayPal order. No new payment will be taken.';try{const response=await fetch('/api/paypal/capture-order',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({orderID:recoveryOrder,verifyOnly:true})});const data=await response.json();if(response.ok&&data.success){message.textContent='Success: '+(data.message||'Membership confirmed.');button.textContent='Verified';}else{message.textContent=data.error||'Could not verify this order. Please do not pay again.';button.disabled=false;button.textContent='Retry verification';}}catch(error){message.textContent='Could not contact Aprann Tech. Please do not pay again.';button.disabled=false;button.textContent='Retry verification';}});}
+const requestedPlan=params.get('plan');
+if(['basic','standard','premium'].includes(requestedPlan)){const selected=document.querySelector('input[name="plan"][value="'+requestedPlan+'"]');if(selected)selected.checked=true;}
+document.querySelectorAll('input[name="plan"]').forEach(input=>input.addEventListener('change',()=>{document.querySelectorAll('.plan').forEach(label=>label.classList.toggle('active',label.querySelector('input').checked));}));
+document.querySelectorAll('.plan').forEach(label=>label.classList.toggle('active',label.querySelector('input').checked));
+if(new URLSearchParams(location.search).get('status')==='cancelled') message.textContent='Payment cancelled. No membership payment was taken.';
+if(new URLSearchParams(location.search).get('status')==='success') message.textContent='Return received. Complete the payment below if it is not already confirmed.';
+if (typeof window.paypal === 'undefined' || !window.paypal.Buttons) {
+  message.textContent = 'PayPal buttons could not load. Check the PayPal configuration and browser connection, then refresh.';
+} else {
+window.paypal.Buttons({
+  createOrder: async () => {
+    message.textContent='Preparing secure PayPal checkout…';
+    const plan=document.querySelector('input[name="plan"]:checked').value;
+    const response=await fetch('/api/paypal/create-order',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({plan})});
+    const data=await response.json();
+    if(!response.ok||!data.id) throw new Error(data.error||'Could not create PayPal order. Please log in first.');
+    return data.id;
+  },
+  onApprove: async (data) => {
+    message.textContent='Confirming payment securely…';
+    const response=await fetch('/api/paypal/capture-order',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({orderID:data.orderID})});
+    const result=await response.json();
+    if(!response.ok||!result.success) throw new Error(result.error||'Payment confirmation failed.');
+    message.textContent=result.message+' Please return to your course page.';
+  },
+  onCancel: () => { message.textContent='Payment cancelled. No membership payment was taken.'; },
+  onError: (err) => { message.textContent=(err&&err.message)||'PayPal checkout could not be completed. Please try again.'; }
+}).render('#paypal-button-container').catch(err=>{message.textContent=err.message||'PayPal checkout could not load.';});
+}
+</script></body></html>`;
+  return new Response(html, { headers: { "content-type": "text/html; charset=UTF-8", "cache-control": "no-store" } });
+}
+__name(paypalCheckoutPage, "paypalCheckoutPage");
+
 var worker_default = {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -1413,6 +1739,9 @@ var worker_default = {
       await ensureResourceTables(env);
     } catch (error) {
       console.error("membership initialization error", error);
+    }
+    if (url.pathname === "/paypal-checkout" && request.method === "GET") {
+      return paypalCheckoutPage(env);
     }
     if (url.pathname.startsWith(
       "/api/"
@@ -1482,6 +1811,12 @@ var worker_default = {
         }
         if (url.pathname === "/api/video-activity" && method === "POST") {
           return await handleSaveVideoActivity(request, env);
+        }
+        if (url.pathname === "/api/paypal/create-order" && method === "POST") {
+          return await handlePayPalCreateOrder(request, env);
+        }
+        if (url.pathname === "/api/paypal/capture-order" && method === "POST") {
+          return await handlePayPalCaptureOrder(request, env);
         }
         if (url.pathname === "/api/create-payment" && method === "POST") {
           return await handleCreatePayment(
@@ -1563,9 +1898,91 @@ var worker_default = {
     ctx.waitUntil(
       cleanupExpiredSessions(env)
     );
-    return env.ASSETS.fetch(
-      request
-    );
+    const assetResponse = await env.ASSETS.fetch(request);
+    if (request.method === "GET" && (url.pathname === "/" || url.pathname.endsWith(".html") || url.pathname === "/index.html")) {
+      const contentType = assetResponse.headers.get("content-type") || "";
+      if (contentType.includes("text/html") && assetResponse.ok) {
+        let html = await assetResponse.text();
+        const membershipBridge = `<script>
+(function(){
+  function planForLabel(value){
+    const label = String(value || '').replace(/\\s+/g,' ').trim().toLowerCase();
+    const chosen = label.match(/choose\\s+(basic|standard|premium)/);
+    if (chosen) return chosen[1];
+    if (/upgrade\\s+membership/.test(label)) return 'standard';
+    return null;
+  }
+  function findMembershipPlan(event){
+    const path = typeof event.composedPath === 'function' ? event.composedPath() : [];
+    const candidates = path.concat([event.target]);
+    for (const node of candidates) {
+      if (!node || !node.tagName) continue;
+      const tag = String(node.tagName).toLowerCase();
+      if (!['button','a','input','div','span'].includes(tag)) continue;
+      const text = (node.innerText || node.textContent || node.getAttribute('aria-label') || node.value || '');
+      const plan = planForLabel(text);
+      if (plan) return plan;
+      if (tag === 'button' || tag === 'a' || node.getAttribute('role') === 'button') {
+        const parentPlan = planForLabel(node.parentElement && (node.parentElement.innerText || node.parentElement.textContent));
+        if (parentPlan) return parentPlan;
+      }
+    }
+    return null;
+  }
+  let redirecting = false;
+  function interceptMembership(event){
+    if (redirecting) return;
+    const plan = findMembershipPlan(event);
+    if (!plan) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+    redirecting = true;
+    fetch('/api/me', {credentials:'same-origin', cache:'no-store'})
+      .then(response => response.ok ? response.json() : Promise.reject(new Error('not-authenticated')))
+      .then(data => {
+        if (!data || !(data.authenticated || data.user || data.email || data.id)) {
+          redirecting = false;
+          alert('Please log in to your student account first.');
+          if (typeof window.login === 'function') window.login();
+          return;
+        }
+        window.location.assign('/paypal-checkout?plan=' + encodeURIComponent(plan));
+      })
+      .catch(() => {
+        redirecting = false;
+        alert('Unable to verify your student login. Please log in again and retry.');
+      });
+  }
+  window.addEventListener('pointerdown', interceptMembership, true);
+  window.addEventListener('click', interceptMembership, true);
+})();
+</script>`;
+        const markedBridge = membershipBridge.replace("<script>", '<script id="AprannTechMembershipBridge">');
+        const bridgeMarker = 'id="AprannTechMembershipBridge"';
+        const bridgeStart = html.indexOf("<script " + bridgeMarker);
+        if (bridgeStart !== -1) {
+          const bridgeEnd = html.indexOf("</script>", bridgeStart);
+          if (bridgeEnd !== -1) {
+            html = html.slice(0, bridgeStart) + markedBridge + html.slice(bridgeEnd + "</script>".length);
+          } else if (html.includes("</body>")) {
+            html = html.replace("</body>", markedBridge + "</body>");
+          } else {
+            html += markedBridge;
+          }
+        } else if (html.includes("</body>")) {
+          html = html.replace("</body>", markedBridge + "</body>");
+        } else {
+          html += markedBridge;
+        }
+        const headers = new Headers(assetResponse.headers);
+        headers.delete("content-length");
+        headers.delete("content-encoding");
+        headers.delete("etag");
+        return new Response(html, { status: assetResponse.status, statusText: assetResponse.statusText, headers });
+      }
+    }
+    return assetResponse;
   }
 };
 export {
