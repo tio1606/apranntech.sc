@@ -1520,14 +1520,12 @@ async function handlePayPalCaptureOrder(request, env) {
       ) {
         return json({ success: true, message: "Payment already confirmed; membership is active." });
       }
-      // Recover the rare case where a payment was marked paid but access was not
-      // persisted. The verified PayPal order below will be checked again before
-      // attempting to activate membership.
-      await env.DB.prepare(`
-        UPDATE payments SET status = 'pending', approved_at = NULL
-        WHERE id = ? AND status = 'paid'
-      `).bind(payment.id).run();
-      payment.status = "pending";
+      // Never reopen a previously paid order: doing so could allow an old
+      // completed PayPal order to grant a fresh 30-day period repeatedly.
+      // If the paid record and membership disagree, stop for manual support review.
+      return json({
+        error: "This payment is recorded, but the membership status needs support review. Do not pay again; contact Aprann Tech support."
+      }, 409);
     }
     const details = paypalPlanDetails(payment.plan);
     if (!details || payment.currency !== "USD" || Number(payment.amount).toFixed(2) !== details.amount) {
