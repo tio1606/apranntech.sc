@@ -1532,12 +1532,31 @@ async function handlePayPalCaptureOrder(request, env) {
       return json({ error: "Payment details did not match the membership plan." }, 409);
     }
     const token = await paypalAccessToken(env);
-    const captureResponse = await fetch(paypalBaseUrl(env) + "/v2/checkout/orders/" + encodeURIComponent(orderId) + "/capture", {
-      method: "POST",
-      headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json", "Prefer": "return=representation" },
-      body: "{}"
-    });
-    let captured = await captureResponse.json();
+    let captureResponse;
+    let captured;
+    if (body.verifyOnly === true) {
+      // Recovery is strictly read-only: never call PayPal's capture endpoint.
+      captureResponse = await fetch(
+        paypalBaseUrl(env) + "/v2/checkout/orders/" + encodeURIComponent(orderId),
+        {
+          method: "GET",
+          headers: { "Authorization": "Bearer " + token, "Prefer": "return=representation" }
+        }
+      );
+      captured = await captureResponse.json();
+      if (!captureResponse.ok) {
+        return json({
+          error: "Could not verify the existing PayPal order. Do not pay again; contact support if you were charged."
+        }, 502);
+      }
+    } else {
+      captureResponse = await fetch(paypalBaseUrl(env) + "/v2/checkout/orders/" + encodeURIComponent(orderId) + "/capture", {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json", "Prefer": "return=representation" },
+        body: "{}"
+      });
+      captured = await captureResponse.json();
+    }
     if (!captureResponse.ok) {
       const issue = (captured.details || []).map((d) => d.issue).filter(Boolean).join(", ");
       console.error("PayPal capture failed", captureResponse.status, captured.name, issue);
@@ -1673,7 +1692,7 @@ const params=new URLSearchParams(location.search);
 const recoveryOrder=params.get('recover');
 const liveCheckout = ${isLive};
 if(recoveryOrder && liveCheckout){document.getElementById('recovery').style.display='block';document.getElementById('paypal-button-container').style.display='none';document.querySelector('.plans').style.display='none';document.getElementById('recover-button').style.display='none';document.querySelector('#recovery .muted').textContent='Automatic recovery is disabled for live payments to prevent an accidental capture. Do not pay again. Contact Aprann Tech support and provide your PayPal order ID for verification.';message.textContent='Live payment recovery requires support verification. Do not pay again.';}
-else if(recoveryOrder){document.getElementById('recovery').style.display='block';document.getElementById('paypal-button-container').style.display='none';document.querySelector('.plans').style.display='none';document.getElementById('recover-button').addEventListener('click',async()=>{const button=document.getElementById('recover-button');button.disabled=true;button.textContent='Verifying…';message.textContent='Checking the existing PayPal order. No new payment will be taken.';try{const response=await fetch('/api/paypal/capture-order',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({orderID:recoveryOrder})});const data=await response.json();if(response.ok&&data.success){message.textContent='Success: '+(data.message||'Membership confirmed.');button.textContent='Verified';}else{message.textContent=data.error||'Could not verify this order. Please do not pay again.';button.disabled=false;button.textContent='Retry verification';}}catch(error){message.textContent='Could not contact Aprann Tech. Please do not pay again.';button.disabled=false;button.textContent='Retry verification';}});}
+else if(recoveryOrder){document.getElementById('recovery').style.display='block';document.getElementById('paypal-button-container').style.display='none';document.querySelector('.plans').style.display='none';document.getElementById('recover-button').addEventListener('click',async()=>{const button=document.getElementById('recover-button');button.disabled=true;button.textContent='Verifying…';message.textContent='Checking the existing PayPal order. No new payment will be taken.';try{const response=await fetch('/api/paypal/capture-order',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({orderID:recoveryOrder,verifyOnly:true})});const data=await response.json();if(response.ok&&data.success){message.textContent='Success: '+(data.message||'Membership confirmed.');button.textContent='Verified';}else{message.textContent=data.error||'Could not verify this order. Please do not pay again.';button.disabled=false;button.textContent='Retry verification';}}catch(error){message.textContent='Could not contact Aprann Tech. Please do not pay again.';button.disabled=false;button.textContent='Retry verification';}});}
 const requestedPlan=params.get('plan');
 if(['basic','standard','premium'].includes(requestedPlan)){const selected=document.querySelector('input[name="plan"][value="'+requestedPlan+'"]');if(selected)selected.checked=true;}
 document.querySelectorAll('input[name="plan"]').forEach(input=>input.addEventListener('change',()=>{document.querySelectorAll('.plan').forEach(label=>label.classList.toggle('active',label.querySelector('input').checked));}));
