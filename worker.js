@@ -1501,7 +1501,7 @@ async function handlePayPalCaptureOrder(request, env) {
     const orderId = String(body.orderID || "").trim();
     if (!orderId || orderId.length > 100) return json({ error: "Invalid PayPal order." }, 400);
     const payment = await env.DB.prepare(`
-      SELECT id, user_email, amount, currency, status, payment_intent_id, plan
+      SELECT id, user_email, amount, currency, status, payment_intent_id, transaction_reference, plan
       FROM payments WHERE payment_intent_id = ? AND lower(user_email) = ? LIMIT 1
     `).bind(orderId, normalizeEmail(user.email)).first();
     if (!payment) return json({ error: "This PayPal order does not belong to your account." }, 404);
