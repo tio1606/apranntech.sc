@@ -1505,7 +1505,30 @@ async function handlePayPalCaptureOrder(request, env) {
       FROM payments WHERE payment_intent_id = ? AND lower(user_email) = ? LIMIT 1
     `).bind(orderId, normalizeEmail(user.email)).first();
     if (!payment) return json({ error: "This PayPal order does not belong to your account." }, 404);
-    if (payment.status === "paid") return json({ success: true, message: "Payment already confirmed; membership is active." });
+    if (payment.status === "paid") {
+      const currentMembership = await env.DB.prepare(`
+        SELECT plan, plan_expires_at FROM users
+        WHERE lower(email) = ? LIMIT 1
+      `).bind(normalizeEmail(user.email)).first();
+      const expiry = currentMembership?.plan_expires_at
+        ? new Date(String(currentMembership.plan_expires_at).replace(" ", "T") + "Z")
+        : null;
+      if (
+        currentMembership &&
+        String(currentMembership.plan || "").toLowerCase() === String(payment.plan || "").toLowerCase() &&
+        expiry && Number.isFinite(expiry.getTime()) && expiry.getTime() > Date.now()
+      ) {
+        return json({ success: true, message: "Payment already confirmed; membership is active." });
+      }
+      // Recover the rare case where a payment was marked paid but access was not
+      // persisted. The verified PayPal order below will be checked again before
+      // attempting to activate membership.
+      await env.DB.prepare(`
+        UPDATE payments SET status = 'pending', approved_at = NULL
+        WHERE id = ? AND status = 'paid'
+      `).bind(payment.id).run();
+      payment.status = "pending";
+    }
     const details = paypalPlanDetails(payment.plan);
     if (!details || payment.currency !== "USD" || Number(payment.amount).toFixed(2) !== details.amount) {
       return json({ error: "Payment details did not match the membership plan." }, 409);
