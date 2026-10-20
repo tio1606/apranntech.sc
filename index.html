@@ -57,6 +57,106 @@ section{padding:58px 0}.section-title{text-align:center;margin-bottom:30px}.sect
   align-items:center;
   gap:38px;
 }
+
+  
+/* Aprann Tech mobile improvements */
+img,
+video,
+iframe {
+  max-width: 100%;
+}
+
+input,
+select,
+textarea {
+  max-width: 100%;
+  font-size: 16px;
+}
+
+button {
+  min-height: 44px;
+}
+
+@media (max-width: 800px) {
+  .container {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .hero-grid,
+  .cards,
+  .module-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero h1 {
+    font-size: clamp(30px, 7vw, 38px);
+    line-height: 1.15;
+  }
+
+  .app-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .side {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px;
+  }
+
+  .side button {
+    flex: 1 1 130px;
+    width: auto;
+    text-align: center;
+  }
+
+  .side span {
+    display: inline;
+  }
+
+  .dash {
+    min-width: 0;
+    padding: 16px;
+  }
+
+  .stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero {
+    padding: 38px 0;
+  }
+
+  section {
+    padding: 38px 0;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+  }
+
+  .stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section-title h2 {
+    font-size: 26px;
+  }
+
+  .footer-grid {
+    flex-direction: column;
+  }
+}
+
 .aprann-hero-copy{position:relative;z-index:2;padding:42px 0;}
 .aprann-hero-copy h1{font-size:clamp(46px,5vw,76px);line-height:.98;margin:18px 0 28px;letter-spacing:-2px;color:#fff;}
 .aprann-hero-copy>p{font-size:21px;line-height:1.7;max-width:760px;color:rgba(255,255,255,.96);}
@@ -681,7 +781,12 @@ footer::after{
 </style>
 </style>
 <style id="aprann-chat-style">
-#aprannChatButton{position:fixed;right:22px;bottom:22px;z-index:99990;width:62px;height:62px;border:0;border-radius:50%;background:linear-gradient(135deg,#087fc8,#00b9d8);color:#fff;box-shadow:0 8px 28px rgba(0,61,100,.28);cursor:pointer;font-size:28px}
+#aprannChatButton {
+  right: 10px !important;
+  bottom: 8px !important;
+  width: 50px !important;
+  height: 50px !important;
+}
 #aprannChatWindow{position:fixed;right:22px;bottom:96px;z-index:99991;width:min(380px,calc(100vw - 28px));height:min(560px,calc(100vh - 120px));background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 18px 60px rgba(0,35,65,.28);display:none;flex-direction:column;border:1px solid #dcecf5}
 #aprannChatWindow.open{display:flex}.aprann-chat-head{padding:16px 18px;background:linear-gradient(135deg,#073e5d,#087fc8);color:#fff;display:flex;align-items:center;justify-content:space-between}.aprann-chat-brand{display:flex;align-items:center;gap:11px}.aprann-chat-avatar{width:42px;height:42px;border-radius:50%;background:#fff;color:#087fc8;display:grid;place-items:center;font-size:22px}.aprann-chat-head strong{display:block;font-size:16px}.aprann-chat-status{font-size:11px;opacity:.9}.aprann-chat-close{border:0;background:rgba(255,255,255,.15);color:#fff;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:20px}
 #aprannChatMessages{flex:1;overflow-y:auto;padding:16px;background:#f5faff}.aprann-msg{display:flex;margin:0 0 12px}.aprann-msg.user{justify-content:flex-end}.aprann-bubble{max-width:84%;padding:11px 13px;border-radius:16px;font-size:14px;line-height:1.45;white-space:pre-line}.aprann-msg.bot .aprann-bubble{background:#fff;color:#17324a;border:1px solid #e0edf4;border-top-left-radius:5px}.aprann-msg.user .aprann-bubble{background:#087fc8;color:#fff;border-top-right-radius:5px}
@@ -791,7 +896,64 @@ html, body { max-width:100%; overflow-x:hidden; }
   color:#0369a1;
 }
 </style>
+<style id="aprann-mobile-header-fix">
+@media (max-width: 600px) {
+  header {
+    height: auto !important;
+    min-height: 0 !important;
+    position: relative !important;
+  }
 
+  header .head,
+  header .container.head {
+    height: auto !important;
+    min-height: 0 !important;
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+  }
+
+  header .brand {
+    flex: 1 1 100% !important;
+    min-width: 0 !important;
+  }
+
+  header .brand b {
+    font-size: 19px !important;
+  }
+
+  header .brand small {
+    font-size: 12px !important;
+  }
+
+  header .head > div:last-child {
+    display: flex !important;
+    flex: 1 1 100% !important;
+    gap: 8px !important;
+  }
+
+  header .head > div:last-child button {
+    flex: 1 1 0 !important;
+    width: auto !important;
+    min-width: 0 !important;
+    padding: 10px 8px !important;
+    font-size: 13px !important;
+    white-space: normal !important;
+  }
+
+  .aprann-exact-hero {
+    min-height: 0 !important;
+header + .hero,
+header + section,
+header + #public {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+  min-height: 0 !important;
+ }
+}
+</style>
 </head>
 <body>
 <header>
@@ -9254,4 +9416,361 @@ B.onclick=open;C.onclick=()=>{W.classList.remove('open');W.setAttribute('aria-hi
 document.querySelectorAll('.aprann-quick').forEach(x=>x.onclick=()=>{const k=x.dataset.chat;send({courses:'What courses do you offer?',membership:'What membership plans are available?',exams:'What exams are available?',videos:'What video lessons are available?',contact:'How can I contact Aprann Tech?'}[k])});
 })();
 </script>
+ 
+
+<style id="aprann-mobile-dashboard-size-fix">
+@media (max-width: 600px) {
+  body {
+    overflow-x: hidden;
+  }
+
+  #app,
+  .app {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .app-grid {
+    display: block !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+.side {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  gap: 6px !important;
+  padding: 8px !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  width: 100% !important;
+  align-items: center !important;
+  box-sizing: border-box !important;
+}
+
+.side button {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: max-content !important;
+  min-height: 40px !important;
+  padding: 10px 14px !important;
+  margin: 0 !important;
+  border-radius: 8px !important;
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+  white-space: nowrap !important;
+  text-align: center !important;
+}
+  .dash {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 14px !important;
+    box-sizing: border-box !important;
+  }
+
+  .dash > *,
+  .stat,
+  .module,
+  .dashboard-progress-panel {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-wrap: anywhere;
+  }
+
+  .stat-grid,
+  .dashboard-progress-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  img,
+  table {
+    max-width: 100%;
+  }
+}
+</style>
+
+  <style id="aprann-mobile-chat-fix">
+@media (max-width: 600px) {
+  #chat-widget,
+  .chat-widget,
+  .chat-button,
+  .chat-launcher,
+  [class*="chat-widget"],
+  [id*="chat-widget"] {
+    bottom: 90px !important;
+    right: 12px !important;
+    z-index: 50 !important;
+    /* Mobile chat widget positioning */
+@media (max-width: 600px) {
+  #aprannChatButton {
+    right: 12px !important;
+    bottom: 20px !important;
+    width: 54px !important;
+    height: 54px !important;
+  }
+
+  #aprannChatWindow {
+    right: 10px !important;
+    bottom: 84px !important;
+    width: calc(100vw - 20px) !important;
+    max-width: 380px !important;
+    height: min(560px, calc(100vh - 105px)) !important;
+  }
+}
+  /* Compact mobile dashboard navigation */
+@media (max-width: 600px) {
+  .app-grid > .side {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 4px !important;
+    padding: 8px !important;
+    align-items: stretch !important;
+   }
+  .login-area {
+  min-height: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.app {
+  min-height: 0 !important;
+}
+  
+   .app-grid {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+  align-items: start !important;
+ 
+  }
+
+  .app-grid > .side > b {
+    grid-column: 1 / -1 !important;
+    padding: 0 0 2px !important;
+    margin: 0 !important;
+    font-size: 15px !important;
+    line-height: 1.2 !important;
+  }
+
+  .app-grid > .side > button {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 34px !important;
+    padding: 6px 4px !important;
+    margin: 0 !important;
+    font-size: 11px !important;
+    line-height: 1.2 !important;
+    overflow-wrap: anywhere !important;
+  }
+header {
+  margin-bottom: 0 !important;
+}
+
+#app {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+#app > .app-grid {
+  margin-top: 0 !important;
+}
+  #app,
+  .app {
+    padding-top: 0 !important;
+  }
+}
+</style>
+
+<style id="aprann-mobile-nav-polish">
+@media (max-width: 600px) {
+  #app .app-grid {
+    display: block !important;
+  }
+
+  #app .side {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 6px !important;
+    width: 100% !important;
+    padding: 8px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    background: #082f49 !important;
+    border-radius: 0 !important;
+  }
+
+  #app .side > b {
+    display: none !important;
+  }
+
+  #app .side button {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: max-content !important;
+    min-height: 38px !important;
+    padding: 9px 12px !important;
+    margin: 0 !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+    white-space: nowrap !important;
+  }
+}
+</style>
+  
+<style id="aprann-mobile-gap-fix">
+@media (max-width: 600px) {
+  #app .app-grid {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  #app .side {
+    margin-top: 0 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    align-content: center !important;
+  }
+
+  #app .side button {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-height: 36px !important;
+    margin: 0 !important;
+  }
+}
+</style>
+ 
+<style id="aprann-mobile-nav-final">
+@media (max-width: 600px) {
+  #app .app-grid {
+    display: block !important;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  #app .side {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 6px !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 8px !important;
+    background: #082f49 !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    border-radius: 0 !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #app .side > b {
+    display: none !important;
+  }
+
+  #app .side button {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-height: 38px !important;
+    margin: 0 !important;
+    padding: 9px 12px !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+  }
+
+  #app .dash {
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 14px !important;
+    box-sizing: border-box !important;
+ @media (max-width: 600px) {
+  header {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  #app {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  #app .app-grid {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+}
+</style>
+ 
+<style id="aprann-mobile-nav-polish">
+@media (max-width: 600px) {
+  #app .app-grid {
+    display: block !important;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  #app .side {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 6px !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 8px 10px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    background: #082f49 !important;
+    border-radius: 0 !important;
+  }
+
+  #app .side > b {
+    display: none !important;
+  }
+
+  #app .side button {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-height: 38px !important;
+    margin: 0 !important;
+    padding: 9px 12px !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+  }
+}
+</style>
+  <style id="aprann-mobile-gap-fix">
+@media (max-width: 600px) {
+  #app {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  #app .app-grid {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  #app .side {
+    margin-top: 0 !important;
+  }
+}
+</style>
+
 </body></html>
