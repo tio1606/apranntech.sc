@@ -57,6 +57,106 @@ section{padding:58px 0}.section-title{text-align:center;margin-bottom:30px}.sect
   align-items:center;
   gap:38px;
 }
+
+  
+/* Aprann Tech mobile improvements */
+img,
+video,
+iframe {
+  max-width: 100%;
+}
+
+input,
+select,
+textarea {
+  max-width: 100%;
+  font-size: 16px;
+}
+
+button {
+  min-height: 44px;
+}
+
+@media (max-width: 800px) {
+  .container {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .hero-grid,
+  .cards,
+  .module-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero h1 {
+    font-size: clamp(30px, 7vw, 38px);
+    line-height: 1.15;
+  }
+
+  .app-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .side {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px;
+  }
+
+  .side button {
+    flex: 1 1 130px;
+    width: auto;
+    text-align: center;
+  }
+
+  .side span {
+    display: inline;
+  }
+
+  .dash {
+    min-width: 0;
+    padding: 16px;
+  }
+
+  .stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero {
+    padding: 38px 0;
+  }
+
+  section {
+    padding: 38px 0;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+  }
+
+  .stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section-title h2 {
+    font-size: 26px;
+  }
+
+  .footer-grid {
+    flex-direction: column;
+  }
+}
+
 .aprann-hero-copy{position:relative;z-index:2;padding:42px 0;}
 .aprann-hero-copy h1{font-size:clamp(46px,5vw,76px);line-height:.98;margin:18px 0 28px;letter-spacing:-2px;color:#fff;}
 .aprann-hero-copy>p{font-size:21px;line-height:1.7;max-width:760px;color:rgba(255,255,255,.96);}
@@ -791,7 +891,58 @@ html, body { max-width:100%; overflow-x:hidden; }
   color:#0369a1;
 }
 </style>
+<style id="aprann-mobile-header-fix">
+@media (max-width: 600px) {
+  header {
+    height: auto !important;
+    min-height: 0 !important;
+    position: relative !important;
+  }
 
+  header .head,
+  header .container.head {
+    height: auto !important;
+    min-height: 0 !important;
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+  }
+
+  header .brand {
+    flex: 1 1 100% !important;
+    min-width: 0 !important;
+  }
+
+  header .brand b {
+    font-size: 19px !important;
+  }
+
+  header .brand small {
+    font-size: 12px !important;
+  }
+
+  header .head > div:last-child {
+    display: flex !important;
+    flex: 1 1 100% !important;
+    gap: 8px !important;
+  }
+
+  header .head > div:last-child button {
+    flex: 1 1 0 !important;
+    width: auto !important;
+    min-width: 0 !important;
+    padding: 10px 8px !important;
+    font-size: 13px !important;
+    white-space: normal !important;
+  }
+
+  .aprann-exact-hero {
+    min-height: 0 !important;
+  }
+}
+</style>
 </head>
 <body>
 <header>
@@ -9254,4 +9405,103 @@ B.onclick=open;C.onclick=()=>{W.classList.remove('open');W.setAttribute('aria-hi
 document.querySelectorAll('.aprann-quick').forEach(x=>x.onclick=()=>{const k=x.dataset.chat;send({courses:'What courses do you offer?',membership:'What membership plans are available?',exams:'What exams are available?',videos:'What video lessons are available?',contact:'How can I contact Aprann Tech?'}[k])});
 })();
 </script>
+ 
+
+<style id="aprann-mobile-dashboard-size-fix">
+@media (max-width: 600px) {
+  body {
+    overflow-x: hidden;
+  }
+
+  #app,
+  .app {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .app-grid {
+    display: block !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .side {
+    display: none !important;
+  }
+
+  .dash {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 14px !important;
+    box-sizing: border-box !important;
+  }
+
+  .dash > *,
+  .stat,
+  .module,
+  .dashboard-progress-panel {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-wrap: anywhere;
+  }
+
+  .stat-grid,
+  .dashboard-progress-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  img,
+  table {
+    max-width: 100%;
+    html{-webkit-text-size-adjust:100%}
+img,video,iframe{max-width:100%}
+.field{font-size:16px}          /* stops iPhones zooming in when a field is tapped */
+button{min-height:44px}         /* comfortable tap size */
+
+@media(max-width:800px){
+  .container{padding:0 16px}
+  section{padding:40px 0}
+
+  /* header: let it grow instead of squashing into 70px */
+  .head{height:auto;min-height:64px;flex-wrap:wrap;gap:8px;padding:8px 0}
+  .nav{display:none}
+
+  /* hero, cards, modules: single column */
+  .hero-grid,.cards,.module-grid{grid-template-columns:1fr}
+  .hero h1{font-size:34px}
+  .hero p{font-size:17px}
+
+  /* dashboard: side menu becomes a swipeable strip across the top */
+  .app-grid{grid-template-columns:1fr;min-height:0}
+  .side{display:flex;gap:6px;overflow-x:auto;padding:10px;-webkit-overflow-scrolling:touch}
+  .side button{width:auto;flex:0 0 auto;white-space:nowrap;margin:0;padding:10px 14px}
+  .side span{display:inline}
+  .dash{padding:16px}
+
+  .stat-grid{grid-template-columns:1fr 1fr}
+  .stat strong{font-size:24px}
+
+  /* tables scroll sideways instead of being cut off */
+  .table{display:block;overflow-x:auto;white-space:nowrap}
+}
+
+@media(max-width:500px){
+  .hero{padding:44px 0}
+  .hero h1{font-size:30px}
+  .hero-actions{flex-direction:column}
+  .hero-actions button{width:100%}
+  .stat-grid{grid-template-columns:1fr 1fr;gap:10px}
+  .login-area{padding:30px 0}
+  .login-box{padding:20px}
+  .footer-grid{flex-direction:column}
+  }
+}
+</style>
+ 
 </body></html>
